@@ -8,6 +8,8 @@ export type CreateGroupFormFields = {
 
 export type CreateGroupFormErrors = Partial<Record<keyof CreateGroupFormFields, string>>;
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function validateCreateGroupForm(fields: CreateGroupFormFields) {
   const errors: CreateGroupFormErrors = {};
   const name = fields.name.trim();
@@ -24,4 +26,18 @@ export function validateCreateGroupForm(fields: CreateGroupFormFields) {
   }
 
   return errors;
+}
+
+export function validateGroupMemberEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return "Enter an email address.";
+  }
+
+  if (!emailPattern.test(normalizedEmail)) {
+    return "Enter a valid email address.";
+  }
+
+  return undefined;
 }

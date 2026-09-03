@@ -5,7 +5,12 @@ import {
   getSupabaseBrowserUrl,
 } from "./env";
 
-export function createSupabaseBrowserClient() {
+type BrowserClientOptions = {
+  detectSessionInUrl?: boolean;
+  isSingleton?: boolean;
+};
+
+export function createSupabaseBrowserClient(options?: BrowserClientOptions) {
   const supabaseUrl = getSupabaseBrowserUrl();
   const supabasePublishableKey = getSupabaseBrowserPublishableKey();
 
@@ -15,5 +20,14 @@ export function createSupabaseBrowserClient() {
     );
   }
 
-  return createBrowserClient(supabaseUrl, supabasePublishableKey);
+  if (!options) {
+    return createBrowserClient(supabaseUrl, supabasePublishableKey);
+  }
+
+  return createBrowserClient(supabaseUrl, supabasePublishableKey, {
+    isSingleton: options.isSingleton,
+    auth: {
+      detectSessionInUrl: options.detectSessionInUrl,
+    },
+  });
 }

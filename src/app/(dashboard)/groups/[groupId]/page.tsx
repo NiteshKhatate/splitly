@@ -1,22 +1,19 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { SectionError } from "@/components/dashboard/section-state";
+import { GroupBalanceSummary } from "@/components/groups/group-balance-summary";
+import { GroupExpenseSummary } from "@/components/groups/group-expense-summary";
+import { GroupHeader } from "@/components/groups/group-header";
+import { GroupMembers } from "@/components/groups/group-members";
 import { ensureUserProfile } from "@/lib/auth/profiles";
+import { getGroupDetail } from "@/lib/groups/details";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type GroupDetailPageProps = {
   params: Promise<{
     groupId: string;
   }>;
-};
-
-type GroupRow = {
-  id: string;
-  name: string;
-  description: string | null;
 };
 
 export default async function GroupDetailPage({ params }: GroupDetailPageProps) {
@@ -37,20 +34,17 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
     });
   }
 
-  const group = await supabase
-    .from("groups")
-    .select("id, name, description")
-    .eq("id", groupId)
-    .maybeSingle<GroupRow>();
+  const groupDetail = await getGroupDetail(supabase, groupId, user.id);
 
-  if (group.error) {
-    console.warn("Supabase group detail failed to load", {
-      message: group.error.message,
-    });
+  if (groupDetail.error && groupDetail.error.message === "Group not found.") {
     notFound();
   }
 
-  if (!group.data) notFound();
+  if (groupDetail.error) {
+    console.warn("Supabase group detail failed to load", {
+      message: groupDetail.error.message,
+    });
+  }
 
   const metadataName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name.trim() : "";
   const displayName = profile?.full_name?.trim() || metadataName || user.email?.split("@")[0] || "there";
@@ -63,34 +57,34 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
         activePath="/groups"
       />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        <Link
-          href="/groups"
-          className="rounded-control text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          Back to groups
-        </Link>
-
-        <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-page-heading">{group.data.name}</h1>
-            {group.data.description ? (
-              <p className="mt-2 text-secondary text-foreground-muted">{group.data.description}</p>
-            ) : null}
-          </div>
-          <Button type="button" className="w-full sm:w-auto" aria-describedby="group-detail-note">
-            + Add Expense
-          </Button>
-          <span id="group-detail-note" className="sr-only">
-            Group detail actions are coming soon.
-          </span>
-        </div>
-
-        <Card className="mt-8">
-          <h2 className="text-card-heading">Group details are coming soon</h2>
-          <p className="mt-2 text-secondary text-foreground-muted">
-            This route is ready for the full group-management experience without sending users to a 404.
-          </p>
-        </Card>
+        {groupDetail.group ? (
+          <>
+            <GroupHeader
+              canAddMembers={groupDetail.group.canAddMembers}
+              description={groupDetail.group.description}
+              groupId={groupDetail.group.id}
+              memberCount={groupDetail.group.memberCount}
+              name={groupDetail.group.name}
+            />
+            <div className="mt-8">
+              <GroupBalanceSummary balances={groupDetail.group.balances} />
+            </div>
+            <div className="mt-6 grid gap-6 lg:grid-cols-5">
+              <div className="lg:col-span-3">
+                <GroupMembers
+                  canAddMembers={groupDetail.group.canAddMembers}
+                  groupId={groupDetail.group.id}
+                  members={groupDetail.group.members}
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <GroupExpenseSummary expenses={groupDetail.group.recentExpenses} />
+              </div>
+            </div>
+          </>
+        ) : (
+          <SectionError message="This group couldn't be loaded. Please try again later." />
+        )}
       </main>
     </div>
   );

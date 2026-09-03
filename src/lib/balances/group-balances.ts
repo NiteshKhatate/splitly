@@ -27,14 +27,14 @@ type SettlementRow = {
   amount: string | number;
 };
 
-const rupeeFormatter = new Intl.NumberFormat("en-IN", {
+export const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   currency: "INR",
   maximumFractionDigits: 2,
   minimumFractionDigits: 0,
   style: "currency",
 });
 
-function parseAmountToMinorUnits(amount: string | number): number {
+export function parseAmountToMinorUnits(amount: string | number): number {
   const normalized = String(amount).trim();
   const sign = normalized.startsWith("-") ? -1 : 1;
   const unsigned = normalized.replace(/^[+-]/, "");
@@ -45,7 +45,7 @@ function parseAmountToMinorUnits(amount: string | number): number {
   return sign * ((Number.isNaN(whole) ? 0 : whole) * 100 + (Number.isNaN(fractional) ? 0 : fractional));
 }
 
-function formatMinorUnits(amountInMinorUnits: number): string {
+export function formatMinorUnits(amountInMinorUnits: number): string {
   return rupeeFormatter.format(amountInMinorUnits / 100);
 }
 
