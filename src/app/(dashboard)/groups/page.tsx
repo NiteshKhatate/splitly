@@ -51,7 +51,7 @@ export default async function GroupsPage() {
               View the groups you belong to and their current balances.
             </p>
           </div>
-          <Button href="/groups" className="w-full sm:w-auto">
+          <Button href="/groups/new" className="w-full sm:w-auto">
             + Create a group
           </Button>
         </div>
@@ -63,7 +63,7 @@ export default async function GroupsPage() {
             <EmptyState
               message="You don't have any groups yet."
               description="Create a group to start sharing expenses."
-              actionHref="/groups"
+              actionHref="/groups/new"
               action="+ Create a group"
             />
           ) : (

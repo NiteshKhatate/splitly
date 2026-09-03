@@ -18,7 +18,7 @@ export function GroupSummary({ groups, state = "ready" }: { groups: Group[]; sta
           <EmptyState
             message="You don't have any groups yet."
             description="Create a group to start sharing expenses."
-            actionHref="/groups"
+            actionHref="/groups/new"
             action="+ Create a group"
           />
         ) : (
@@ -28,7 +28,7 @@ export function GroupSummary({ groups, state = "ready" }: { groups: Group[]; sta
                 <GroupCard group={group} key={group.id} />
               ))}
             </ul>
-            <Button href="/groups" className="w-full">
+            <Button href="/groups/new" className="w-full">
               + Create a group
             </Button>
           </div>
