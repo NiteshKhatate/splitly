@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AuthError } from "@supabase/supabase-js";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,6 @@ function getFriendlySignupError(error: AuthError) {
 
 export function SignupForm() {
   const router = useRouter();
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [formMessage, setFormMessage] = useState<FormMessage | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -84,6 +83,7 @@ export function SignupForm() {
     setFormMessage(null);
 
     try {
+      const supabase = createSupabaseBrowserClient();
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
@@ -130,7 +130,10 @@ export function SignupForm() {
 
       router.push("/dashboard");
       router.refresh();
-    } catch {
+    } catch (signupError) {
+      console.warn("Signup failed", {
+        message: signupError instanceof Error ? signupError.message : String(signupError),
+      });
       setFormMessage({
         tone: "error",
         text: "Something went wrong. Please try again.",

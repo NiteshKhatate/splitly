@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ type LoginFormProps = { redirectTo: string; initialMessage?: string };
 
 export function LoginForm({ redirectTo, initialMessage }: LoginFormProps) {
   const router = useRouter();
-  const supabase = useMemo(() => createSupabaseBrowserClient(), []);
   const [error, setError] = useState<string>();
   const {
     formState: { errors, isSubmitting },
@@ -38,6 +37,7 @@ export function LoginForm({ redirectTo, initialMessage }: LoginFormProps) {
     setError(undefined);
 
     try {
+      const supabase = createSupabaseBrowserClient();
       const { data, error: signInError } = await supabase.auth.signInWithPassword(values);
 
       if (signInError || !data.user) {
@@ -55,7 +55,10 @@ export function LoginForm({ redirectTo, initialMessage }: LoginFormProps) {
       }
       router.replace(redirectTo);
       router.refresh();
-    } catch {
+    } catch (loginError) {
+      console.warn("Login failed", {
+        message: loginError instanceof Error ? loginError.message : String(loginError),
+      });
       setError("Something went wrong. Please try again.");
     }
   }

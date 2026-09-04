@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { EmailOtpType, Session } from "@supabase/supabase-js";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import {
   SIGNUP_PASSWORD_MIN_LENGTH,
 } from "@/lib/validations/auth";
 import { zodResolver } from "@/lib/validations/zod-resolver";
+
+const INVITATION_SESSION_TIMEOUT_MS = 12000;
 
 function getInvitationAcceptanceMessage(status: string | null) {
   if (status === "expired") {
@@ -36,12 +38,27 @@ function cleanAuthParameters() {
   window.history.replaceState({}, document.title, window.location.pathname);
 }
 
+async function withInvitationSessionTimeout<T>(promise: Promise<T>) {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => {
+          reject(new Error("Invitation session check timed out."));
+        }, INVITATION_SESSION_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
 export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
   const router = useRouter();
-  const supabase = useMemo(
-    () => createSupabaseBrowserClient({ detectSessionInUrl: false, isSingleton: false }),
-    [],
-  );
   const didInitialize = useRef(false);
   const [session, setSession] = useState<Session>();
   const [message, setMessage] = useState<string>();
@@ -67,75 +84,95 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
     let isActive = true;
 
     async function establishInvitationSession() {
-      const hash = new URLSearchParams(window.location.hash.slice(1));
-      const query = new URLSearchParams(window.location.search);
-      const accessToken = hash.get("access_token");
-      const refreshToken = hash.get("refresh_token");
-      const code = query.get("code");
-      const tokenHash = query.get("token_hash");
-      const otpType = query.get("type") as EmailOtpType | null;
-      let activeSession: Session | null = null;
+      try {
+        const supabase = createSupabaseBrowserClient({
+          detectSessionInUrl: false,
+          isSingleton: false,
+        });
+        const hash = new URLSearchParams(window.location.hash.slice(1));
+        const query = new URLSearchParams(window.location.search);
+        const authError = query.get("error_description") ?? hash.get("error_description");
+        const accessToken = hash.get("access_token");
+        const refreshToken = hash.get("refresh_token");
+        const code = query.get("code");
+        const tokenHash = query.get("token_hash");
+        const otpType = query.get("type") as EmailOtpType | null;
+        let activeSession: Session | null = null;
 
-      if (accessToken && refreshToken) {
-        const result = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
+        if (authError) {
+          setMessage("This invitation link is invalid or has expired.");
+          cleanAuthParameters();
+          return;
+        }
+
+        if (accessToken && refreshToken) {
+          const result = await withInvitationSessionTimeout(supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          }));
+
+          if (result.error) {
+            setMessage("This invitation link is invalid or has expired.");
+            return;
+          }
+
+          activeSession = result.data.session;
+          cleanAuthParameters();
+        } else if (code) {
+          const result = await withInvitationSessionTimeout(supabase.auth.exchangeCodeForSession(code));
+
+          if (result.error) {
+            setMessage("This invitation link is invalid or has expired.");
+            return;
+          }
+
+          activeSession = result.data.session;
+          cleanAuthParameters();
+        } else if (tokenHash && otpType) {
+          const result = await withInvitationSessionTimeout(supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: otpType,
+          }));
+
+          if (result.error) {
+            setMessage("This invitation link is invalid or has expired.");
+            return;
+          }
+
+          activeSession = result.data.session;
+          cleanAuthParameters();
+        } else {
+          const result = await withInvitationSessionTimeout(supabase.auth.getSession());
+          activeSession = result.data.session;
+        }
+
+        if (!isActive) return;
+
+        if (!activeSession) {
+          setMessage("Open the invitation link from your email to continue.");
+          return;
+        }
+
+        const metadataName = activeSession.user.user_metadata?.full_name;
+        setSession(activeSession);
+        reset({
+          fullName: typeof metadataName === "string" ? metadataName : "",
+          password: "",
+          confirmPassword: "",
+        });
+      } catch (error) {
+        console.warn("Supabase invitation session check failed", {
+          message: error instanceof Error ? error.message : String(error),
         });
 
-        if (result.error) {
-          if (isActive) setMessage("This invitation link is invalid or has expired.");
-          if (isActive) setIsLoading(false);
-          return;
+        if (isActive) {
+          setMessage("We couldn't check this invitation. Open the invitation link again or log in to continue.");
         }
-
-        activeSession = result.data.session;
-        cleanAuthParameters();
-      } else if (code) {
-        const result = await supabase.auth.exchangeCodeForSession(code);
-
-        if (result.error) {
-          if (isActive) setMessage("This invitation link is invalid or has expired.");
-          if (isActive) setIsLoading(false);
-          return;
+      } finally {
+        if (isActive) {
+          setIsLoading(false);
         }
-
-        activeSession = result.data.session;
-        cleanAuthParameters();
-      } else if (tokenHash && otpType) {
-        const result = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: otpType,
-        });
-
-        if (result.error) {
-          if (isActive) setMessage("This invitation link is invalid or has expired.");
-          if (isActive) setIsLoading(false);
-          return;
-        }
-
-        activeSession = result.data.session;
-        cleanAuthParameters();
-      } else {
-        const result = await supabase.auth.getSession();
-        activeSession = result.data.session;
       }
-
-      if (!isActive) return;
-
-      if (!activeSession) {
-        setMessage("Open the invitation link from your email to continue.");
-        setIsLoading(false);
-        return;
-      }
-
-      const metadataName = activeSession.user.user_metadata?.full_name;
-      setSession(activeSession);
-      reset({
-        fullName: typeof metadataName === "string" ? metadataName : "",
-        password: "",
-        confirmPassword: "",
-      });
-      setIsLoading(false);
     }
 
     void establishInvitationSession();
@@ -143,7 +180,7 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
     return () => {
       isActive = false;
     };
-  }, [reset, supabase]);
+  }, [reset]);
 
   async function handleInvitationSubmit(values: InvitationAccountSetupData) {
     if (!session?.user.email) {
@@ -153,6 +190,10 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
     setMessage(undefined);
 
     try {
+      const supabase = createSupabaseBrowserClient({
+        detectSessionInUrl: false,
+        isSingleton: false,
+      });
       const updateResult = await supabase.auth.updateUser({
         password: values.password,
         data: { full_name: values.fullName },
