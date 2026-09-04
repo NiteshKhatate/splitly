@@ -20,9 +20,6 @@
 # production
 /build
 
-# generated Prisma Client
-/src/generated/prisma
-
 # misc
 .DS_Store
 *.pem
