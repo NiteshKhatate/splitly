@@ -33,7 +33,13 @@ describe("getGroupDetail", () => {
       from: jest.fn(() => groupQuery),
     };
 
-    const result = await getGroupDetail(supabase as never, "missing-group", "user-1");
+    const database = { expense: { findMany: jest.fn() } };
+    const result = await getGroupDetail(
+      supabase as never,
+      database as never,
+      "missing-group",
+      "user-1",
+    );
 
     expect(result).toEqual({ group: null, error: { message: "Group not found." } });
     expect(getCurrentUserGroupBalances).not.toHaveBeenCalled();
@@ -61,20 +67,24 @@ describe("getGroupDetail", () => {
         profiles: [{ id: "user-2", full_name: null, email: "grace@example.com", avatar_url: "avatar.png" }],
       },
     ]);
-    const expensesQuery = createQueryResult([
-      {
-        id: "expense-1",
-        description: "Dinner",
-        amount: "125.50",
-        expense_date: "2026-09-04",
+    const database = {
+      expense: {
+        findMany: jest.fn().mockResolvedValue([
+          {
+            id: "expense-1",
+            description: "Dinner",
+            totalMinor: 12550,
+            date: new Date("2026-09-04T00:00:00.000Z"),
+          },
+          {
+            id: "expense-2",
+            description: "Taxi",
+            totalMinor: 8000,
+            date: new Date("2026-09-03T00:00:00.000Z"),
+          },
+        ]),
       },
-      {
-        id: "expense-2",
-        description: "Taxi",
-        amount: "80.00",
-        expense_date: null,
-      },
-    ]);
+    };
     jest.mocked(getCurrentUserGroupBalances).mockResolvedValue({
       balances: new Map([[
         "group-1",
@@ -89,11 +99,15 @@ describe("getGroupDetail", () => {
     const supabase = {
       from: jest.fn()
         .mockReturnValueOnce(groupQuery)
-        .mockReturnValueOnce(membersQuery)
-        .mockReturnValueOnce(expensesQuery),
+        .mockReturnValueOnce(membersQuery),
     };
 
-    const result = await getGroupDetail(supabase as never, "group-1", "user-1");
+    const result = await getGroupDetail(
+      supabase as never,
+      database as never,
+      "group-1",
+      "user-1",
+    );
 
     expect(result.error).toBeNull();
     expect(result.group).toMatchObject({
@@ -135,9 +149,25 @@ describe("getGroupDetail", () => {
       ],
       recentExpenses: [
         { id: "expense-1", description: "Dinner", amount: "₹125.5", date: "4 Sept" },
-        { id: "expense-2", description: "Taxi", amount: "₹80", date: "No date" },
+        { id: "expense-2", description: "Taxi", amount: "₹80", date: "3 Sept" },
       ],
     });
+    expect(database.expense.findMany).toHaveBeenCalledWith({
+      where: { deletedAt: null, groupId: "group-1" },
+      orderBy: { date: "desc" },
+      take: 5,
+      select: {
+        date: true,
+        description: true,
+        id: true,
+        totalMinor: true,
+      },
+    });
+    expect(getCurrentUserGroupBalances).toHaveBeenCalledWith(
+      database,
+      "user-1",
+      ["group-1"],
+    );
   });
 
   it("returns balance errors before mapping group details", async () => {
@@ -149,7 +179,9 @@ describe("getGroupDetail", () => {
       created_by: "user-1",
     });
     const membersQuery = createQueryResult([]);
-    const expensesQuery = createQueryResult([]);
+    const database = {
+      expense: { findMany: jest.fn().mockResolvedValue([]) },
+    };
     const error = { message: "balances unavailable" };
     jest.mocked(getCurrentUserGroupBalances).mockResolvedValue({
       balances: new Map(),
@@ -158,12 +190,51 @@ describe("getGroupDetail", () => {
     const supabase = {
       from: jest.fn()
         .mockReturnValueOnce(groupQuery)
-        .mockReturnValueOnce(membersQuery)
-        .mockReturnValueOnce(expensesQuery),
+        .mockReturnValueOnce(membersQuery),
     };
 
-    const result = await getGroupDetail(supabase as never, "group-1", "user-1");
+    const result = await getGroupDetail(
+      supabase as never,
+      database as never,
+      "group-1",
+      "user-1",
+    );
 
     expect(result).toEqual({ group: null, error });
+  });
+
+  it("returns a safe error when recent expenses cannot be loaded", async () => {
+    const groupQuery = createQueryResult({
+      id: "group-1",
+      name: "Goa trip",
+      description: null,
+      currency: "INR",
+      created_by: "user-1",
+    });
+    const membersQuery = createQueryResult([]);
+    const database = {
+      expense: { findMany: jest.fn().mockRejectedValue(new Error("ledger unavailable")) },
+    };
+    jest.mocked(getCurrentUserGroupBalances).mockResolvedValue({
+      balances: new Map(),
+      error: null,
+    });
+    const supabase = {
+      from: jest.fn()
+        .mockReturnValueOnce(groupQuery)
+        .mockReturnValueOnce(membersQuery),
+    };
+
+    const result = await getGroupDetail(
+      supabase as never,
+      database as never,
+      "group-1",
+      "user-1",
+    );
+
+    expect(result).toEqual({
+      group: null,
+      error: { message: "Group details could not be loaded." },
+    });
   });
 });

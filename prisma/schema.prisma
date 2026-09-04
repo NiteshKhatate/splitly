@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum GroupMemberRole {
+  OWNER  @map("admin")
+  MEMBER @map("member")
+
+  @@map("group_member_role")
+}
+
+enum ExpenseCategory {
+  GENERAL
+  GROCERIES
+  DINING
+  TRANSPORT
+  HOUSING
+  UTILITIES
+  ENTERTAINMENT
+  TRAVEL
+  HEALTH
+  SHOPPING
+  OTHER
+
+  @@map("expense_category")
+}
+
+enum SplitMethod {
+  EQUAL
+  EXACT
+  PERCENTAGE
+  SHARES
+
+  @@map("split_method")
+}
+
+enum ActivityEventType {
+  GROUP_CREATED
+  MEMBER_JOINED
+  MEMBER_REMOVED
+  EXPENSE_CREATED
+  EXPENSE_UPDATED
+  EXPENSE_DELETED
+  SETTLEMENT_CREATED
+
+  @@map("activity_event_type")
+}
+
+enum ActivityEntityType {
+  GROUP
+  MEMBER
+  INVITE
+  EXPENSE
+  SETTLEMENT
+
+  @@map("activity_entity_type")
+}
+
+model User {
+  id        String   @id @db.Uuid
+  name      String   @map("full_name")
+  email     String
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  createdGroups       Group[]          @relation("GroupCreator")
+  memberships         GroupMember[]
+  sentInvites         Invite[]         @relation("InviteSender")
+  createdExpenses     Expense[]        @relation("ExpenseCreator")
+  expensePayments     ExpensePayment[]
+  expenseShares       ExpenseShare[]
+  settlementsPaid     Settlement[]     @relation("SettlementPayer")
+  settlementsReceived Settlement[]     @relation("SettlementPayee")
+  activityEvents      ActivityEvent[]  @relation("ActivityActor")
+
+  @@map("profiles")
+}
+
+model Group {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  description     String?
+  createdBy       String   @map("created_by") @db.Uuid
+  defaultCurrency String   @default("INR") @map("currency")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  creator        User            @relation("GroupCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  members        GroupMember[]
+  invites        Invite[]
+  expenses       Expense[]
+  settlements    Settlement[]
+  activityEvents ActivityEvent[]
+
+  @@index([createdBy], map: "idx_groups_created_by")
+  @@map("groups")
+}
+
+model GroupMember {
+  id       String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId  String          @map("group_id") @db.Uuid
+  userId   String          @map("user_id") @db.Uuid
+  role     GroupMemberRole @default(MEMBER)
+  joinedAt DateTime        @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId], map: "unique_group_member")
+  @@index([groupId], map: "idx_group_members_group_id")
+  @@index([userId], map: "idx_group_members_user_id")
+  @@map("group_members")
+}
+
+model Invite {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId    String    @map("group_id") @db.Uuid
+  email      String
+  invitedBy  String    @map("invited_by") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  acceptedAt DateTime? @map("accepted_at") @db.Timestamptz(6)
+
+  group  Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender User  @relation("InviteSender", fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, email], map: "group_invitations_group_id_email_key")
+  @@map("group_invitations")
+}
+
+model Expense {
+  id          String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId     String          @map("group_id") @db.Uuid
+  description String
+  totalMinor  Int             @map("total_minor")
+  currency    String
+  date        DateTime        @db.Date
+  category    ExpenseCategory @default(GENERAL)
+  notes       String?
+  createdBy   String          @map("created_by") @db.Uuid
+  deletedAt   DateTime?       @map("deleted_at") @db.Timestamptz(6)
+  createdAt   DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  group    Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator  User             @relation("ExpenseCreator", fields: [createdBy], references: [id], onDelete: Restrict)
+  payments ExpensePayment[]
+  shares   ExpenseShare[]
+
+  @@index([groupId, date], map: "idx_expenses_group_id_date")
+  @@index([createdBy], map: "idx_expenses_created_by")
+  @@map("expenses")
+}
+
+model ExpensePayment {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expenseId   String   @map("expense_id") @db.Uuid
+  payerId     String   @map("payer_id") @db.Uuid
+  amountMinor Int      @map("amount_minor")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  payer   User    @relation(fields: [payerId], references: [id], onDelete: Restrict)
+
+  @@unique([expenseId, payerId], map: "expense_payments_expense_id_payer_id_key")
+  @@index([payerId], map: "idx_expense_payments_payer_id")
+  @@map("expense_payments")
+}
+
+model ExpenseShare {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expenseId     String      @map("expense_id") @db.Uuid
+  participantId String      @map("participant_id") @db.Uuid
+  owedMinor     Int         @map("owed_minor")
+  splitMethod   SplitMethod @map("split_method")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  expense     Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  participant User    @relation(fields: [participantId], references: [id], onDelete: Restrict)
+
+  @@unique([expenseId, participantId], map: "expense_shares_expense_id_participant_id_key")
+  @@index([participantId], map: "idx_expense_shares_participant_id")
+  @@map("expense_shares")
+}
+
+model Settlement {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId        String   @map("group_id") @db.Uuid
+  payerId        String   @map("paid_by") @db.Uuid
+  payeeId        String   @map("paid_to") @db.Uuid
+  amount         Decimal  @db.Decimal
+  settlementDate DateTime @default(now()) @map("settlement_date") @db.Date
+  notes          String?
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  payer User  @relation("SettlementPayer", fields: [payerId], references: [id], onDelete: Restrict)
+  payee User  @relation("SettlementPayee", fields: [payeeId], references: [id], onDelete: Restrict)
+
+  @@index([groupId], map: "idx_settlements_group_id")
+  @@index([payerId], map: "idx_settlements_paid_by")
+  @@index([payeeId], map: "idx_settlements_paid_to")
+  @@map("settlements")
+}
+
+model ActivityEvent {
+  id         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId    String             @map("group_id") @db.Uuid
+  actorId    String             @map("actor_id") @db.Uuid
+  type       ActivityEventType
+  entityType ActivityEntityType @map("entity_type")
+  entityId   String             @map("entity_id") @db.Uuid
+  metadata   Json               @default("{}") @db.JsonB
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  actor User  @relation("ActivityActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([groupId, createdAt], map: "idx_activity_events_group_id_created_at")
+  @@index([actorId], map: "idx_activity_events_actor_id")
+  @@index([entityType, entityId], map: "idx_activity_events_entity")
+  @@map("activity_events")
+}

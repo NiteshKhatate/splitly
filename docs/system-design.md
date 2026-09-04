@@ -1,1073 +1,1599 @@
 # Splitly — System Design
 
-## 1. Overview
+## 1. Purpose
 
-Splitly is a shared-expense management application.
+This document defines the technical architecture and engineering design for Splitly.
 
-The core purpose is to allow users to:
+Splitly is a web application for tracking shared expenses between people, calculating balances, and recording settlements.
 
-* Create accounts
-* Create groups
-* Add people to groups
-* Record shared expenses
-* Split expenses
-* Track balances
-* Record settlements
-* View expense history
+The system must prioritize:
 
-The application is designed to provide a simple and transparent way for groups of people to manage shared expenses.
+1. Financial correctness
+2. Data integrity
+3. Authorization and security
+4. Auditability
+5. Maintainability
+6. Responsive UX
+7. Low operational complexity
 
----
+This document describes **how the system works**.
 
-# 2. Phase 1 Scope
+`docs/BUILD_PLAN.md` describes **what should be built and in what order**.
 
-Phase 1 focuses on establishing the core application foundation.
-
-Phase 1 includes:
-
-```text
-Authentication
-    ↓
-Dashboard
-    ↓
-Groups
-    ↓
-Group members
-    ↓
-Expenses
-    ↓
-Expense splits
-    ↓
-Balances
-    ↓
-Settlements
-```
-
-The implementation should remain intentionally simple.
-
-Do not introduce infrastructure or features that are not required for the current phase.
+`AGENTS.md` describes **how agents and developers should work within this architecture**.
 
 ---
 
-# 3. Architecture
-
-Splitly uses a single Next.js application.
+# 2. System Overview
 
 ```text
-                        ┌──────────────┐
-                        │     User     │
-                        └──────┬───────┘
-                               │
-                               ▼
-                        ┌──────────────┐
-                        │    Vercel    │
-                        └──────┬───────┘
-                               │
-                               ▼
-                        ┌──────────────┐
-                        │    Next.js   │
-                        │ Application  │
-                        └──────┬───────┘
-                               │
-                ┌──────────────┴──────────────┐
-                ▼                             ▼
-        ┌──────────────┐              ┌──────────────┐
-        │ Supabase Auth│              │  Supabase DB │
-        └──────────────┘              │ PostgreSQL   │
-                                      │ + RLS         │
-                                      └──────────────┘
-```
-
-There is no separate backend microservice in Phase 1.
-
----
-
-# 4. Deployment
-
-The application is deployed on:
-
-```text
-Vercel
-```
-
-The application runtime is Next.js.
-
-Supabase provides:
-
-* Authentication
-* PostgreSQL database
-* Row Level Security
-* Database APIs
-
-Deployment architecture should remain simple unless scale or requirements justify additional infrastructure.
-
----
-
-# 5. Technology Stack
-
-Core technologies:
-
-```text
-Frontend
-    Next.js
-    React
-    TypeScript
-    Tailwind CSS
-
-Backend / Data
-    Supabase
-    PostgreSQL
-    Supabase Auth
-    PostgreSQL RLS
-
-Forms
-    React Hook Form
-    Zod
-    @hookform/resolvers
-
-Testing
-    Jest
-
-Deployment
-    Vercel
-
-Package manager
-    pnpm
+┌─────────────────────────────────────────────┐
+│                   Browser                   │
+│                                             │
+│  Next.js UI                                │
+│  React Components                          │
+│  React Hook Form                            │
+│  Client-side Zod validation                 │
+└──────────────────────┬──────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────┐
+│                Next.js Server               │
+│                                             │
+│  App Router                                 │
+│  Server Components                          │
+│  Server Actions / Route Handlers            │
+│                                             │
+│  Authentication                             │
+│  Authorization                              │
+│  Server-side Zod validation                 │
+│  Domain Services                             │
+└──────────────────────┬──────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────┐
+│                 Domain Layer                │
+│                                             │
+│  Expense calculations                       │
+│  Split calculations                          │
+│  Balance calculations                        │
+│  Debt simplification                         │
+│  Settlement calculations                     │
+│  Business invariants                         │
+└──────────────────────┬──────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────┐
+│                    Prisma                   │
+│                                             │
+│  Queries                                    │
+│  Mutations                                  │
+│  Transactions                               │
+│  Schema                                     │
+│  Migrations                                 │
+└──────────────────────┬──────────────────────┘
+                       │
+                       ▼
+┌─────────────────────────────────────────────┐
+│            Supabase PostgreSQL              │
+│                                             │
+│  Persistent application data                │
+│  RLS enabled                                │
+└─────────────────────────────────────────────┘
 ```
 
 ---
 
-# 6. Application Layers
+# 3. Technology Stack
 
-The application should conceptually follow:
+## Frontend
 
-```text
-UI
- │
- ▼
-Application / Server Logic
- │
- ▼
-Data Access
- │
- ▼
-Supabase
- │
- ▼
-PostgreSQL + RLS
-```
+* Next.js App Router
+* React
+* TypeScript
+* Tailwind CSS
 
-The exact implementation may vary between Server Components, Server Actions, Route Handlers, and client components.
+## Forms
 
-The important principle is that database access and business rules should not be tightly coupled to presentation.
+* React Hook Form
+
+## Validation
+
+* Zod
+
+## Authentication
+
+* Auth.js
+
+## Database
+
+* Supabase PostgreSQL
+
+## ORM
+
+* Prisma
+
+## Testing
+
+* Jest
+* Playwright
+
+## CI
+
+* GitHub Actions
+
+## Deployment
+
+* Vercel
 
 ---
 
-# 7. Next.js
+# 4. Architectural Principles
 
-Use the Next.js App Router.
+## 4.1 Thin UI
 
-Prefer Server Components by default.
+React components should primarily handle:
 
-Use Client Components only when necessary for:
-
-* Interactive UI
+* Presentation
+* User interaction
 * Form state
-* Browser APIs
-* Client-side state
-* Event handlers
-
-Avoid making entire pages Client Components unnecessarily.
-
----
-
-# 8. Authentication
-
-Supabase Authentication is the authentication provider.
-
-The application relies on Supabase Auth for:
-
-* Signup
-* Login
-* Email confirmation
-* Logout
-* Session management
-* Authenticated identity
-
-Supabase provides the authenticated user identity through:
-
-```sql
-auth.uid()
-```
-
-The application must not implement its own password authentication system.
-
----
-
-# 9. Protected Routes
-
-Authenticated pages must verify that the user has a valid session.
-
-Examples include:
-
-```text
-/dashboard
-/groups
-/groups/[groupId]
-```
-
-Unauthenticated users must not gain access to protected application data.
-
-Route protection should be implemented using the existing Next.js/Supabase authentication architecture.
-
----
-
-# 10. Database
-
-The Phase 1 database consists of the following primary application tables:
-
-```text
-profiles
-groups
-group_members
-expenses
-expense_splits
-settlements
-```
-
-Supabase manages:
-
-```text
-auth.users
-```
-
-The application should not recreate authentication users in PostgreSQL.
-
----
-
-# 11. Entity Relationships
-
-The high-level relationship is:
-
-```text
-auth.users
-     │
-     │ 1:1
-     ▼
-profiles
-     │
-     │
-     ├───────────────┐
-     │               │
-     ▼               ▼
- groups        group_members
-     │               │
-     │               │
-     └───────┬───────┘
-             │
-             ▼
-          expenses
-             │
-             ▼
-       expense_splits
-             │
-             ▼
-        settlements
-```
-
-A user can belong to multiple groups.
-
-A group can contain multiple users.
-
-A group can contain multiple expenses.
-
-An expense can be split among multiple group members.
-
-Settlements reduce outstanding balances.
-
----
-
-# 12. Profiles
-
-`profiles` represents application-level user information associated with Supabase Auth.
-
-Conceptually:
-
-```text
-auth.users
-     │
-     ▼
-profiles
-```
-
-The application should use the authenticated user's ID as the identity reference.
-
-Only necessary profile information should be exposed to other users.
-
-Sensitive authentication data remains managed by Supabase Auth.
-
----
-
-# 13. Groups
-
-A group represents a collection of users sharing expenses.
-
-Examples:
-
-```text
-Goa Trip
-Flatmates
-Weekend Trip
-Office Lunch
-```
-
-A group has:
-
-* Identity
-* Name
-* Creator/owner relationship according to the implemented schema
-* Members
-* Expenses
-* Derived balances
-
-The exact schema must follow the existing database implementation.
-
----
-
-# 14. Group Membership
-
-`group_members` represents the many-to-many relationship between users and groups.
-
-Conceptually:
-
-```text
-users
-  │
-  ├───────────────┐
-  ▼               ▼
-group_members ← groups
-```
-
-A user can belong to multiple groups.
-
-A group can contain multiple users.
-
-Membership should be unique.
-
-The database should prevent duplicate membership records.
-
----
-
-# 15. Group Creation
-
-The intended group-creation flow is:
-
-```text
-Authenticated User
-       │
-       ▼
-Create Group
-       │
-       ▼
-Create Initial Membership
-       │
-       ▼
-User becomes group owner/member
-```
-
-The exact ownership model depends on the current schema.
-
-Authorization must not rely solely on client-side checks.
-
-RLS must enforce the database boundary.
-
----
-
-# 16. Adding Group Members
-
-The initial member-management flow allows an authorized group user to add an existing Splitly user.
-
-Conceptually:
-
-```text
-Group
-  │
-  ▼
-Add people
-  │
-  ▼
-Find existing profile
-  │
-  ▼
-Verify authorization
-  │
-  ▼
-Create group_members row
-```
-
-The application should:
-
-1. Authenticate the current user.
-2. Verify that the user has permission to add members.
-3. Find the intended existing user.
-4. Verify that the user is not already a member.
-5. Add the membership.
-6. Refresh the group member list.
-
-Do not automatically create accounts during this process.
-
-Email invitations can be implemented separately in a later phase.
-
----
-
-# 17. Expenses
-
-An expense represents money spent for a group.
-
-Examples:
-
-```text
-Dinner
-Hotel
-Groceries
-Taxi
-Movie tickets
-```
-
-An expense should belong to a group and identify the payer.
-
-The expense total is distributed through `expense_splits`.
-
----
-
-# 18. Expense Splits
-
-`expense_splits` represents how an expense is divided among participants.
-
-Conceptually:
-
-```text
-Expense
-   │
-   ├── Participant A → ₹500
-   ├── Participant B → ₹300
-   └── Participant C → ₹200
-```
-
-The split amounts should follow the application's supported split rules.
-
-The total of the splits must reconcile with the expense total after applying documented rounding rules.
-
----
-
-# 19. Settlements
-
-A settlement represents money paid to reduce or clear an outstanding balance.
-
-Conceptually:
-
-```text
-User A
-  │
-  │ ₹500
-  ▼
-User B
-```
-
-Settlements affect derived balances.
-
-They should not modify historical expense amounts.
-
----
-
-# 20. Balance Model
-
-Balances are derived data.
-
-Do not create a persistent `balances` table solely to cache dashboard balances unless a future architectural decision explicitly requires it.
-
-Conceptually:
-
-```text
-Expenses
-    +
-Expense Splits
-    -
-Settlements
-    =
-Current Balances
-```
-
-For an individual user:
-
-```text
-Net Balance
-=
-Money owed to user
--
-Money user owes
-```
-
-A positive balance means money is owed to the user.
-
-A negative balance means the user owes money.
-
-Zero means the user is settled.
-
----
-
-# 21. Financial Precision
-
-Financial calculations must be deterministic.
-
-Avoid unsafe floating-point arithmetic for money.
-
-Where appropriate, represent currency using integer minor units.
-
-For example:
-
-```text
-₹125.50
-```
-
-may be represented as:
-
-```text
-12550 paise
-```
-
-The exact representation should follow the implemented database/application model.
-
-Rounding rules must be explicit.
-
-Financial totals must reconcile.
-
----
-
-# 22. Row Level Security
-
-RLS is a core security mechanism.
-
-RLS must remain enabled on application tables containing user/group financial data.
-
-Policies must enforce:
-
-* User identity
-* Group membership
-* Group ownership/admin privileges where applicable
-* Appropriate member-management permissions
-* Data isolation between unrelated users/groups
-
-Never disable RLS to solve application errors.
-
----
-
-# 23. RLS Policy Principles
-
-Policies should follow least privilege.
-
-Conceptually:
-
-```text
-User
- │
- ├── Can access own profile
- │
- ├── Can access groups they belong to
- │
- ├── Can access members of authorized groups
- │
- ├── Can access expenses belonging to authorized groups
- │
- └── Can perform mutations only when authorized
-```
-
-Authorization must ultimately be enforced by the database security model.
-
----
-
-# 24. `auth.uid()`
-
-RLS policies should use the authenticated user's identity where appropriate.
-
-For example:
-
-```sql
-(auth.uid() = user_id)
-```
-
-or a membership/ownership check derived from the appropriate relationship.
-
-Never trust a user ID supplied by the browser without verifying it against the authenticated session.
-
----
-
-# 25. RLS and Group Membership
-
-Access to group-level information should generally depend on group membership.
-
-Conceptually:
-
-```text
-Current User
-     │
-     ▼
-group_members
-     │
-     ▼
-group_id
-     │
-     ▼
-groups / expenses / members
-```
-
-The exact SQL must follow the current schema.
-
-Avoid RLS policies that accidentally expose all groups or all users.
-
----
-
-# 26. RLS and Member Management
-
-Adding members is a privileged operation according to the application's group authorization model.
-
-The database must enforce who can add members.
-
-Do not rely solely on:
-
-```text
-if (isOwner) {
-   ...
-}
-```
-
-in client-side React code.
-
-Client checks are UX.
-
-RLS/database authorization is security.
-
----
-
-# 27. Profile Privacy
-
-User lookup must expose only the information necessary for the requested operation.
-
-For example, an add-member flow may need:
-
-```text
-display name
-email
-user ID
-```
-
-but should not expose unrelated profile data.
-
-Do not create a public user directory simply to implement email-based group membership.
-
----
-
-# 28. Data Access
-
-Keep Supabase access behind application boundaries where practical.
-
-Conceptually:
-
-```text
-UI
- ↓
-Server Action / Route / Application Logic
- ↓
-Data Access
- ↓
-Supabase
-```
-
-This allows:
-
-* Better testing
-* Cleaner separation
-* Easier error handling
-* Consistent authorization handling
-
----
-
-# 29. Forms
-
-All important application forms use:
-
-```text
-React Hook Form
-        +
-Zod
-```
-
-Examples:
-
-```text
-Signup
-Login
-Create Group
-Add Person
-Add Expense
-Settlement
-```
-
-Standard flow:
-
-```text
-User Input
-    ↓
-React Hook Form
-    ↓
-Zod Validation
-    ↓
-Server Boundary
-    ↓
-Server Validation
-    ↓
-Supabase
-    ↓
-PostgreSQL + RLS
-```
-
-Client-side validation does not replace server/database validation.
-
----
-
-# 30. Validation
-
-Zod schemas should define application input rules.
-
-Important schemas should be reusable.
-
-Examples:
-
-```text
-src/lib/validations/auth.ts
-src/lib/validations/groups.ts
-src/lib/validations/expenses.ts
-src/lib/validations/settlements.ts
-```
-
-The same domain rule should not be duplicated across multiple UI components.
-
----
-
-# 31. Testing Architecture
-
-Splitly uses Jest.
-
-Testing is layered:
-
-```text
-                 Tests
-                   │
-        ┌──────────┼──────────┐
-        ▼          ▼          ▼
-       Unit    Component   Integration
-        │          │          │
-        ▼          ▼          ▼
-     Business     User      Supabase /
-      Logic     Behavior    Database
-```
-
-The objective is meaningful confidence, not maximum test count.
-
----
-
-# 32. Unit Testing
-
-Unit tests should cover isolated business logic.
-
-Priority areas:
-
-```text
-Balances
-Expense splitting
-Settlements
-Financial calculations
-Validation
-Utility functions
-```
-
-Tests should be deterministic and independent.
-
----
-
-# 33. Component Testing
-
-Component tests should focus on user-visible behavior.
-
-Examples:
-
-```text
-User opens Add Person
-        ↓
-Dialog appears
-
-User enters invalid email
-        ↓
-Validation error appears
-
-User submits valid email
-        ↓
-Member-add operation is triggered
-```
-
-Avoid testing implementation details.
-
----
-
-# 34. Form Testing
-
-Important forms should test:
-
-* Valid input
-* Invalid input
-* Validation errors
-* Submission behavior
 * Loading state
-* Server errors
-* Success state
-* Duplicate submission prevention where applicable
+* Error state
+* Accessibility
 
-Do not test React Hook Form itself.
-
-Do not test Zod itself.
-
-Test Splitly's implementation using those libraries.
+They should not contain significant business logic.
 
 ---
 
-# 35. RLS Testing Strategy
+## 4.2 Server-Owned Business Rules
 
-Jest cannot prove PostgreSQL RLS correctness when Supabase is mocked.
+Business rules must be enforced on the server.
 
-Therefore:
+The client is untrusted.
 
-### Jest
+Never assume a client-provided value is correct merely because the UI generated it.
 
-Tests:
+Examples:
 
-* Application authorization behavior
-* Data-access behavior
-* Error handling
-* UI behavior for unauthorized responses
-
-### Integration/database tests
-
-Where a suitable test environment exists, verify:
-
-* Group isolation
-* Membership access
-* Unauthorized group access
-* Member-management permissions
-* Expense access
-* Cross-user data isolation
-
-Never weaken production RLS to make tests easier.
+* Total amount
+* Currency
+* User ID
+* Group ID
+* Group membership
+* Role
+* Expense ownership
+* Split amounts
 
 ---
 
-# 36. Regression Testing
+## 4.3 Pure Financial Logic
 
-Important bugs should produce regression tests.
-
-Preferred process:
-
-```text
-Bug
- ↓
-Reproduce
- ↓
-Failing test
- ↓
-Fix
- ↓
-Passing test
- ↓
-Regression suite
-```
-
----
-
-# 37. Test Coverage
-
-Coverage should prioritize:
-
-```text
-Financial logic
-Validation
-Authorization
-Critical user flows
-Error handling
-```
-
-100% coverage is not a requirement.
-
-Tests should provide meaningful confidence rather than inflate coverage metrics.
-
----
-
-# 38. Dashboard
-
-The dashboard provides a high-level view of the authenticated user's activity.
-
-Primary sections include:
-
-```text
-Welcome
-Balance Summary
-Recent Expenses
-Your Groups
-Who Owes Whom
-Add Expense
-```
-
-Dashboard data should be derived from existing application data.
-
-Do not create dashboard-specific database tables.
-
----
-
-# 39. Groups Dashboard Section
-
-The dashboard's Groups section is a summary.
-
-Each group can display:
-
-* Group name
-* Member count
-* User's group balance
-* Balance state
-* Navigation to the group
-
-The dashboard should not contain full group-management functionality.
-
-The full Groups experience belongs under:
-
-```text
-/groups
-/groups/[groupId]
-```
-
----
-
-# 40. Group Details
-
-The group details page provides:
-
-* Group information
-* Members
-* Add people
-* Balance summary
-* Expenses
-* Relevant group actions
+Financial calculations should be implemented as pure functions wherever possible.
 
 Example:
 
 ```text
+calculateEqualSplit()
+calculateExactSplit()
+calculatePercentageSplit()
+calculateSharesSplit()
+calculateBalances()
+simplifyDebts()
+```
+
+Pure financial functions should not depend on:
+
+* React
+* Next.js
+* Prisma
+* Database state
+* Browser APIs
+
+This makes them deterministic and easy to test.
+
+---
+
+## 4.4 Transactional Financial Writes
+
+Financially material database writes must be atomic.
+
+For example:
+
+```text
+Create Expense
+ ├── Expense
+ ├── ExpensePayment[]
+ ├── ExpenseShare[]
+ └── ActivityEvent
+```
+
+All records must be committed together.
+
+If one fails, everything must roll back.
+
+---
+
+# 5. Application Layers
+
+Splitly uses the following logical layers.
+
+```text
+Presentation
+     ↓
+Application
+     ↓
+Domain
+     ↓
+Persistence
+```
+
+## Presentation
+
+Responsible for:
+
+* Pages
+* Components
+* Forms
+* User interaction
+* Responsive layouts
+
+---
+
+## Application
+
+Responsible for:
+
+* Server Actions
+* Route Handlers
+* Authentication context
+* Authorization checks
+* Calling domain services
+* Coordinating transactions
+
+---
+
+## Domain
+
+Responsible for:
+
+* Financial calculations
+* Business invariants
+* Split logic
+* Balance logic
+* Debt simplification
+* Settlement rules
+
+---
+
+## Persistence
+
+Responsible for:
+
+* Prisma Client
+* Database queries
+* Transactions
+* Prisma schema
+* Migrations
+
+---
+
+# 6. Recommended Project Structure
+
+The exact structure may evolve, but the intended separation is:
+
+```text
+src/
+├── app/
+│   ├── (auth)/
+│   ├── (dashboard)/
+│   ├── groups/
+│   ├── expenses/
+│   ├── activity/
+│   └── settings/
+│
+├── components/
+│   ├── ui/
+│   ├── forms/
+│   └── layout/
+│
+├── features/
+│   ├── auth/
+│   ├── groups/
+│   ├── expenses/
+│   ├── balances/
+│   ├── settlements/
+│   └── activity/
+│
+├── lib/
+│   ├── auth/
+│   ├── validation/
+│   ├── utils/
+│   └── config/
+│
+└── server/
+    ├── services/
+    ├── repositories/
+    └── domain/
+```
+
+Do not create folders merely to satisfy this diagram.
+
+Use the repository's existing conventions where they are already established.
+
+---
+
+# 7. Routing Architecture
+
+## Dashboard
+
+```text
+/
+```
+
+Purpose:
+
+* Personal financial overview
+* Groups
+* Recent activity
+* Amount owed
+* Amount owed to user
+
+---
+
+## Groups
+
+```text
+/groups
+```
+
+Purpose:
+
+* List groups
+* Search groups
+* Create group
+
+---
+
+## Group Dashboard
+
+```text
 /groups/[groupId]
 ```
 
-Only authorized group users should be able to access the group's information.
+Purpose:
+
+* Group summary
+* Members
+* Recent expenses
+* Balance summary
+* Add expense
+* Settle up
 
 ---
 
-# 41. UI Architecture
-
-Shared UI components belong under:
+## Group Expenses
 
 ```text
-src/components/ui/
+/groups/[groupId]/expenses
 ```
 
-Domain components belong under areas such as:
+Purpose:
+
+* Expense history
+* Search
+* Filters
+* Expense navigation
+
+---
+
+## Group Balances
 
 ```text
-src/components/dashboard/
-src/components/groups/
-src/components/expenses/
+/groups/[groupId]/balances
 ```
 
-Components should remain reusable and composable.
+Purpose:
+
+* Member balances
+* Suggested transfers
+* Settlement history
 
 ---
 
-# 42. Design System
-
-The project has a separate UI/design specification.
-
-That document is the source of truth for:
-
-* Colors
-* Typography
-* Font sizes
-* Spacing
-* Buttons
-* Inputs
-* Forms
-* Cards
-* Dialogs
-* Responsive behavior
-* Accessibility
-
-System architecture should not duplicate detailed visual specifications.
-
----
-
-# 43. Error Handling
-
-Application errors should be categorized.
-
-Common categories:
+## Expense Detail
 
 ```text
-Validation
-Authentication
-Authorization
-Not Found
-Database
-Unexpected
+/expenses/[expenseId]
 ```
 
-User-facing errors should be understandable.
+Purpose:
 
-Never expose:
-
-* SQL
-* Stack traces
-* Secrets
-* Service-role credentials
-* Internal Supabase details
+* Expense information
+* Participants
+* Payers
+* Split details
+* Edit/delete where authorized
 
 ---
 
-# 44. Loading and Empty States
+## Activity
 
-Important application sections should define:
+```text
+/activity
+```
 
-* Loading state
-* Empty state
-* Error state
+Purpose:
+
+* User activity
+* Group activity
+* Financial events
+
+---
+
+## Settings
+
+```text
+/settings
+```
+
+Purpose:
+
+* Profile
+* Currency
+* Timezone
+* Notification preferences
+
+---
+
+# 8. Authentication Architecture
+
+Auth.js is the authentication provider.
+
+Authentication determines the current user.
+
+Application authorization determines what the user can access.
+
+```text
+Request
+   ↓
+Auth.js session
+   ↓
+Current user
+   ↓
+Application authorization
+   ↓
+Resource access
+```
+
+Do not use client-side session state as the authorization mechanism.
+
+Every protected server operation must verify the authenticated user.
+
+---
+
+# 9. Authorization Architecture
+
+Authorization should be enforced close to the server-side operation.
+
+Example:
+
+```text
+Server Action
+     ↓
+getCurrentUser()
+     ↓
+requireGroupMembership()
+     ↓
+requireGroupRole()
+     ↓
+Business operation
+```
+
+Never do:
+
+```text
+Client says:
+"I am an owner."
+```
+
+Instead:
+
+```text
+Server:
+Fetch current user
+Fetch group membership
+Verify role
+Perform operation
+```
+
+---
+
+# 10. Group Authorization
+
+Group membership is represented by `GroupMember`.
+
+A protected group operation must verify that:
+
+```text
+GroupMember.userId === currentUser.id
+```
+
+and:
+
+```text
+GroupMember.leftAt IS NULL
+```
+
+where applicable.
+
+Role-based operations must additionally verify the member role.
+
+---
+
+# 11. Database Architecture
+
+Supabase provides managed PostgreSQL.
+
+Prisma provides application-level database access.
+
+```text
+Next.js
+   ↓
+Prisma Client
+   ↓
+DATABASE_URL
+   ↓
+Supabase PostgreSQL
+```
+
+Prisma is the authoritative ORM.
+
+---
+
+# 12. Database Connections
+
+Two PostgreSQL connections are required.
+
+## Runtime
+
+```env
+DATABASE_URL=
+```
+
+Used by:
+
+* Prisma Client
+* Application server
+* Runtime queries
+* Runtime mutations
+
+This should normally use the Supabase pooled connection.
+
+---
+
+## Migration
+
+```env
+DIRECT_URL=
+```
+
+Used by:
+
+* Prisma migrations
+* Prisma database administration
+* Schema operations
+
+This should use the Supabase direct connection.
+
+Both variables are server-only.
+
+Never expose either as:
+
+```text
+NEXT_PUBLIC_*
+```
+
+---
+
+# 13. Prisma Architecture
+
+Prisma owns:
+
+```text
+prisma/
+├── schema.prisma
+└── migrations/
+```
+
+Prisma Client should be initialized using the project's standard singleton/server pattern.
+
+Avoid creating a new Prisma Client instance for every request in development.
+
+Application code should access the database through server-side modules.
+
+---
+
+# 14. Prisma Migrations
+
+Database changes follow:
+
+```text
+Modify schema.prisma
+        ↓
+Generate migration
+        ↓
+Review migration
+        ↓
+Apply migration
+        ↓
+Test
+```
+
+Never manually modify production schema without representing the change in Prisma.
+
+Do not modify previously-applied production migrations.
+
+---
+
+# 15. Row Level Security
+
+Supabase has RLS enabled.
+
+RLS provides an additional database security boundary.
+
+However, Prisma server operations must still enforce application-level authorization.
+
+The application should not depend on RLS alone for authorization.
+
+If browser-side Supabase access is introduced later:
+
+```text
+Browser
+   ↓
+Supabase client
+   ↓
+RLS
+   ↓
+PostgreSQL
+```
+
+Every exposed table must have explicit RLS policies.
+
+Those policies must be tested.
+
+Do not disable RLS to solve an authorization/query problem.
+
+---
+
+# 16. Core Data Model
+
+The initial domain consists of:
+
+```text
+User
+Group
+GroupMember
+Invite
+
+Expense
+ExpensePayment
+ExpenseShare
+
+Settlement
+
+ActivityEvent
+
+Attachment
+```
+
+---
+
+# 17. User
+
+Conceptual model:
+
+```text
+User
+├── id
+├── name
+├── email
+├── avatarUrl
+├── defaultCurrency
+├── timezone
+├── createdAt
+└── updatedAt
+```
+
+Auth.js owns authentication identity.
+
+Do not store authentication passwords in the application User model when Auth.js handles identity.
+
+---
+
+# 18. Group
+
+Conceptual model:
+
+```text
+Group
+├── id
+├── name
+├── imageUrl
+├── defaultCurrency
+├── archivedAt
+├── createdAt
+└── updatedAt
+```
+
+Relationships:
+
+```text
+Group
+├── GroupMember[]
+├── Invite[]
+├── Expense[]
+├── Settlement[]
+└── ActivityEvent[]
+```
+
+---
+
+# 19. GroupMember
+
+Conceptual model:
+
+```text
+GroupMember
+├── id
+├── groupId
+├── userId
+├── role
+├── joinedAt
+├── leftAt
+├── createdAt
+└── updatedAt
+```
+
+Roles initially:
+
+```text
+OWNER
+MEMBER
+```
+
+An active user must not have multiple active memberships in the same group.
+
+---
+
+# 20. Invite
+
+Conceptual model:
+
+```text
+Invite
+├── id
+├── groupId
+├── email
+├── token
+├── role
+├── expiresAt
+├── acceptedAt
+└── createdAt
+```
+
+Invitation requirements:
+
+* Secure token generation
+* Expiration
+* Single-use acceptance
+* Email association
+* Authorization
+* Safe handling of already-registered users
+
+Do not expose raw invitation secrets unnecessarily.
+
+---
+
+# 21. Expense
+
+Conceptual model:
+
+```text
+Expense
+├── id
+├── groupId
+├── description
+├── totalMinor
+├── currency
+├── date
+├── category
+├── notes
+├── createdBy
+├── deletedAt
+├── createdAt
+└── updatedAt
+```
+
+The total is stored as an integer minor unit.
+
+---
+
+# 22. ExpensePayment
+
+Represents who paid.
+
+```text
+ExpensePayment
+├── id
+├── expenseId
+├── payerId
+├── amountMinor
+└── createdAt
+```
+
+An expense may have multiple payers.
+
+Invariant:
+
+```text
+SUM(ExpensePayment.amountMinor)
+=
+Expense.totalMinor
+```
+
+---
+
+# 23. ExpenseShare
+
+Represents who owes the expense.
+
+```text
+ExpenseShare
+├── id
+├── expenseId
+├── participantId
+├── owedMinor
+├── splitMethod
+└── createdAt
+```
+
+`ExpenseShare` is the canonical participant obligation.
+
+Invariant:
+
+```text
+SUM(ExpenseShare.owedMinor)
+=
+Expense.totalMinor
+```
+
+---
+
+# 24. Settlement
+
+Conceptual model:
+
+```text
+Settlement
+├── id
+├── groupId
+├── payerId
+├── payeeId
+├── amountMinor
+├── currency
+├── date
+├── note
+├── createdBy
+├── createdAt
+└── updatedAt
+```
+
+Rules:
+
+```text
+payer !== payee
+amountMinor > 0
+payer ∈ active group members
+payee ∈ active group members
+```
+
+A settlement does not modify historical expenses.
+
+---
+
+# 25. ActivityEvent
+
+Conceptual model:
+
+```text
+ActivityEvent
+├── id
+├── groupId
+├── actorId
+├── type
+├── entityType
+├── entityId
+├── metadata
+└── createdAt
+```
 
 Examples:
 
 ```text
-No groups yet
-No expenses yet
-You're all settled up
-No matching user found
+EXPENSE_CREATED
+EXPENSE_UPDATED
+EXPENSE_DELETED
+SETTLEMENT_CREATED
+MEMBER_JOINED
+MEMBER_REMOVED
+GROUP_CREATED
 ```
 
-These states should use the project's UI/design standards.
+Use structured metadata.
+
+The UI should generate display text from structured event data.
 
 ---
 
-# 45. Responsive Design
+# 26. Attachment
 
-All pages must support:
+Receipt storage is a later-stage capability.
+
+Conceptual model:
+
+```text
+Attachment
+├── id
+├── expenseId
+├── storageKey
+├── mimeType
+├── byteSize
+├── uploadedBy
+└── createdAt
+```
+
+Storage objects must be private.
+
+Access should use authorization plus signed retrieval URLs.
+
+---
+
+# 27. Monetary Representation
+
+All monetary values are stored as integer minor units.
+
+Example:
+
+```text
+₹1,250.50
+```
+
+is represented as:
+
+```text
+125050
+```
+
+assuming paise.
+
+Never store:
+
+```text
+1250.50
+```
+
+as the authoritative financial value.
+
+Never perform final financial calculations using JavaScript floating-point arithmetic.
+
+---
+
+# 28. Currency
+
+Every monetary operation must have a currency context.
+
+Currency values use ISO currency codes.
+
+Example:
+
+```text
+INR
+USD
+EUR
+GBP
+```
+
+Do not silently convert currencies.
+
+Currency conversion is outside the initial MVP.
+
+Balances should not combine unrelated currencies.
+
+---
+
+# 29. Split Engine
+
+The split engine is a pure domain module.
+
+Input:
+
+```text
+totalMinor
+participants
+splitMethod
+splitConfiguration
+```
+
+Output:
+
+```text
+participantId → owedMinor
+```
+
+Supported methods:
+
+```text
+EQUAL
+EXACT
+PERCENTAGE
+SHARES
+```
+
+---
+
+# 30. Equal Split
+
+Example:
+
+```text
+₹1,000
+3 participants
+```
+
+The engine must produce integer allocations whose total is exactly:
+
+```text
+₹1,000
+```
+
+If rounding produces a remainder, allocate it deterministically.
+
+Never discard minor units.
+
+---
+
+# 31. Exact Split
+
+The user specifies each participant's amount.
+
+Validation:
+
+```text
+SUM(participant amounts)
+=
+totalMinor
+```
+
+Otherwise reject the operation.
+
+---
+
+# 32. Percentage Split
+
+The user specifies percentages.
+
+Validation:
+
+```text
+SUM(percentages)
+=
+100%
+```
+
+The final minor-unit allocations must reconcile exactly to the total.
+
+Rounding must be deterministic.
+
+---
+
+# 33. Shares Split
+
+The user specifies weights.
+
+Example:
+
+```text
+Alex = 1
+Sam  = 2
+Priya = 1
+```
+
+Total shares:
+
+```text
+4
+```
+
+The engine distributes the expense according to the weights.
+
+Final allocations must reconcile exactly.
+
+---
+
+# 34. Rounding Strategy
+
+Rounding must be deterministic.
+
+Recommended conceptual approach:
+
+```text
+Calculate exact proportional values
+        ↓
+Take floor/minor-unit base values
+        ↓
+Calculate remaining minor units
+        ↓
+Distribute remainder deterministically
+        ↓
+Verify total
+```
+
+The exact algorithm should be implemented and covered by Jest tests.
+
+---
+
+# 35. Expense Creation Flow
+
+```text
+User opens Add Expense
+        ↓
+React Hook Form
+        ↓
+User enters amount/payers/participants
+        ↓
+Client Zod validation
+        ↓
+Preview split
+        ↓
+Submit
+        ↓
+Server Action
+        ↓
+Authenticate user
+        ↓
+Validate request with Zod
+        ↓
+Verify group membership
+        ↓
+Verify payer/participant membership
+        ↓
+Calculate shares on server
+        ↓
+Verify financial invariants
+        ↓
+Prisma transaction
+        ├── Expense
+        ├── ExpensePayment[]
+        ├── ExpenseShare[]
+        └── ActivityEvent
+        ↓
+Return success
+        ↓
+Refresh/revalidate relevant UI
+```
+
+The server recalculates financial values.
+
+Never trust the client's calculated shares.
+
+---
+
+# 36. Expense Edit Flow
+
+```text
+Request
+ ↓
+Authenticate
+ ↓
+Load expense
+ ↓
+Verify group membership
+ ↓
+Verify edit permission
+ ↓
+Validate input
+ ↓
+Recalculate payments/shares
+ ↓
+Transaction
+ ├── Update expense
+ ├── Replace/update payments
+ ├── Replace/update shares
+ └── ActivityEvent
+ ↓
+Success
+```
+
+Historical activity must remain auditable.
+
+---
+
+# 37. Expense Delete Flow
+
+Deletion must respect authorization.
+
+Where historical preservation is required, prefer soft deletion.
+
+Conceptually:
+
+```text
+deletedAt = timestamp
+```
+
+rather than physically removing the record.
+
+The exact behavior should follow the product rules in the build plan.
+
+---
+
+# 38. Balance Calculation
+
+For each member:
+
+```text
+net =
+totalPaid
+-
+totalOwed
++
+settlementAdjustments
+```
+
+Interpretation:
+
+```text
+net > 0
+→ Member is owed money
+
+net < 0
+→ Member owes money
+
+net = 0
+→ Settled
+```
+
+For each group/currency:
+
+```text
+SUM(all member net balances) === 0
+```
+
+This invariant must be tested.
+
+---
+
+# 39. Balance Data Flow
+
+```text
+Expenses
+   ↓
+ExpensePayment
+ExpenseShare
+   ↓
+Raw balances
+   ↓
+Settlements
+   ↓
+Adjusted balances
+   ↓
+Debt simplification
+   ↓
+Suggested transfers
+```
+
+Never derive financial truth from UI state.
+
+---
+
+# 40. Debt Simplification
+
+Debt simplification is a presentation/optimization layer over raw balances.
+
+It must never rewrite:
+
+* Expenses
+* Expense payments
+* Expense shares
+* Historical settlements
+
+Algorithm:
+
+```text
+Raw balances
+      ↓
+Separate positive and negative balances
+      ↓
+Sort deterministically
+      ↓
+Match debtor with creditor
+      ↓
+Transfer min(debt, credit)
+      ↓
+Reduce outstanding amounts
+      ↓
+Continue
+```
+
+Output:
+
+```text
+payer
+payee
+amountMinor
+currency
+```
+
+The output must be deterministic.
+
+---
+
+# 41. Settlement Flow
+
+```text
+User selects suggested debt
+        ↓
+Settlement form
+        ↓
+React Hook Form
+        ↓
+Client Zod validation
+        ↓
+Server request
+        ↓
+Authenticate
+        ↓
+Verify membership
+        ↓
+Verify payer/payee
+        ↓
+Server-side validation
+        ↓
+Prisma transaction
+        ├── Settlement
+        └── ActivityEvent
+        ↓
+Recalculate balance
+        ↓
+Update UI
+```
+
+A settlement is an additional ledger event.
+
+It does not modify expenses.
+
+---
+
+# 42. Activity Flow
+
+Financially relevant mutations should produce activity events.
+
+Example:
+
+```text
+Create expense
+        ↓
+Expense created
+        ↓
+ActivityEvent(EXPENSE_CREATED)
+```
+
+Example:
+
+```text
+Create settlement
+        ↓
+Settlement created
+        ↓
+ActivityEvent(SETTLEMENT_CREATED)
+```
+
+Activity is informational/auditable.
+
+It is not the source of financial truth.
+
+---
+
+# 43. Forms Architecture
+
+Interactive forms use:
+
+```text
+React Hook Form
++
+Zod
+```
+
+Example:
+
+```text
+Form UI
+ ↓
+useForm()
+ ↓
+Zod resolver
+ ↓
+Server Action
+ ↓
+Server-side Zod parse
+ ↓
+Authorization
+ ↓
+Domain logic
+ ↓
+Prisma
+```
+
+The same business constraints must be enforced server-side even if the client validates them.
+
+---
+
+# 44. Validation Layers
+
+There are three conceptual validation levels.
+
+## UI validation
+
+Purpose:
+
+* Fast feedback
+* Better UX
+
+Technology:
+
+```text
+React Hook Form + Zod
+```
+
+---
+
+## Server validation
+
+Purpose:
+
+* Security
+* Correctness
+
+Technology:
+
+```text
+Zod
+```
+
+---
+
+## Database constraints
+
+Purpose:
+
+* Final data integrity
+
+Examples:
+
+* Foreign keys
+* Unique constraints
+* Not-null constraints
+* Check constraints where practical
+
+No single validation layer is sufficient by itself.
+
+---
+
+# 45. UI Architecture
+
+The UI uses reusable design-system components.
+
+Typical components:
+
+```text
+Button
+Input
+Textarea
+Select
+Checkbox
+RadioGroup
+FormField
+Card
+Dialog
+Dropdown
+Badge
+Toast
+Skeleton
+EmptyState
+ErrorState
+```
+
+Feature components compose these primitives.
+
+Do not create a new button/input style for every screen.
+
+---
+
+# 46. Design System
+
+The existing Splitly UI is authoritative.
+
+Preserve:
+
+* Existing font family
+* Typography scale
+* Color tokens
+* Green accent
+* Spacing
+* Border radius
+* Shadows
+* Button styles
+* Form styles
+* Card styles
+* Navigation
+* Responsive behavior
+
+When a new UI element is required:
+
+```text
+Existing component?
+      ↓
+Yes → reuse it
+      ↓
+No
+      ↓
+Extend design-system component
+```
+
+Avoid isolated CSS implementations.
+
+---
+
+# 47. Financial UI
+
+Money displays should have consistent formatting.
+
+Examples:
+
+```text
+₹2,400
+₹800
+₹0
+```
+
+Use dedicated reusable money/balance display components where appropriate.
+
+Financial state should be understandable without color.
+
+Example:
+
+```text
+You owe ₹800
+Alex owes you ₹1,200
+Settled
+```
+
+not merely:
+
+```text
+[red]
+[green]
+[gray]
+```
+
+---
+
+# 48. Responsive Architecture
+
+The application is mobile-first.
+
+Desktop layouts should enhance the mobile experience rather than being a separate application.
+
+Critical workflows must work on:
 
 ```text
 Mobile
@@ -1075,198 +1601,826 @@ Tablet
 Desktop
 ```
 
-Responsive behavior should be designed rather than simply shrinking desktop layouts.
+Particular attention should be given to:
+
+* Add Expense
+* Split selection
+* Member selection
+* Balance display
+* Settle Up
+* Expense details
 
 ---
 
-# 46. Accessibility
+# 49. Loading and Error Architecture
 
-User-facing functionality should support:
-
-* Keyboard navigation
-* Screen readers
-* Visible focus
-* Semantic HTML
-* Accessible form labels
-* Accessible validation messages
-* Accessible dialogs
-
-Accessibility should be considered during implementation, not added as an afterthought.
-
----
-
-# 47. Security Principles
-
-Splitly follows:
+Data-driven screens should explicitly support:
 
 ```text
-Least privilege
-Defense in depth
-Server-side validation
-Database-level authorization
-RLS
-Minimal data exposure
-No secrets in client code
+Loading
+Empty
+Error
+Unauthorized
+Success
 ```
 
-Never rely on UI hiding to enforce authorization.
+Use Next.js loading/error conventions where appropriate.
+
+Do not expose internal database errors to users.
 
 ---
 
-# 48. Environment Variables
+# 50. Testing Architecture
 
-Secrets and environment-specific configuration must be provided through environment variables.
+## Jest
+
+Use Jest for deterministic logic.
+
+Primary targets:
+
+```text
+Split calculations
+Balance calculations
+Debt simplification
+Validation
+Authorization
+Service logic
+Financial invariants
+```
+
+---
+
+## Playwright
+
+Use Playwright for essential user journeys.
+
+Primary flows:
+
+```text
+Authentication
+Group creation
+Member invitation
+Expense creation
+Expense viewing
+Balance viewing
+Settlement
+Authorization failures
+```
+
+Include mobile viewport coverage for important workflows.
+
+---
+
+# 51. Financial Test Strategy
+
+Every financial algorithm should have:
+
+### Normal cases
+
+```text
+Equal split
+Exact split
+Percentage split
+Shares split
+```
+
+### Edge cases
+
+```text
+1 participant
+2 participants
+Many participants
+Odd amounts
+Small amounts
+Rounding
+Zero
+Invalid negative values
+Invalid totals
+```
+
+### Invariants
+
+```text
+sum(shares) === total
+sum(payments) === total
+sum(balances) === 0
+```
+
+### Regression cases
+
+Every discovered financial bug should become a permanent automated test.
+
+---
+
+# 52. Integration Test Strategy
+
+Integration tests should verify:
+
+```text
+Authentication
+Authorization
+Database operations
+Prisma transactions
+Validation
+Financial persistence
+Activity events
+```
+
+Especially test transaction failure.
+
+Example:
+
+```text
+Expense creation
+ ↓
+Expense created
+ ↓
+Share creation fails
+ ↓
+Entire transaction rolls back
+```
+
+There must not be an orphaned expense.
+
+---
+
+# 53. End-to-End Critical Path
+
+The primary E2E flow is:
+
+```text
+Sign up
+   ↓
+Create group
+   ↓
+Invite member
+   ↓
+Member accepts
+   ↓
+Add expense
+   ↓
+View balances
+   ↓
+Settle up
+   ↓
+Verify balances
+   ↓
+Review activity
+```
+
+This is the minimum business-critical workflow.
+
+---
+
+# 54. Security Architecture
+
+Never trust:
+
+```text
+Client user ID
+Client group role
+Client group membership
+Client total
+Client currency
+Client split calculation
+Client authorization
+```
+
+Server must independently verify all security-sensitive information.
+
+---
+
+# 55. Secret Management
+
+Secrets must exist only in environment configuration.
+
+Examples:
+
+```text
+DATABASE_URL
+DIRECT_URL
+Auth.js secrets
+OAuth credentials
+Other private API keys
+```
+
+Never expose them through:
+
+```text
+NEXT_PUBLIC_*
+```
 
 Never commit:
 
 ```text
 .env
 .env.local
+production credentials
 ```
 
-when they contain secrets.
-
-Never hard-code:
-
-* Supabase service-role keys
-* API secrets
-* Database credentials
-* Authentication secrets
-
-Only variables explicitly intended for browser exposure may be used client-side.
+`.env.example` contains placeholders only.
 
 ---
 
-# 49. Deployment
+# 56. Vercel Architecture
 
-Production deployment uses Vercel.
-
-The application should be deployable without a separate backend service.
-
-Supabase remains the external backend/data platform.
-
----
-
-# 50. Database Migrations
-
-Database changes must be reproducible.
-
-When schema or RLS changes are required:
-
-1. Create a migration.
-2. Apply the migration in the development environment.
-3. Verify the resulting schema/policies.
-4. Test relevant behavior.
-5. Keep the migration in version control.
-
-Do not rely on undocumented manual dashboard changes for production-critical schema.
-
----
-
-# 51. Architecture Decision Rule
-
-Before introducing a new service, ask:
+Vercel hosts the Next.js application.
 
 ```text
-Can the requirement be implemented safely within
-the existing Next.js + Supabase architecture?
+GitHub
+   ↓
+Vercel
+   ↓
+Next.js
+   ↓
+Prisma
+   ↓
+Supabase PostgreSQL
 ```
 
-If yes, prefer the existing architecture.
+Vercel environments:
 
-A separate microservice requires explicit justification.
+```text
+Development
+Preview
+Production
+```
+
+Production secrets must be configured in Vercel.
 
 ---
 
-# 52. Performance
+# 57. CI/CD Architecture
+
+GitHub Actions handles CI.
+
+Vercel handles deployment.
+
+CI pipeline:
+
+```text
+Push / Pull Request
+        ↓
+Install dependencies
+        ↓
+Lint
+        ↓
+Typecheck
+        ↓
+Jest
+        ↓
+Build
+        ↓
+Optional Playwright
+```
+
+Deployment should not bypass CI quality checks.
+
+---
+
+# 58. Database Deployment
+
+Database migrations must be handled separately from ordinary application runtime requests.
+
+Conceptually:
+
+```text
+Code change
+   ↓
+Prisma schema change
+   ↓
+Prisma migration
+   ↓
+Migration deployment
+   ↓
+Application deployment
+```
+
+Use `DIRECT_URL` for migration operations.
+
+Use `DATABASE_URL` for runtime application access.
+
+Do not run schema mutations from application request handlers.
+
+---
+
+# 59. Observability
+
+The system should eventually include:
+
+* Application error monitoring
+* Health endpoint
+* Database health monitoring
+* Deployment monitoring
+
+Logs must not contain:
+
+* Passwords
+* Tokens
+* Database credentials
+* Service-role keys
+* Sensitive personal information unnecessarily
+
+---
+
+# 60. Health Check
+
+Provide a lightweight health endpoint.
+
+Purpose:
+
+* Verify application availability
+* Verify required runtime dependencies
+* Support deployment checks
+
+Do not expose sensitive database information.
+
+A health response should not contain:
+
+```text
+DATABASE_URL
+Database credentials
+Connection strings
+Secrets
+```
+
+---
+
+# 61. Performance Principles
+
+Optimize only after correctness.
+
+Priorities:
+
+1. Avoid unnecessary database queries.
+2. Avoid unnecessary client-side JavaScript.
+3. Use Server Components where appropriate.
+4. Keep client components focused.
+5. Paginate large expense/activity lists.
+6. Avoid loading unrelated group data.
+7. Use appropriate database indexes.
+
+Do not introduce caching that can make financial information stale unless the consistency model is explicitly understood.
+
+---
+
+# 62. Database Indexing
+
+Index fields frequently used for:
+
+* Group lookup
+* Membership lookup
+* Expense lookup
+* Expense date sorting
+* Activity lookup
+* Settlement lookup
+* Invitation lookup
+
+Likely index candidates include:
+
+```text
+GroupMember(groupId)
+GroupMember(userId)
+Expense(groupId, date)
+ExpensePayment(expenseId)
+ExpenseShare(expenseId)
+Settlement(groupId, date)
+ActivityEvent(groupId, createdAt)
+Invite(groupId)
+Invite(email)
+```
+
+Exact indexes should follow observed query patterns and Prisma schema requirements.
+
+Do not add indexes blindly.
+
+---
+
+# 63. Data Integrity
+
+Use database constraints wherever practical.
+
+Examples:
+
+```text
+Foreign keys
+Unique constraints
+Not-null constraints
+```
+
+Business invariants that span multiple rows should additionally be enforced in application transactions.
+
+---
+
+# 64. Deletion and Historical Data
+
+Financial history should be treated as durable.
+
+Avoid destructive deletion when it would make historical balances or activity impossible to explain.
 
 Prefer:
 
-* Server-side data fetching where appropriate
-* Efficient Supabase queries
-* Minimal client-side JavaScript
-* Reusable components
-* Avoiding unnecessary requests
-* Avoiding unnecessary re-renders
+```text
+Archive
+Soft delete
+Audit event
+```
 
-Do not prematurely optimize.
+where appropriate.
 
-Correctness and maintainability come first.
-
----
-
-# 53. Observability
-
-Errors should be diagnosable without exposing sensitive information to users.
-
-Avoid logging:
-
-* Passwords
-* Authentication tokens
-* Service-role keys
-* Sensitive personal information
-* Financial information unnecessarily
-
-Use appropriate error logging for production diagnostics as the application evolves.
+The exact behavior depends on the entity.
 
 ---
 
-# 54. Future Architecture
+# 65. Receipt Storage
 
-The system may evolve as Splitly grows.
+Receipt support is a later stage.
 
-Potential future additions include:
+Architecture:
 
-* Email invitations
-* Notifications
-* Advanced expense splitting
-* Recurring expenses
-* Settlement workflows
-* Analytics
-* Background jobs
-* Caching
-* Dedicated services
+```text
+Browser
+   ↓
+Authenticated server operation
+   ↓
+Validate MIME
+   ↓
+Validate file size
+   ↓
+Private Supabase Storage
+   ↓
+Attachment metadata in PostgreSQL
+   ↓
+Signed URL
+```
 
-These should not be introduced prematurely.
-
-The current architecture should remain simple until actual requirements justify additional infrastructure.
-
----
-
-# 55. Definition of Done
-
-A feature is architecturally complete when:
-
-* It follows the existing Next.js architecture.
-* It uses Supabase appropriately.
-* Authentication is respected.
-* RLS is respected.
-* Validation is implemented.
-* Important business logic is tested.
-* Important user behavior is tested.
-* Financial logic has appropriate coverage.
-* Database changes are reproducible.
-* No unnecessary infrastructure is introduced.
-* Existing functionality remains intact.
+Do not expose receipt objects publicly.
 
 ---
 
-# 56. Core Architecture Principle
+# 66. Notification Architecture
 
-Splitly should follow:
+Reminders are a later-stage feature.
+
+The initial implementation should remain simple.
+
+Conceptual flow:
+
+```text
+Scheduled job
+   ↓
+Find eligible users
+   ↓
+Check outstanding balances
+   ↓
+Check notification preferences
+   ↓
+Send notification
+   ↓
+Record delivery
+```
+
+Do not build a full notification platform for the MVP.
+
+---
+
+# 67. CSV Export
+
+CSV export is generated from authorized server-side data.
+
+Flow:
+
+```text
+User request
+ ↓
+Authenticate
+ ↓
+Authorize group access
+ ↓
+Apply filters
+ ↓
+Fetch data
+ ↓
+Generate CSV
+ ↓
+Return file
+```
+
+Never allow arbitrary database queries from export parameters.
+
+---
+
+# 68. Error Boundaries
+
+Errors should be categorized as:
+
+```text
+Validation error
+Authorization error
+Not found
+Conflict
+Business-rule violation
+Unexpected server error
+```
+
+Expected errors should be converted into safe user-facing messages.
+
+Unexpected errors should be logged appropriately without exposing internal details.
+
+---
+
+# 69. Concurrency
+
+Financial writes must account for concurrent operations.
+
+Examples:
+
+```text
+Two users editing the same expense
+Two settlements created simultaneously
+Member removed while expense is being created
+```
+
+Use appropriate database transactions and constraints.
+
+Do not assume requests execute sequentially.
+
+---
+
+# 70. Idempotency
+
+Where repeated requests could create duplicate financial records, consider idempotency.
+
+Particularly important for:
+
+* Settlement creation
+* Invitation acceptance
+* External notification delivery
+* Future payment integrations
+
+Do not implement unnecessary idempotency infrastructure for simple read operations.
+
+---
+
+# 71. No Payment Processing in MVP
+
+Splitly does not move real money.
+
+Settlement represents:
+
+```text
+User A says they paid User B
+```
+
+It does not mean:
+
+```text
+Splitly transferred money
+```
+
+Actual payment integrations are future work.
+
+---
+
+# 72. Multi-Currency Boundary
+
+The MVP supports storing a currency per financial context.
+
+It does not automatically convert:
+
+```text
+INR → USD
+USD → EUR
+```
+
+Do not calculate combined balances across currencies without an explicit conversion model.
+
+Currency conversion is a separate future feature.
+
+---
+
+# 73. Architecture Decision Summary
+
+| Decision                 | Choice                         |
+| ------------------------ | ------------------------------ |
+| Frontend                 | Next.js App Router             |
+| Language                 | TypeScript                     |
+| Styling                  | Tailwind CSS                   |
+| UI system                | Existing Splitly design system |
+| Forms                    | React Hook Form                |
+| Validation               | Zod                            |
+| Authentication           | Auth.js                        |
+| Database                 | Supabase PostgreSQL            |
+| ORM                      | Prisma                         |
+| Runtime DB connection    | `DATABASE_URL`                 |
+| Migration DB connection  | `DIRECT_URL`                   |
+| Unit/integration testing | Jest                           |
+| E2E testing              | Playwright                     |
+| CI                       | GitHub Actions                 |
+| Deployment               | Vercel                         |
+| Money representation     | Integer minor units            |
+| Expense source of truth  | `ExpenseShare`                 |
+| Financial writes         | Prisma transactions            |
+| Real payment transfers   | Not in MVP                     |
+| Receipt storage          | Later stage                    |
+| Currency conversion      | Not in MVP                     |
+
+---
+
+# 74. Architecture Rules for Future Changes
+
+When introducing a new feature, determine:
+
+1. Does it introduce new domain data?
+2. Does it require a Prisma schema change?
+3. Does it require a migration?
+4. Does it require authorization?
+5. Does it change a financial invariant?
+6. Does it require a transaction?
+7. Does it require activity/audit data?
+8. Does it require new validation?
+9. Does it require Jest tests?
+10. Does it require Playwright coverage?
+11. Does it fit the current build-plan stage?
+12. Does it preserve the existing Splitly design system?
+
+If the answer to any of these is yes, implement the corresponding architecture rather than bypassing it.
+
+---
+
+# 75. Change Process
+
+For a typical feature:
+
+```text
+Read BUILD_PLAN
+      ↓
+Read relevant system-design section
+      ↓
+Inspect existing implementation
+      ↓
+Design data changes
+      ↓
+Update Prisma schema
+      ↓
+Create migration
+      ↓
+Implement domain logic
+      ↓
+Add tests
+      ↓
+Implement server operation
+      ↓
+Implement UI using existing design system
+      ↓
+Add E2E coverage where required
+      ↓
+Run verification
+      ↓
+Update BUILD_PLAN
+```
+
+---
+
+# 76. Definition of Architectural Correctness
+
+A feature is architecturally correct when:
+
+* Business rules are enforced server-side.
+* Financial calculations are deterministic.
+* Financial writes are transactional.
+* Prisma represents database changes.
+* Authorization is enforced.
+* Validation exists at the server boundary.
+* Relevant activity is recorded.
+* Tests cover important business rules.
+* Existing UI components/design tokens are reused.
+* No secrets are exposed.
+* The implementation fits the current build stage.
+
+---
+
+# 77. Current Architecture State
+
+```text
+Next.js
+    │
+    ├── App Router
+    ├── Server Components
+    ├── Client Components
+    └── Server Actions / Route Handlers
+              │
+              ▼
+       Application Services
+              │
+              ▼
+          Domain Logic
+              │
+              ▼
+           Prisma ORM
+              │
+       ┌──────┴──────┐
+       ▼             ▼
+DATABASE_URL    DIRECT_URL
+       │             │
+       ▼             ▼
+ Supabase PG    Supabase PG
+  Runtime       Migrations
+```
+
+---
+
+# 78. Current Implementation Priority
+
+The architecture currently supports:
+
+```text
+Foundation
+    ↓
+Authentication
+    ↓
+Groups
+    ↓
+Group membership
+```
+
+The next major domain capability is:
+
+```text
+Expense Ledger
+```
+
+which introduces:
+
+```text
+Expense
+ExpensePayment
+ExpenseShare
+ActivityEvent
+Split Engine
+```
+
+After that:
+
+```text
+Balances
+    ↓
+Debt Simplification
+    ↓
+Settlements
+```
+
+Then:
+
+```text
+Activity
+Receipts
+Reminders
+Exports
+Polish
+Release Hardening
+```
+
+The exact implementation order is controlled by:
+
+```text
+docs/BUILD_PLAN.md
+```
+
+---
+
+# 79. Final Principle
+
+Splitly should remain a simple system with strong financial correctness.
+
+Prefer:
 
 ```text
 Simple architecture
-        +
-Strong database security
-        +
++
+Strong domain rules
++
+Transactional writes
++
+Explicit authorization
++
 Reusable UI
-        +
-Type-safe validation
-        +
-Meaningful automated tests
-        =
-Maintainable application
++
+Automated tests
 ```
 
-Prefer the simplest architecture that safely satisfies the current product requirements.
+over:
+
+```text
+Complex infrastructure
++
+Premature abstractions
++
+Duplicated logic
++
+Client-side financial calculations
++
+Unnecessary services
+```
+
+The system should be easy for another developer or coding agent to understand, modify, test, and deploy safely.

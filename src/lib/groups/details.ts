@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   formatMinorUnits,
   getCurrentUserGroupBalances,
-  parseAmountToMinorUnits,
+  type GroupBalanceDatabase,
 } from "@/lib/balances/group-balances";
 import type { BalanceTone } from "@/lib/balances/types";
 
@@ -38,8 +38,8 @@ type GroupMemberRow = {
 type ExpenseRow = {
   id: string;
   description: string;
-  amount: string | number;
-  expense_date: string | null;
+  totalMinor: number;
+  date: Date;
 };
 
 export type GroupMember = {
@@ -94,7 +94,7 @@ function normalizeProfile(member: GroupMemberRow) {
   return member.profiles;
 }
 
-function formatExpenseDate(date: string | null) {
+function formatExpenseDate(date: Date | string | null) {
   if (!date) return "No date";
 
   return new Intl.DateTimeFormat("en-IN", {
@@ -132,6 +132,7 @@ function createBalanceCards(amountInMinorUnits: number): GroupDetail["balances"]
 
 export async function getGroupDetail(
   supabase: SupabaseClient,
+  database: GroupBalanceDatabase,
   groupId: string,
   userId: string,
 ): Promise<GroupDetailResult> {
@@ -149,29 +150,37 @@ export async function getGroupDetail(
     return { group: null, error: { message: "Group not found." } };
   }
 
-  const [membersResult, expensesResult, balancesResult] = await Promise.all([
-    supabase
-      .from("group_members")
-      .select("id, role, user_id, profiles(id, full_name, email, avatar_url)")
-      .eq("group_id", groupId)
-      .order("joined_at", { ascending: true })
-      .returns<GroupMemberRow[]>(),
-    supabase
-      .from("expenses")
-      .select("id, description, amount, expense_date")
-      .eq("group_id", groupId)
-      .order("expense_date", { ascending: false })
-      .limit(5)
-      .returns<ExpenseRow[]>(),
-    getCurrentUserGroupBalances(supabase, userId, [groupId]),
-  ]);
+  let relatedData;
+
+  try {
+    relatedData = await Promise.all([
+      supabase
+        .from("group_members")
+        .select("id, role, user_id, profiles(id, full_name, email, avatar_url)")
+        .eq("group_id", groupId)
+        .order("joined_at", { ascending: true })
+        .returns<GroupMemberRow[]>(),
+      database.expense.findMany({
+        where: { deletedAt: null, groupId },
+        orderBy: { date: "desc" },
+        take: 5,
+        select: {
+          date: true,
+          description: true,
+          id: true,
+          totalMinor: true,
+        },
+      }),
+      getCurrentUserGroupBalances(database, userId, [groupId]),
+    ]);
+  } catch {
+    return { group: null, error: { message: "Group details could not be loaded." } };
+  }
+
+  const [membersResult, expenses, balancesResult] = relatedData;
 
   if (membersResult.error) {
     return { group: null, error: membersResult.error };
-  }
-
-  if (expensesResult.error) {
-    return { group: null, error: expensesResult.error };
   }
 
   if (balancesResult.error) {
@@ -208,11 +217,11 @@ export async function getGroupDetail(
       canAddMembers: currentUserMembership?.role === "admin",
       balances: createBalanceCards(balance?.amountInMinorUnits ?? 0),
       members,
-      recentExpenses: expensesResult.data.map((expense) => ({
+      recentExpenses: (expenses as ExpenseRow[]).map((expense) => ({
         id: expense.id,
         description: expense.description,
-        amount: formatMinorUnits(parseAmountToMinorUnits(expense.amount)),
-        date: formatExpenseDate(expense.expense_date),
+        amount: formatMinorUnits(expense.totalMinor),
+        date: formatExpenseDate(expense.date),
       })),
     },
     error: null,
