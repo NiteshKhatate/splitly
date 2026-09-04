@@ -9,6 +9,7 @@ import { GroupMembers } from "@/components/groups/group-members";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { getGroupDetail } from "@/lib/groups/details";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getDb } from "@/server/db";
 
 type GroupDetailPageProps = {
   params: Promise<{
@@ -34,14 +35,14 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
     });
   }
 
-  const groupDetail = await getGroupDetail(supabase, groupId, user.id);
+  const groupDetail = await getGroupDetail(supabase, getDb(), groupId, user.id);
 
   if (groupDetail.error && groupDetail.error.message === "Group not found.") {
     notFound();
   }
 
   if (groupDetail.error) {
-    console.warn("Supabase group detail failed to load", {
+    console.warn("Group detail failed to load", {
       message: groupDetail.error.message,
     });
   }

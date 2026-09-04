@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { getDashboardGroups } from "@/lib/groups/dashboard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getDb } from "@/server/db";
 
 export default async function GroupsPage() {
   const supabase = await createSupabaseServerClient();
@@ -28,10 +29,10 @@ export default async function GroupsPage() {
 
   const metadataName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name.trim() : "";
   const displayName = profile?.full_name?.trim() || metadataName || user.email?.split("@")[0] || "there";
-  const userGroups = await getDashboardGroups(supabase, user.id, 100);
+  const userGroups = await getDashboardGroups(supabase, getDb(), user.id, 100);
 
   if (userGroups.error) {
-    console.warn("Supabase groups page failed to load", {
+    console.warn("Groups page failed to load", {
       message: userGroups.error.message,
     });
   }

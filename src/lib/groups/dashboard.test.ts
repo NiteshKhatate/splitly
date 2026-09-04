@@ -18,6 +18,8 @@ function createQueryResult<T>(data: T, error: { message: string } | null = null)
 }
 
 describe("getDashboardGroups", () => {
+  const database = {} as never;
+
   beforeEach(() => {
     jest.mocked(getCurrentUserGroupBalances).mockReset();
   });
@@ -28,7 +30,7 @@ describe("getDashboardGroups", () => {
       from: jest.fn(() => membershipsQuery),
     };
 
-    const result = await getDashboardGroups(supabase as never, "user-1");
+    const result = await getDashboardGroups(supabase as never, database, "user-1");
 
     expect(result).toEqual({ groups: [], error: null });
     expect(getCurrentUserGroupBalances).not.toHaveBeenCalled();
@@ -67,7 +69,7 @@ describe("getDashboardGroups", () => {
         .mockReturnValueOnce(memberRowsQuery),
     };
 
-    const result = await getDashboardGroups(supabase as never, "user-1", 2);
+    const result = await getDashboardGroups(supabase as never, database, "user-1", 2);
 
     expect(result.error).toBeNull();
     expect(result.groups).toEqual([
@@ -91,7 +93,7 @@ describe("getDashboardGroups", () => {
       },
     ]);
     expect(getCurrentUserGroupBalances).toHaveBeenCalledWith(
-      supabase,
+      database,
       "user-1",
       ["group-1", "group-2"],
     );
@@ -117,7 +119,7 @@ describe("getDashboardGroups", () => {
         .mockReturnValueOnce(memberRowsQuery),
     };
 
-    const result = await getDashboardGroups(supabase as never, "user-1");
+    const result = await getDashboardGroups(supabase as never, database, "user-1");
 
     expect(result).toEqual({ groups: [], error });
   });

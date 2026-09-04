@@ -4,12 +4,20 @@ import {
   parseAmountToMinorUnits,
 } from "./group-balances";
 
-function createQueryResult<T>(data: T, error: { message: string } | null = null) {
+function createDatabase({
+  expenses = [],
+  settlements = [],
+}: {
+  expenses?: unknown[];
+  settlements?: unknown[];
+} = {}) {
   return {
-    select: jest.fn().mockReturnThis(),
-    in: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    returns: jest.fn().mockResolvedValue({ data, error }),
+    expense: {
+      findMany: jest.fn().mockResolvedValue(expenses),
+    },
+    settlement: {
+      findMany: jest.fn().mockResolvedValue(settlements),
+    },
   };
 }
 
@@ -33,42 +41,44 @@ describe("group balance calculations", () => {
     expect(formatMinorUnits(12505)).toBe("₹125.05");
   });
 
-  it("returns an empty balance map without querying Supabase when there are no groups", async () => {
-    const supabase = { from: jest.fn() };
+  it("returns an empty balance map without querying Prisma when there are no groups", async () => {
+    const database = createDatabase();
 
-    const result = await getCurrentUserGroupBalances(supabase as never, "user-1", []);
+    const result = await getCurrentUserGroupBalances(database as never, "user-1", []);
 
     expect(result).toEqual({ balances: new Map(), error: null });
-    expect(supabase.from).not.toHaveBeenCalled();
+    expect(database.expense.findMany).not.toHaveBeenCalled();
+    expect(database.settlement.findMany).not.toHaveBeenCalled();
   });
 
-  it("combines paid expenses, user splits, and settlements into per-group balances", async () => {
-    const expensesQuery = createQueryResult([
-      { id: "expense-1", group_id: "group-1", amount: "100.00", paid_by: "user-1" },
-      { id: "expense-2", group_id: "group-1", amount: "40.00", paid_by: "user-2" },
-      { id: "expense-3", group_id: "group-2", amount: "30.00", paid_by: "user-3" },
-    ]);
-    const splitsQuery = createQueryResult([
-      { expense_id: "expense-1", amount: "25.00" },
-      { expense_id: "expense-2", amount: "20.00" },
-      { expense_id: "expense-3", amount: "30.00" },
-    ]);
-    const settlementsQuery = createQueryResult([
-      { group_id: "group-1", paid_by: "user-2", paid_to: "user-1", amount: "15.00" },
-      { group_id: "group-1", paid_by: "user-1", paid_to: "user-2", amount: "5.00" },
-      { group_id: "group-2", paid_by: "user-1", paid_to: "user-3", amount: "10.00" },
-    ]);
-    const supabase = {
-      from: jest.fn((table: string) => {
-        if (table === "expenses") return expensesQuery;
-        if (table === "expense_splits") return splitsQuery;
-        if (table === "settlements") return settlementsQuery;
-        throw new Error(`Unexpected table: ${table}`);
-      }),
-    };
+  it("combines multiple payments, shares, and settlements into per-group balances", async () => {
+    const database = createDatabase({
+      expenses: [
+        {
+          groupId: "group-1",
+          payments: [{ amountMinor: 6000 }, { amountMinor: 4000 }],
+          shares: [{ owedMinor: 2500 }],
+        },
+        {
+          groupId: "group-1",
+          payments: [],
+          shares: [{ owedMinor: 2000 }],
+        },
+        {
+          groupId: "group-2",
+          payments: [],
+          shares: [{ owedMinor: 3000 }],
+        },
+      ],
+      settlements: [
+        { groupId: "group-1", payerId: "user-2", payeeId: "user-1", amount: "15.00" },
+        { groupId: "group-1", payerId: "user-1", payeeId: "user-2", amount: "5.00" },
+        { groupId: "group-2", payerId: "user-1", payeeId: "user-3", amount: "10.00" },
+      ],
+    });
 
     const result = await getCurrentUserGroupBalances(
-      supabase as never,
+      database as never,
       "user-1",
       ["group-1", "group-2"],
     );
@@ -86,15 +96,34 @@ describe("group balance calculations", () => {
     });
   });
 
-  it("returns the first Supabase error without calculating balances", async () => {
-    const error = { message: "expenses unavailable" };
-    const expensesQuery = createQueryResult([], error);
-    const supabase = {
-      from: jest.fn(() => expensesQuery),
-    };
+  it("uses the new ledger relations and excludes soft-deleted expenses", async () => {
+    const database = createDatabase();
 
-    const result = await getCurrentUserGroupBalances(supabase as never, "user-1", ["group-1"]);
+    await getCurrentUserGroupBalances(database as never, "user-1", ["group-1"]);
 
-    expect(result).toEqual({ balances: new Map(), error });
+    expect(database.expense.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          deletedAt: null,
+          groupId: { in: ["group-1"] },
+        },
+        select: expect.objectContaining({
+          payments: expect.any(Object),
+          shares: expect.any(Object),
+        }),
+      }),
+    );
+  });
+
+  it("returns a safe error when the ledger query fails", async () => {
+    const database = createDatabase();
+    database.expense.findMany.mockRejectedValue(new Error("missing legacy amount column"));
+
+    const result = await getCurrentUserGroupBalances(database as never, "user-1", ["group-1"]);
+
+    expect(result).toEqual({
+      balances: new Map(),
+      error: { message: "Group balances could not be loaded." },
+    });
   });
 });

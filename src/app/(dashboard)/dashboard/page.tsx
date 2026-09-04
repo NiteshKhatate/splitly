@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { getDashboardGroups } from "@/lib/groups/dashboard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getDb } from "@/server/db";
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
@@ -37,10 +38,10 @@ export default async function DashboardPage() {
     { id: "groceries", description: "Groceries", group: "Flatmates", date: "25 Aug", total: "₹850", impact: "you lent ₹567", impactTone: "success" },
     { id: "movie", description: "Movie tickets", group: "Weekend Trip", date: "22 Aug", total: "₹600", impact: "you owe ₹300", impactTone: "danger" },
   ];
-  const dashboardGroups = await getDashboardGroups(supabase, user.id);
+  const dashboardGroups = await getDashboardGroups(supabase, getDb(), user.id);
 
   if (dashboardGroups.error) {
-    console.warn("Supabase dashboard groups failed to load", {
+    console.warn("Dashboard groups failed to load", {
       message: dashboardGroups.error.message,
     });
   }

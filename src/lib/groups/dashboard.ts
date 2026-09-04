@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Group } from "@/components/dashboard/types";
-import { getCurrentUserGroupBalances } from "@/lib/balances/group-balances";
+import {
+  getCurrentUserGroupBalances,
+  type GroupBalanceDatabase,
+} from "@/lib/balances/group-balances";
 
 const DASHBOARD_GROUP_LIMIT = 4;
 
@@ -41,6 +44,7 @@ function normalizeGroup(group: GroupMembershipRow["groups"]): GroupRow | null {
 
 export async function getDashboardGroups(
   supabase: SupabaseClient,
+  database: GroupBalanceDatabase,
   userId: string,
   limit = DASHBOARD_GROUP_LIMIT,
 ): Promise<DashboardGroupsResult> {
@@ -71,7 +75,7 @@ export async function getDashboardGroups(
       .select("group_id")
       .in("group_id", groupIds)
       .returns<GroupMemberRow[]>(),
-    getCurrentUserGroupBalances(supabase, userId, groupIds),
+    getCurrentUserGroupBalances(database, userId, groupIds),
   ]);
 
   if (memberRows.error) {

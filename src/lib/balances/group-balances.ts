@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PrismaClient } from "@/generated/prisma/client";
 
 import type { BalanceTone } from "./types";
 
@@ -8,24 +8,7 @@ export type GroupBalanceSummary = {
   tone: BalanceTone;
 };
 
-type ExpenseRow = {
-  id: string;
-  group_id: string;
-  amount: string | number;
-  paid_by: string;
-};
-
-type ExpenseSplitRow = {
-  expense_id: string;
-  amount: string | number;
-};
-
-type SettlementRow = {
-  group_id: string;
-  paid_by: string;
-  paid_to: string;
-  amount: string | number;
-};
+export type GroupBalanceDatabase = Pick<PrismaClient, "expense" | "settlement">;
 
 export const rupeeFormatter = new Intl.NumberFormat("en-IN", {
   currency: "INR",
@@ -74,7 +57,7 @@ function createBalanceSummary(amountInMinorUnits: number): GroupBalanceSummary {
 }
 
 export async function getCurrentUserGroupBalances(
-  supabase: SupabaseClient,
+  database: GroupBalanceDatabase,
   userId: string,
   groupIds: string[],
 ): Promise<{ balances: Map<string, GroupBalanceSummary>; error: { message: string } | null }> {
@@ -84,73 +67,74 @@ export async function getCurrentUserGroupBalances(
     return { balances: new Map(), error: null };
   }
 
-  const expenses = await supabase
-    .from("expenses")
-    .select("id, group_id, amount, paid_by")
-    .in("group_id", groupIds)
-    .returns<ExpenseRow[]>();
+  try {
+    const [expenses, settlements] = await Promise.all([
+      database.expense.findMany({
+        where: {
+          deletedAt: null,
+          groupId: { in: groupIds },
+        },
+        select: {
+          groupId: true,
+          payments: {
+            where: { payerId: userId },
+            select: { amountMinor: true },
+          },
+          shares: {
+            where: { participantId: userId },
+            select: { owedMinor: true },
+          },
+        },
+      }),
+      database.settlement.findMany({
+        where: { groupId: { in: groupIds } },
+        select: {
+          amount: true,
+          groupId: true,
+          payeeId: true,
+          payerId: true,
+        },
+      }),
+    ]);
 
-  if (expenses.error) {
-    return { balances: new Map(), error: expenses.error };
-  }
+    for (const expense of expenses) {
+      const paidMinor = expense.payments.reduce(
+        (total, payment) => total + payment.amountMinor,
+        0,
+      );
+      const owedMinor = expense.shares.reduce(
+        (total, share) => total + share.owedMinor,
+        0,
+      );
 
-  const expenseIds = expenses.data.map((expense) => expense.id);
-  const [splits, settlements] = await Promise.all([
-    expenseIds.length > 0
-      ? supabase
-          .from("expense_splits")
-          .select("expense_id, amount")
-          .eq("user_id", userId)
-          .in("expense_id", expenseIds)
-          .returns<ExpenseSplitRow[]>()
-      : Promise.resolve({ data: [], error: null }),
-    supabase
-      .from("settlements")
-      .select("group_id, paid_by, paid_to, amount")
-      .in("group_id", groupIds)
-      .returns<SettlementRow[]>(),
-  ]);
-
-  if (splits.error) {
-    return { balances: new Map(), error: splits.error };
-  }
-
-  if (settlements.error) {
-    return { balances: new Map(), error: settlements.error };
-  }
-
-  const expenseGroups = new Map(expenses.data.map((expense) => [expense.id, expense.group_id]));
-
-  for (const expense of expenses.data) {
-    if (expense.paid_by === userId) {
       balanceAmounts.set(
-        expense.group_id,
-        (balanceAmounts.get(expense.group_id) ?? 0) + parseAmountToMinorUnits(expense.amount),
+        expense.groupId,
+        (balanceAmounts.get(expense.groupId) ?? 0) + paidMinor - owedMinor,
       );
     }
-  }
 
-  for (const split of splits.data) {
-    const groupId = expenseGroups.get(split.expense_id);
+    for (const settlement of settlements) {
+      const amountMinor = parseAmountToMinorUnits(settlement.amount.toString());
 
-    if (groupId) {
-      balanceAmounts.set(
-        groupId,
-        (balanceAmounts.get(groupId) ?? 0) - parseAmountToMinorUnits(split.amount),
-      );
+      if (settlement.payeeId === userId) {
+        balanceAmounts.set(
+          settlement.groupId,
+          (balanceAmounts.get(settlement.groupId) ?? 0) - amountMinor,
+        );
+      }
+
+      if (settlement.payerId === userId) {
+        balanceAmounts.set(
+          settlement.groupId,
+          (balanceAmounts.get(settlement.groupId) ?? 0) + amountMinor,
+        );
+      }
     }
-  }
-
-  for (const settlement of settlements.data) {
-    const amount = parseAmountToMinorUnits(settlement.amount);
-
-    if (settlement.paid_to === userId) {
-      balanceAmounts.set(settlement.group_id, (balanceAmounts.get(settlement.group_id) ?? 0) - amount);
-    }
-
-    if (settlement.paid_by === userId) {
-      balanceAmounts.set(settlement.group_id, (balanceAmounts.get(settlement.group_id) ?? 0) + amount);
-    }
+  } catch {
+    return {
+      balances: new Map(),
+      error: { message: "Group balances could not be loaded." },
+    };
   }
 
   return {
