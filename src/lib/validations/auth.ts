@@ -38,12 +38,18 @@ export const loginFormSchema = z.object({
   password: z.string().min(1, "Enter your password."),
 });
 
+export const forgotPasswordFormSchema = z.object({
+  email: emailSchema,
+});
+
 export const signupFormSchema = z
   .object({
     fullName: fullNameSchema,
     email: emailSchema,
   })
   .and(signupPasswordFieldsSchema);
+
+export const resetPasswordFormSchema = signupPasswordFieldsSchema;
 
 export const invitationAccountSetupSchema = z
   .object({
@@ -52,5 +58,7 @@ export const invitationAccountSetupSchema = z
   .and(signupPasswordFieldsSchema);
 
 export type LoginFormData = z.infer<typeof loginFormSchema>;
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordFormSchema>;
 export type SignupFormData = z.infer<typeof signupFormSchema>;
+export type ResetPasswordFormData = z.infer<typeof resetPasswordFormSchema>;
 export type InvitationAccountSetupData = z.infer<typeof invitationAccountSetupSchema>;

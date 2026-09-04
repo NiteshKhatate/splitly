@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { EmailOtpType, Session } from "@supabase/supabase-js";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,6 @@ async function withInvitationSessionTimeout<T>(promise: Promise<T>) {
 
 export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
   const router = useRouter();
-  const didInitialize = useRef(false);
   const [session, setSession] = useState<Session>();
   const [message, setMessage] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
@@ -78,9 +77,6 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
   });
 
   useEffect(() => {
-    if (didInitialize.current) return;
-    didInitialize.current = true;
-
     let isActive = true;
 
     async function establishInvitationSession() {

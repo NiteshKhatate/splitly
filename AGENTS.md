@@ -29,13 +29,13 @@ The repository contains separate documents for different aspects of the project.
 docs/system-design.md
 ```
 
-This is the source of truth for:
+Source of truth for:
 
 * System architecture
 * Technology choices
 * Database design
 * Data relationships
-* Authentication architecture
+* Authentication
 * Authorization
 * RLS
 * Data flows
@@ -47,10 +47,10 @@ This is the source of truth for:
 ### UI and design
 
 ```text
-docs/design-system.md
+docs/system-design.md
 ```
 
-This is the source of truth for:
+Source of truth for:
 
 * Colors
 * Typography
@@ -66,9 +66,9 @@ This is the source of truth for:
 * Component variants
 * Component states
 * Responsive behavior
-* Accessibility expectations
+* Accessibility
 
-### Actual reusable UI implementation
+### Reusable UI implementation
 
 ```text
 src/components/ui/
@@ -78,39 +78,18 @@ This directory contains reusable UI components implementing the design system.
 
 ---
 
-# 3. How to Use Project Documentation
+# 3. Documentation Rules
 
-Do not repeatedly ask the user to provide information that already exists in the repository.
+Do not require the user to repeatedly tell you to read project documentation.
 
-Before making changes, inspect the relevant project documentation and existing implementation.
+Before making changes:
 
-### For UI work
+* Follow this `AGENTS.md`.
+* Consult `docs/system-design.md` for architecture/backend/database work.
+* Consult `docs/system-design.md` for UI/form/component work.
+* Inspect existing implementation before creating new components or utilities.
 
-Use:
-
-```text
-docs/design-system.md
-```
-
-and inspect:
-
-```text
-src/components/ui/
-```
-
-### For architecture/backend/database work
-
-Use:
-
-```text
-docs/system-design.md
-```
-
-### For general project conventions
-
-Follow this `AGENTS.md`.
-
-Do not require the user to explicitly tell you to read these documents in every prompt.
+These documents are the project's source of truth.
 
 ---
 
@@ -141,6 +120,8 @@ The project uses:
 * PostgreSQL
 * Supabase Authentication
 * Supabase Row Level Security (RLS)
+* React Hook Form
+* Zod
 * Vercel
 * pnpm
 
@@ -174,9 +155,7 @@ Do not create a separate:
 * Microservice
 * API gateway
 
-unless the user explicitly approves an architectural change.
-
-Next.js server-side functionality and Supabase provide the backend capabilities required for Phase 1.
+unless explicitly approved.
 
 ---
 
@@ -192,7 +171,7 @@ Use Client Components only when required for:
 * Client-side state
 * Event handlers
 * Interactive forms
-* Other functionality that requires `"use client"`
+* Other functionality requiring `"use client"`
 
 Do not add `"use client"` unnecessarily.
 
@@ -218,18 +197,251 @@ Prefer:
 * Type inference where appropriate
 * Shared domain types
 * Type-safe Supabase queries
-
-Do not duplicate types unnecessarily.
+* Zod-inferred form types
 
 ---
 
-# 9. Supabase
+# 9. Forms and Validation
+
+**React Hook Form and Zod are the standard form-management and validation solution for Splitly.**
+
+Use:
+
+* `react-hook-form` for form state, submission state, touched/dirty state, and field management.
+* `zod` for schema definitions and validation.
+* `@hookform/resolvers/zod` to connect Zod schemas to React Hook Form.
+
+Do not introduce another form-management or validation library without explicit approval.
+
+### Standard pattern
+
+Forms should generally follow:
+
+```text
+Zod Schema
+    ↓
+zodResolver
+    ↓
+React Hook Form
+    ↓
+Reusable Form UI Components
+    ↓
+Server/API action
+    ↓
+Supabase
+```
+
+Example:
+
+```ts
+const schema = z.object({
+  name: z.string().min(1, "Name is required"),
+});
+
+type FormValues = z.infer<typeof schema>;
+
+const form = useForm<FormValues>({
+  resolver: zodResolver(schema),
+  defaultValues: {
+    name: "",
+  },
+});
+```
+
+Use the inferred Zod type rather than manually duplicating the form type.
+
+---
+
+# 10. Form Validation Rules
+
+Validation must happen at multiple layers where appropriate.
+
+### Client-side
+
+Use Zod + React Hook Form for immediate user feedback.
+
+### Server-side
+
+Validate submitted data again before performing privileged or persistent operations.
+
+Do not trust client-side validation as a security boundary.
+
+### Database
+
+Use database constraints and RLS to enforce data integrity and authorization.
+
+The layers serve different purposes:
+
+```text
+React Hook Form
+    ↓
+User interaction/form state
+
+Zod
+    ↓
+Input validation
+
+Server-side validation
+    ↓
+Security/data boundary
+
+Supabase/PostgreSQL
+    ↓
+Data integrity + authorization
+```
+
+---
+
+# 11. Form Schema Location
+
+Keep reusable validation schemas outside UI components where appropriate.
+
+Prefer a structure such as:
+
+```text
+src/lib/validations/
+├── auth.ts
+├── groups.ts
+├── expenses.ts
+└── settlements.ts
+```
+
+Adapt to the existing project structure.
+
+Do not create duplicate schemas for the same domain object.
+
+For simple page-specific forms, a local schema is acceptable when it is genuinely not reusable.
+
+---
+
+# 12. React Hook Form Rules
+
+Use React Hook Form for interactive forms.
+
+Prefer:
+
+```tsx
+const form = useForm<FormValues>({
+  resolver: zodResolver(schema),
+});
+```
+
+Use:
+
+```tsx
+form.handleSubmit(...)
+```
+
+for submission.
+
+Do not manually manage every field using separate `useState` calls when React Hook Form already provides the required functionality.
+
+Avoid unnecessary controlled components.
+
+Use React Hook Form's standard registration mechanisms where possible.
+
+Use `Controller` only when required by a third-party or fully controlled component.
+
+---
+
+# 13. Form Components
+
+Forms must use reusable UI components where available.
+
+Prefer a structure such as:
+
+```text
+Form
+ ├── FormField
+ │    ├── Label
+ │    ├── Input
+ │    ├── Description
+ │    └── ErrorMessage
+ │
+ └── Button
+```
+
+Use components from:
+
+```text
+src/components/ui/
+```
+
+Do not create one-off form styling.
+
+---
+
+# 14. Validation Error Handling
+
+Zod validation errors should be displayed through the standardized form error UI.
+
+Errors should:
+
+* Appear close to the relevant field.
+* Be understandable to users.
+* Not expose implementation details.
+* Be accessible to assistive technologies.
+* Follow `docs/system-design.md`.
+
+Do not manually format Zod errors differently on every page.
+
+---
+
+# 15. Submit State
+
+All asynchronous forms must correctly handle submission state.
+
+During submission:
+
+* Prevent duplicate submissions.
+* Disable the submit action where appropriate.
+* Show the standard loading state.
+* Preserve entered values.
+* Do not reset the form prematurely.
+
+After successful submission:
+
+* Reset the form only when appropriate.
+* Display the appropriate success state/message.
+* Update the relevant UI/data.
+
+After failure:
+
+* Preserve user input.
+* Display a user-friendly error.
+* Allow the user to retry.
+
+---
+
+# 16. Server and Database Validation
+
+Never rely exclusively on React Hook Form or Zod running in the browser.
+
+For important operations:
+
+```text
+Client
+  ↓
+Zod validation
+  ↓
+Server boundary
+  ↓
+Zod/domain validation
+  ↓
+Supabase
+  ↓
+PostgreSQL constraints + RLS
+```
+
+The server must not blindly trust values sent from the client.
+
+---
+
+# 17. Supabase
 
 Supabase is the primary backend/data platform.
 
 Use the existing Supabase configuration and utilities.
-
-Do not create a second database access layer unless required.
 
 Never expose the Supabase service-role key to browser/client-side code.
 
@@ -237,7 +449,23 @@ Only use privileged Supabase credentials in secure server-side environments.
 
 ---
 
-# 10. Database
+# 18. Row Level Security
+
+RLS is a fundamental part of Splitly's security model.
+
+Never bypass RLS simply to make an operation work.
+
+Do not disable RLS.
+
+Do not weaken RLS policies without explicit approval.
+
+Do not use client-side validation as a substitute for RLS.
+
+Authorization must ultimately be enforced by the server/database security model.
+
+---
+
+# 19. Database
 
 The Phase 1 application tables are:
 
@@ -262,43 +490,13 @@ Do not recreate `auth.users`.
 
 Do not modify the existing database schema unless explicitly requested or required to fix a confirmed issue.
 
-Before proposing a schema change, check:
-
-```text
-docs/system-design.md
-```
-
 ---
 
-# 11. Row Level Security
-
-RLS is a fundamental part of Splitly's security model.
-
-Never bypass RLS simply to make an operation work.
-
-Application behavior must respect the existing authorization model.
-
-Users must only be able to access data they are authorized to access.
-
-Pay particular attention to:
-
-* Group membership
-* Expenses
-* Expense splits
-* Settlements
-* User profiles
-
-Do not disable RLS.
-
-Do not weaken RLS policies without explicit approval.
-
----
-
-# 12. Authentication
+# 20. Authentication
 
 Use Supabase Authentication.
 
-The authentication flow must support:
+The authentication flow supports:
 
 * Signup
 * Email confirmation where enabled
@@ -312,15 +510,17 @@ Do not implement a second authentication system.
 
 Do not store passwords in the application database.
 
+Use Zod + React Hook Form for authentication forms.
+
 ---
 
-# 13. UI Development
+# 21. UI Development
 
 Splitly uses a centralized design system.
 
 Before creating or modifying UI:
 
-1. Check `docs/design-system.md`.
+1. Check `docs/system-design.md`.
 2. Inspect `src/components/ui/`.
 3. Reuse an existing component whenever possible.
 4. If a required component does not exist, create a reusable component.
@@ -330,7 +530,7 @@ Do not create one-off UI implementations when an existing reusable component is 
 
 ---
 
-# 14. Reusable Components
+# 22. Reusable Components
 
 Common reusable UI components should live under:
 
@@ -338,7 +538,7 @@ Common reusable UI components should live under:
 src/components/ui/
 ```
 
-Examples include:
+Examples:
 
 ```text
 Button
@@ -362,96 +562,35 @@ Skeleton
 
 Use component variants rather than duplicating CSS.
 
+---
+
+# 23. Business Logic
+
+Keep business logic separate from presentation components where practical.
+
 For example:
 
-```tsx
-<Button variant="primary">
-  Submit
-</Button>
-```
-
-rather than creating a new custom button style for every page.
-
----
-
-# 15. Semantic Component Usage
-
-Use components according to their intended purpose.
-
-Examples:
-
 ```text
-Submit Button
-→ Form submission
-
-Cancel Button
-→ Cancel/back out of an operation
-
-Danger Button
-→ Destructive action
-
-Primary Button
-→ Main action
-
-Secondary Button
-→ Supporting action
-
-Ghost Button
-→ Low-emphasis action
+src/lib/
+├── balances/
+├── expenses/
+├── validations/
+└── ...
 ```
 
-Do not change the visual meaning of a component merely to make a page look different.
+Components should primarily handle presentation and interaction.
 
-If a new semantic component is required, add it to the design system instead of creating a one-off implementation.
+Validation schemas should not be duplicated between components.
 
 ---
 
-# 16. Forms
-
-Forms should use the standardized form components.
-
-Follow:
-
-```text
-docs/design-system.md
-```
-
-for:
-
-* Labels
-* Inputs
-* Helper text
-* Validation messages
-* Error states
-* Disabled states
-* Loading states
-* Focus states
-
-Validate important data both client-side and server-side.
-
-Client validation exists for user experience.
-
-Server/database validation exists for security and data integrity.
-
----
-
-# 17. Financial Data
+# 24. Financial Data
 
 Splitly handles financial information.
 
 Treat monetary calculations carefully.
 
 Never use floating-point arithmetic for financial calculations where precision could be lost.
-
-Use the database/application representation defined by the system design.
-
-Important invariant:
-
-```text
-SUM(expense_splits.amount) = expenses.amount
-```
-
-Always preserve the original expense total.
 
 Balance calculations must account for:
 
@@ -461,57 +600,11 @@ Balance calculations must account for:
 
 Do not silently round away money.
 
-Any rounding must be deterministic and must preserve the original total.
+Any rounding must be deterministic and preserve the original total.
 
 ---
 
-# 18. Expense Rules
-
-An expense must:
-
-* Have a positive amount.
-* Belong to a valid group.
-* Have a payer who is a group member.
-* Have valid participants who are group members.
-* Have splits whose total equals the expense total.
-
-Do not allow users to create expenses involving users outside the group.
-
----
-
-# 19. Settlement Rules
-
-A settlement must:
-
-* Belong to a valid group.
-* Have a positive amount.
-* Have a payer who belongs to the group.
-* Have a recipient who belongs to the group.
-* Have different payer and recipient users.
-
-Settlements must not modify historical expense records.
-
----
-
-# 20. Business Logic
-
-Keep business logic separate from presentation components where practical.
-
-For example, balance calculations should not be embedded directly inside a large React component.
-
-Prefer dedicated modules such as:
-
-```text
-src/lib/balances/
-src/lib/expenses/
-src/lib/validations/
-```
-
-Keep components focused on presentation and interaction.
-
----
-
-# 21. Error Handling
+# 25. Error Handling
 
 Handle errors explicitly.
 
@@ -526,7 +619,7 @@ Not found
 Unexpected error
 ```
 
-User-facing messages should be clear and understandable.
+User-facing messages should be clear.
 
 Do not expose:
 
@@ -538,7 +631,7 @@ Do not expose:
 
 ---
 
-# 22. Accessibility
+# 26. Accessibility
 
 All UI should be accessible by default.
 
@@ -553,11 +646,11 @@ Follow appropriate practices for:
 * Dialog accessibility
 * Screen-reader-friendly messaging
 
-Do not rely solely on color to communicate important information.
+Validation messages must be associated with their fields.
 
 ---
 
-# 23. Responsive Design
+# 27. Responsive Design
 
 All user-facing pages must work across:
 
@@ -568,26 +661,32 @@ All user-facing pages must work across:
 Follow responsive rules in:
 
 ```text
-docs/design-system.md
+docs/system-design.md
 ```
 
-Do not design desktop-only interfaces unless explicitly requested.
-
 ---
 
-# 24. Dependencies
+# 28. Dependencies
 
-Before adding a new dependency:
+Before adding a dependency:
 
-1. Check whether the functionality can be implemented using existing dependencies.
-2. Check whether an existing project utility already provides the functionality.
+1. Check whether existing dependencies already solve the problem.
+2. Check existing project utilities.
 3. Add a dependency only when there is a meaningful benefit.
 
-Do not add libraries merely for convenience.
+Current standard form dependencies are:
+
+```text
+react-hook-form
+zod
+@hookform/resolvers
+```
+
+Do not replace them with another form/validation solution without explicit approval.
 
 ---
 
-# 25. File Organization
+# 29. File Organization
 
 Follow the existing project structure.
 
@@ -609,11 +708,9 @@ src/
 └── types/
 ```
 
-Do not reorganize the project unnecessarily.
-
 ---
 
-# 26. Scope Control
+# 30. Scope Control
 
 When asked to implement a feature:
 
@@ -622,41 +719,35 @@ When asked to implement a feature:
 * Do not redesign unrelated pages.
 * Do not refactor unrelated code.
 * Do not introduce future-phase functionality.
-* Do not change the architecture unless necessary.
-
-If a requested feature conflicts with the existing architecture or design system, identify the conflict before making a significant change.
+* Do not change architecture unless necessary.
 
 ---
 
-# 27. Documentation Updates
+# 31. Documentation Updates
 
-When an implementation changes an important architectural or design decision, update the appropriate documentation.
+When implementation changes an important architectural or design decision, update the appropriate documentation.
 
-Use:
+Architecture:
 
 ```text
 docs/system-design.md
 ```
 
-for architectural changes.
-
-Use:
+UI/design:
 
 ```text
-docs/design-system.md
+docs/system-design.md
 ```
-
-for design-system changes.
 
 Do not duplicate the same specification across multiple files unnecessarily.
 
 ---
 
-# 28. Testing and Verification
+# 32. Testing and Verification
 
-After making changes, run the relevant checks available in the project.
+After making changes, run the relevant project checks.
 
-At minimum, when applicable:
+At minimum, when available:
 
 ```text
 pnpm lint
@@ -664,15 +755,22 @@ pnpm typecheck
 pnpm build
 ```
 
-If a command does not exist in the project, inspect `package.json` and use the project's configured equivalent.
+For forms, verify:
 
-Fix errors introduced by your changes.
-
-For business-critical functionality, test relevant edge cases.
+* Valid submission
+* Required fields
+* Invalid values
+* Field-level error messages
+* Server errors
+* Loading state
+* Duplicate submission prevention
+* Successful submission
+* Form reset behavior where appropriate
+* Keyboard accessibility
 
 ---
 
-# 29. Git and Changes
+# 33. Git and Changes
 
 Keep changes focused.
 
@@ -688,44 +786,47 @@ Never expose environment secrets in source code.
 
 ---
 
-# 30. When Requirements Are Ambiguous
+# 34. When Requirements Are Ambiguous
 
-Use the existing documentation and codebase to infer the intended implementation when the decision is low-risk.
+Use the existing documentation and codebase to infer low-risk decisions.
 
-Ask the user before making a significant decision involving:
+Ask the user before making significant decisions involving:
 
 * Architecture
 * Database schema
-* Authentication model
+* Authentication
 * Security/RLS
 * Major UX changes
 * New infrastructure
-* New external services
+* External services
 * Breaking changes
 
 Do not silently make major architectural decisions.
 
 ---
 
-# 31. Definition of Done
+# 35. Definition of Done
 
-A task is considered complete when:
+A task is complete when:
 
-* The requested functionality is implemented.
+* Requested functionality is implemented.
 * Existing functionality continues to work.
-* The implementation follows `AGENTS.md`.
+* `AGENTS.md` is followed.
 * Relevant system-design rules are followed.
 * Relevant design-system rules are followed.
-* Existing reusable components are reused where appropriate.
+* Existing reusable components are reused.
+* Forms use React Hook Form + Zod where applicable.
+* Client and server validation are appropriately separated.
+* RLS is respected.
 * TypeScript checks pass.
 * Lint passes.
 * Build passes when applicable.
 * No secrets are exposed.
-* No unnecessary dependencies or infrastructure were introduced.
+* No unnecessary dependencies or infrastructure are introduced.
 
 ---
 
-# 32. Core Principle
+# 36. Core Principle
 
 When implementing Splitly, optimize for:
 
@@ -737,7 +838,5 @@ Type safety
 Maintainability
 User experience
 ```
-
-Do not optimize for architectural complexity.
 
 Build the simplest solution that correctly satisfies the current Phase 1 requirements.
