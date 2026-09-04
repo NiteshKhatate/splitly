@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import { forwardRef, type ComponentProps } from "react";
 
 type TextareaProps = ComponentProps<"textarea"> & {
   label: string;
@@ -6,14 +6,14 @@ type TextareaProps = ComponentProps<"textarea"> & {
   helperText?: string;
 };
 
-export function Textarea({
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea({
   className,
   error,
   helperText,
   id,
   label,
   ...props
-}: TextareaProps) {
+}, ref) {
   const describedBy = [
     error ? `${id}-error` : undefined,
     helperText ? `${id}-helper` : undefined,
@@ -27,6 +27,7 @@ export function Textarea({
         {label}
       </label>
       <textarea
+        ref={ref}
         id={id}
         aria-describedby={describedBy || undefined}
         aria-invalid={error ? "true" : undefined}
@@ -51,4 +52,4 @@ export function Textarea({
       ) : null}
     </div>
   );
-}
+});

@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AuthError } from "@supabase/supabase-js";
-import { type FormEvent, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
@@ -11,18 +13,12 @@ import { ensureUserProfile } from "@/lib/auth/profiles";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   SIGNUP_PASSWORD_MIN_LENGTH,
-  SignupFormErrors,
-  validateSignupForm,
+  type SignupFormData,
+  signupFormSchema,
 } from "@/lib/validations/auth";
+import { zodResolver } from "@/lib/validations/zod-resolver";
 
-type FormState = {
-  fullName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
-
-const initialFormState: FormState = {
+const initialFormState: SignupFormData = {
   fullName: "",
   email: "",
   password: "",
@@ -67,51 +63,34 @@ function getFriendlySignupError(error: AuthError) {
 export function SignupForm() {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [formState, setFormState] = useState<FormState>(initialFormState);
-  const [errors, setErrors] = useState<SignupFormErrors>({});
   const [formMessage, setFormMessage] = useState<FormMessage | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const {
+    formState: { errors, isSubmitting },
+    handleSubmit,
+    register,
+    reset,
+  } = useForm<SignupFormData>({
+    defaultValues: initialFormState,
+    resolver: zodResolver(signupFormSchema),
+  });
 
-  function updateField(field: keyof FormState, value: string) {
-    setFormState((current) => ({ ...current, [field]: value }));
-    setErrors((current) => ({ ...current, [field]: undefined }));
+  function clearFormMessage() {
     setFormMessage(null);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (isSubmitting) {
-      return;
-    }
-
-    const nextErrors = validateSignupForm(formState);
-    setErrors(nextErrors);
-
-    if (Object.keys(nextErrors).length > 0) {
-      setFormMessage({
-        tone: "error",
-        text: "Please fix the highlighted fields.",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
+  async function handleSignupSubmit(values: SignupFormData) {
     setFormMessage(null);
-
-    const fullName = formState.fullName.trim();
-    const email = formState.email.trim().toLowerCase();
 
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password: formState.password,
+        email: values.email,
+        password: values.password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
           data: {
-            full_name: fullName,
+            full_name: values.fullName,
           },
         },
       });
@@ -130,7 +109,7 @@ export function SignupForm() {
       }
 
       if (data.user && !data.session) {
-        setFormState(initialFormState);
+        reset(initialFormState);
         setFormMessage({
           tone: "success",
           text: "Account created. Check your email to confirm your account, then log in to Splitly.",
@@ -139,7 +118,7 @@ export function SignupForm() {
       }
 
       if (data.user && data.session) {
-        const { error: profileError } = await ensureUserProfile(supabase, data.user, fullName);
+        const { error: profileError } = await ensureUserProfile(supabase, data.user, values.fullName);
 
         if (profileError) {
           console.warn("Supabase profile setup failed after signup", {
@@ -156,49 +135,41 @@ export function SignupForm() {
         tone: "error",
         text: "Something went wrong. Please try again.",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+    <form className="space-y-6" onSubmit={handleSubmit(handleSignupSubmit)} noValidate>
       {formMessage ? (
         <FormMessage tone={formMessage.tone}>{formMessage.text}</FormMessage>
       ) : null}
 
       <TextField
         id="full-name"
-        name="fullName"
         label="Full name"
         autoComplete="name"
-        value={formState.fullName}
-        error={errors.fullName}
-        onChange={(event) => updateField("fullName", event.target.value)}
+        error={errors.fullName?.message}
         required
+        {...register("fullName", { onChange: clearFormMessage })}
       />
 
       <TextField
         id="email"
-        name="email"
         label="Email"
         type="email"
         autoComplete="email"
         inputMode="email"
-        value={formState.email}
-        error={errors.email}
-        onChange={(event) => updateField("email", event.target.value)}
+        error={errors.email?.message}
         required
+        {...register("email", { onChange: clearFormMessage })}
       />
 
       <TextField
         id="password"
-        name="password"
         label="Password"
         type={showPassword ? "text" : "password"}
         autoComplete="new-password"
-        value={formState.password}
-        error={errors.password}
+        error={errors.password?.message}
         helperText={`Use at least ${SIGNUP_PASSWORD_MIN_LENGTH} characters.`}
         action={
           <button
@@ -210,18 +181,16 @@ export function SignupForm() {
             {showPassword ? "Hide" : "Show"}
           </button>
         }
-        onChange={(event) => updateField("password", event.target.value)}
         required
+        {...register("password", { onChange: clearFormMessage })}
       />
 
       <TextField
         id="confirm-password"
-        name="confirmPassword"
         label="Confirm password"
         type={showConfirmPassword ? "text" : "password"}
         autoComplete="new-password"
-        value={formState.confirmPassword}
-        error={errors.confirmPassword}
+        error={errors.confirmPassword?.message}
         action={
           <button
             type="button"
@@ -232,8 +201,8 @@ export function SignupForm() {
             {showConfirmPassword ? "Hide" : "Show"}
           </button>
         }
-        onChange={(event) => updateField("confirmPassword", event.target.value)}
         required
+        {...register("confirmPassword", { onChange: clearFormMessage })}
       />
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>

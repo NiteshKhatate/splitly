@@ -24,15 +24,17 @@ export async function createGroupAction(
     name: getStringField(formData, "name"),
     description: getStringField(formData, "description"),
   };
-  const errors = validateCreateGroupForm(fields);
+  const validation = validateCreateGroupForm(fields);
 
-  if (Object.keys(errors).length > 0) {
+  if (!validation.data) {
     return {
       fields,
-      errors,
+      errors: validation.errors,
       message: "Please fix the highlighted fields.",
     };
   }
+
+  const data = validation.data;
 
   const supabase = await createSupabaseServerClient();
   const {
@@ -66,8 +68,8 @@ export async function createGroupAction(
     .from("groups")
     .insert({
       id: groupId,
-      name: fields.name.trim(),
-      description: fields.description.trim() || null,
+      name: data.name,
+      description: data.description || null,
       created_by: user.id,
       currency: "INR",
     });

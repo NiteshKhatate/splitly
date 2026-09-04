@@ -3,12 +3,17 @@
 import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { XIcon } from "@phosphor-icons/react";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
 import type { AddMemberCandidate } from "@/lib/groups/add-member-form-state";
-import { validateGroupMemberEmail } from "@/lib/validations/groups";
+import {
+  type GroupMemberEmailFormData,
+  groupMemberEmailFormSchema,
+} from "@/lib/validations/groups";
+import { zodResolver } from "@/lib/validations/zod-resolver";
 
 type FormMessageState = {
   text: string;
@@ -24,36 +29,44 @@ export function AddMemberDialog({
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [email, setEmail] = useState("");
-  const [fieldError, setFieldError] = useState<string>();
   const [message, setMessage] = useState<FormMessageState>();
   const [candidate, setCandidate] = useState<AddMemberCandidate>();
   const [invitableEmail, setInvitableEmail] = useState<string>();
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
+  const {
+    clearErrors,
+    formState: { errors },
+    handleSubmit,
+    register,
+    reset,
+    setError,
+  } = useForm<GroupMemberEmailFormData>({
+    defaultValues: {
+      email: "",
+    },
+    resolver: zodResolver(groupMemberEmailFormSchema),
+  });
 
-  async function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const normalizedEmail = email.trim().toLowerCase();
-    const nextFieldError = validateGroupMemberEmail(normalizedEmail);
-
-    setFieldError(nextFieldError);
+  function clearSearchResult() {
+    clearErrors("email");
     setMessage(undefined);
     setCandidate(undefined);
     setInvitableEmail(undefined);
+  }
 
-    if (nextFieldError) {
-      return;
-    }
-
+  async function handleSearch(values: GroupMemberEmailFormData) {
     setIsSearching(true);
+    setMessage(undefined);
+    setCandidate(undefined);
+    setInvitableEmail(undefined);
 
     try {
       const response = await fetch(`/groups/${groupId}/members/search`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail }),
+        body: JSON.stringify(values),
       });
       const data = await response.json() as {
         candidate?: AddMemberCandidate;
@@ -63,7 +76,9 @@ export function AddMemberDialog({
       };
 
       if (!response.ok) {
-        setFieldError(data.fieldError);
+        if (data.fieldError) {
+          setError("email", { message: data.fieldError });
+        }
         setMessage(data.message ? { text: data.message, tone: "error" } : undefined);
         return;
       }
@@ -104,12 +119,14 @@ export function AddMemberDialog({
       };
 
       if (!response.ok) {
-        setFieldError(data.fieldError);
+        if (data.fieldError) {
+          setError("email", { message: data.fieldError });
+        }
         setMessage(data.message ? { text: data.message, tone: "error" } : undefined);
         return;
       }
 
-      setEmail("");
+      reset({ email: "" });
       setInvitableEmail(undefined);
       setMessage({
         text: data.message ?? `Invitation sent to ${invitableEmail}.`,
@@ -144,12 +161,14 @@ export function AddMemberDialog({
       };
 
       if (!response.ok) {
-        setFieldError(data.fieldError);
+        if (data.fieldError) {
+          setError("email", { message: data.fieldError });
+        }
         setMessage(data.message ? { text: data.message, tone: "error" } : undefined);
         return;
       }
 
-      setEmail("");
+      reset({ email: "" });
       setCandidate(undefined);
       setMessage({
         text: data.message ?? `${candidate.name} was added to the group.`,
@@ -209,24 +228,16 @@ export function AddMemberDialog({
                 <FormMessage tone={message.tone}>{message.text}</FormMessage>
               ) : null}
 
-              <form onSubmit={handleSearch} className="space-y-4" noValidate>
+              <form onSubmit={handleSubmit(handleSearch)} className="space-y-4" noValidate>
                 <TextField
                   id="member-email"
-                  name="email"
                   label="Email address"
                   type="email"
                   autoComplete="email"
                   inputMode="email"
-                  value={email}
-                  error={fieldError}
-                  onChange={(event) => {
-                    setEmail(event.target.value);
-                    setFieldError(undefined);
-                    setMessage(undefined);
-                    setCandidate(undefined);
-                    setInvitableEmail(undefined);
-                  }}
+                  error={errors.email?.message}
                   required
+                  {...register("email", { onChange: clearSearchResult })}
                 />
                 <div className="flex justify-end">
                   <Button type="submit" variant="secondary" disabled={isSearching}>

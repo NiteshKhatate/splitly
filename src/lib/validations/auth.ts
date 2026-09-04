@@ -1,42 +1,56 @@
+import { z } from "zod";
+
 export const SIGNUP_PASSWORD_MIN_LENGTH = 8;
 
-export type SignupFormValues = {
-  fullName: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter your email address.")
+  .email("Enter a valid email address.")
+  .transform((email) => email.toLowerCase());
 
-export type SignupFormErrors = Partial<Record<keyof SignupFormValues, string>>;
+const fullNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter your full name.");
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const passwordSchema = z
+  .string()
+  .min(1, "Enter a password.")
+  .min(SIGNUP_PASSWORD_MIN_LENGTH, `Use at least ${SIGNUP_PASSWORD_MIN_LENGTH} characters.`);
 
-export function validateSignupForm(values: SignupFormValues) {
-  const errors: SignupFormErrors = {};
-  const fullName = values.fullName.trim();
-  const email = values.email.trim();
+const confirmPasswordSchema = z
+  .string()
+  .min(1, "Confirm your password.");
 
-  if (!fullName) {
-    errors.fullName = "Enter your full name.";
-  }
+const signupPasswordFieldsSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: confirmPasswordSchema,
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
 
-  if (!email) {
-    errors.email = "Enter your email address.";
-  } else if (!emailPattern.test(email)) {
-    errors.email = "Enter a valid email address.";
-  }
+export const loginFormSchema = z.object({
+  email: emailSchema,
+  password: z.string().min(1, "Enter your password."),
+});
 
-  if (!values.password) {
-    errors.password = "Enter a password.";
-  } else if (values.password.length < SIGNUP_PASSWORD_MIN_LENGTH) {
-    errors.password = `Use at least ${SIGNUP_PASSWORD_MIN_LENGTH} characters.`;
-  }
+export const signupFormSchema = z
+  .object({
+    fullName: fullNameSchema,
+    email: emailSchema,
+  })
+  .and(signupPasswordFieldsSchema);
 
-  if (!values.confirmPassword) {
-    errors.confirmPassword = "Confirm your password.";
-  } else if (values.password !== values.confirmPassword) {
-    errors.confirmPassword = "Passwords do not match.";
-  }
+export const invitationAccountSetupSchema = z
+  .object({
+    fullName: fullNameSchema,
+  })
+  .and(signupPasswordFieldsSchema);
 
-  return errors;
-}
+export type LoginFormData = z.infer<typeof loginFormSchema>;
+export type SignupFormData = z.infer<typeof signupFormSchema>;
+export type InvitationAccountSetupData = z.infer<typeof invitationAccountSetupSchema>;

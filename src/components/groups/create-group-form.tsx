@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { type FormEvent, useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
+import { useForm } from "react-hook-form";
 
 import { createGroupAction } from "@/app/(dashboard)/groups/new/actions";
 import { Button } from "@/components/ui/button";
@@ -10,9 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { TextField } from "@/components/ui/text-field";
 import { initialCreateGroupFormState } from "@/lib/groups/create-group-form-state";
 import {
+  createGroupFormSchema,
+  type CreateGroupFormFields,
   GROUP_DESCRIPTION_MAX_LENGTH,
   GROUP_NAME_MAX_LENGTH,
 } from "@/lib/validations/groups";
+import { zodResolver } from "@/lib/validations/zod-resolver";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -25,35 +29,56 @@ function SubmitButton() {
 }
 
 export function CreateGroupForm() {
+  const formRef = useRef<HTMLFormElement>(null);
+  const isValidatedSubmit = useRef(false);
   const [state, formAction] = useActionState(
     createGroupAction,
     initialCreateGroupFormState,
   );
   const formState = state ?? initialCreateGroupFormState;
+  const {
+    formState: { errors },
+    handleSubmit: handleValidatedSubmit,
+    register,
+  } = useForm<CreateGroupFormFields>({
+    defaultValues: formState.fields,
+    resolver: zodResolver(createGroupFormSchema),
+  });
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (isValidatedSubmit.current) {
+      isValidatedSubmit.current = false;
+      return;
+    }
+
+    event.preventDefault();
+    void handleValidatedSubmit(() => {
+      isValidatedSubmit.current = true;
+      formRef.current?.requestSubmit();
+    })(event);
+  }
 
   return (
-    <form action={formAction} className="space-y-6" noValidate>
+    <form ref={formRef} action={formAction} className="space-y-6" onSubmit={handleSubmit} noValidate>
       {formState.message ? <FormMessage tone="error">{formState.message}</FormMessage> : null}
 
       <TextField
         id="group-name"
-        name="name"
         label="Group name"
-        defaultValue={formState.fields.name}
-        error={formState.errors.name}
+        error={errors.name?.message ?? formState.errors.name}
         helperText={`Use ${GROUP_NAME_MAX_LENGTH} characters or less.`}
         maxLength={GROUP_NAME_MAX_LENGTH}
         required
+        {...register("name")}
       />
 
       <Textarea
         id="group-description"
-        name="description"
         label="Description"
-        defaultValue={formState.fields.description}
-        error={formState.errors.description}
+        error={errors.description?.message ?? formState.errors.description}
         helperText={`Optional. Use ${GROUP_DESCRIPTION_MAX_LENGTH} characters or less.`}
         maxLength={GROUP_DESCRIPTION_MAX_LENGTH}
+        {...register("description")}
       />
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">

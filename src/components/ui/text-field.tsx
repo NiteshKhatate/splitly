@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import { forwardRef, type ComponentProps, type ReactNode } from "react";
 
 type TextFieldProps = ComponentProps<"input"> & {
   label: string;
@@ -7,7 +7,7 @@ type TextFieldProps = ComponentProps<"input"> & {
   action?: ReactNode;
 };
 
-export function TextField({
+export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField({
   action,
   className,
   error,
@@ -15,7 +15,7 @@ export function TextField({
   id,
   label,
   ...props
-}: TextFieldProps) {
+}, ref) {
   const describedBy = [
     error ? `${id}-error` : undefined,
     helperText ? `${id}-helper` : undefined,
@@ -32,6 +32,7 @@ export function TextField({
         {action}
       </div>
       <input
+        ref={ref}
         id={id}
         aria-describedby={describedBy || undefined}
         aria-invalid={error ? "true" : undefined}
@@ -56,4 +57,4 @@ export function TextField({
       ) : null}
     </div>
   );
-}
+});

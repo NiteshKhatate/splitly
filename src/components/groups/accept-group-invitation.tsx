@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { EmailOtpType, Session } from "@supabase/supabase-js";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,15 +14,11 @@ import { ensureUserProfile } from "@/lib/auth/profiles";
 import { acceptGroupInvitation } from "@/lib/groups/member-actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
+  type InvitationAccountSetupData,
+  invitationAccountSetupSchema,
   SIGNUP_PASSWORD_MIN_LENGTH,
-  validateSignupForm,
 } from "@/lib/validations/auth";
-
-type InvitationFormErrors = {
-  fullName?: string;
-  password?: string;
-  confirmPassword?: string;
-};
+import { zodResolver } from "@/lib/validations/zod-resolver";
 
 function getInvitationAcceptanceMessage(status: string | null) {
   if (status === "expired") {
@@ -47,13 +44,21 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
   );
   const didInitialize = useRef(false);
   const [session, setSession] = useState<Session>();
-  const [fullName, setFullName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [errors, setErrors] = useState<InvitationFormErrors>({});
   const [message, setMessage] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    formState: { errors, isSubmitting },
+    handleSubmit,
+    register,
+    reset,
+  } = useForm<InvitationAccountSetupData>({
+    defaultValues: {
+      fullName: "",
+      password: "",
+      confirmPassword: "",
+    },
+    resolver: zodResolver(invitationAccountSetupSchema),
+  });
 
   useEffect(() => {
     if (didInitialize.current) return;
@@ -125,7 +130,11 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
 
       const metadataName = activeSession.user.user_metadata?.full_name;
       setSession(activeSession);
-      setFullName(typeof metadataName === "string" ? metadataName : "");
+      reset({
+        fullName: typeof metadataName === "string" ? metadataName : "",
+        password: "",
+        confirmPassword: "",
+      });
       setIsLoading(false);
     }
 
@@ -134,40 +143,19 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
     return () => {
       isActive = false;
     };
-  }, [supabase]);
+  }, [reset, supabase]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!session?.user.email || isSubmitting) {
+  async function handleInvitationSubmit(values: InvitationAccountSetupData) {
+    if (!session?.user.email) {
       return;
     }
 
-    const validationErrors = validateSignupForm({
-      fullName,
-      email: session.user.email,
-      password,
-      confirmPassword,
-    });
-    const nextErrors: InvitationFormErrors = {
-      fullName: validationErrors.fullName,
-      password: validationErrors.password,
-      confirmPassword: validationErrors.confirmPassword,
-    };
-
-    setErrors(nextErrors);
     setMessage(undefined);
-
-    if (Object.values(nextErrors).some(Boolean)) {
-      return;
-    }
-
-    setIsSubmitting(true);
 
     try {
       const updateResult = await supabase.auth.updateUser({
-        password,
-        data: { full_name: fullName.trim() },
+        password: values.password,
+        data: { full_name: values.fullName },
       });
 
       if (updateResult.error || !updateResult.data.user) {
@@ -178,7 +166,7 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
       const profileResult = await ensureUserProfile(
         supabase,
         updateResult.data.user,
-        fullName,
+        values.fullName,
       );
 
       if (profileResult.error) {
@@ -205,8 +193,6 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
       router.refresh();
     } catch {
       setMessage("We couldn't accept this invitation. Please try again.");
-    } finally {
-      setIsSubmitting(false);
     }
   }
 
@@ -237,7 +223,7 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
             Checking your invitation...
           </p>
         ) : session ? (
-          <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+          <form className="space-y-5" onSubmit={handleSubmit(handleInvitationSubmit)} noValidate>
             {message ? <FormMessage tone="error">{message}</FormMessage> : null}
             <TextField
               id="invitation-email"
@@ -249,45 +235,30 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
             />
             <TextField
               id="invitation-full-name"
-              name="fullName"
               label="Full name"
               autoComplete="name"
-              value={fullName}
-              error={errors.fullName}
-              onChange={(event) => {
-                setFullName(event.target.value);
-                setErrors((current) => ({ ...current, fullName: undefined }));
-              }}
+              error={errors.fullName?.message}
               required
+              {...register("fullName", { onChange: () => setMessage(undefined) })}
             />
             <TextField
               id="invitation-password"
-              name="password"
               label="Password"
               type="password"
               autoComplete="new-password"
-              value={password}
-              error={errors.password}
+              error={errors.password?.message}
               helperText={`Use at least ${SIGNUP_PASSWORD_MIN_LENGTH} characters.`}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                setErrors((current) => ({ ...current, password: undefined }));
-              }}
               required
+              {...register("password", { onChange: () => setMessage(undefined) })}
             />
             <TextField
               id="invitation-confirm-password"
-              name="confirmPassword"
               label="Confirm password"
               type="password"
               autoComplete="new-password"
-              value={confirmPassword}
-              error={errors.confirmPassword}
-              onChange={(event) => {
-                setConfirmPassword(event.target.value);
-                setErrors((current) => ({ ...current, confirmPassword: undefined }));
-              }}
+              error={errors.confirmPassword?.message}
               required
+              {...register("confirmPassword", { onChange: () => setMessage(undefined) })}
             />
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Joining group..." : "Create account and join"}
