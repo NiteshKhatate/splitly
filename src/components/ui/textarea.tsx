@@ -1,14 +1,12 @@
-import { forwardRef, type ComponentProps, type ReactNode } from "react";
+import { forwardRef, type ComponentProps } from "react";
 
-type TextFieldProps = ComponentProps<"input"> & {
+type TextareaProps = ComponentProps<"textarea"> & {
   label: string;
   error?: string;
   helperText?: string;
-  action?: ReactNode;
 };
 
-export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField({
-  action,
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea({
   className,
   error,
   helperText,
@@ -25,19 +23,16 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between gap-4">
-        <label htmlFor={id} className="text-label text-foreground">
-          {label}
-        </label>
-        {action}
-      </div>
-      <input
+      <label htmlFor={id} className="mb-2 block text-label text-foreground">
+        {label}
+      </label>
+      <textarea
         ref={ref}
         id={id}
         aria-describedby={describedBy || undefined}
         aria-invalid={error ? "true" : undefined}
         className={[
-          "min-h-12 w-full max-w-full rounded-control border bg-surface px-3 py-2 text-body text-foreground outline-none transition-colors placeholder:text-foreground-muted focus:border-primary focus:ring-2 focus:ring-primary-subtle",
+          "min-h-28 w-full max-w-full resize-y rounded-control border bg-surface px-3 py-2 text-body text-foreground outline-none transition-colors placeholder:text-foreground-muted focus:border-primary focus:ring-2 focus:ring-primary-subtle",
           error ? "border-danger" : "border-border",
           className,
         ]

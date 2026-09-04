@@ -5,6 +5,7 @@ import { CaretDownIcon, ListIcon, SignOutIcon } from "@phosphor-icons/react/ssr"
 type DashboardHeaderProps = {
   userName: string;
   avatarUrl?: string | null;
+  activePath?: "/dashboard" | "/groups";
 };
 
 /** Links the Splitly wordmark back to the dashboard home. */
@@ -39,14 +40,39 @@ function LogoutForm() {
   );
 }
 
-export function DashboardHeader({ userName, avatarUrl }: DashboardHeaderProps) {
+function getNavLinkClassName(isActive: boolean) {
+  return [
+    "rounded-control px-4 py-2 text-label focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+    isActive
+      ? "bg-primary-subtle text-primary"
+      : "text-foreground-muted hover:bg-surface-muted hover:text-foreground",
+  ].join(" ");
+}
+
+function getMobileNavLinkClassName(isActive: boolean) {
+  return [
+    "block min-h-11 rounded-control px-3 py-3 text-label",
+    isActive
+      ? "bg-primary-subtle text-primary"
+      : "text-foreground-muted hover:bg-surface-muted",
+  ].join(" ");
+}
+
+export function DashboardHeader({
+  userName,
+  avatarUrl,
+  activePath = "/dashboard",
+}: DashboardHeaderProps) {
+  const isDashboardActive = activePath === "/dashboard";
+  const isGroupsActive = activePath === "/groups";
+
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-surface">
       <nav className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8" aria-label="Primary navigation">
         <DashboardBrandLink />
         <div className="hidden items-center gap-2 md:flex">
-          <Link href="/dashboard" aria-current="page" className="rounded-control bg-primary-subtle px-4 py-2 text-label text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Dashboard</Link>
-          <Link href="/groups" className="rounded-control px-4 py-2 text-label text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Groups</Link>
+          <Link href="/dashboard" aria-current={isDashboardActive ? "page" : undefined} className={getNavLinkClassName(isDashboardActive)}>Dashboard</Link>
+          <Link href="/groups" aria-current={isGroupsActive ? "page" : undefined} className={getNavLinkClassName(isGroupsActive)}>Groups</Link>
         </div>
         <details className="group relative hidden md:block">
           <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-control px-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
@@ -64,8 +90,8 @@ export function DashboardHeader({ userName, avatarUrl }: DashboardHeaderProps) {
           </summary>
           <div className="absolute right-0 mt-2 w-56 rounded-card border border-border bg-surface p-2 shadow-sm">
             <p className="truncate px-3 py-2 text-label">{userName}</p>
-            <Link href="/dashboard" aria-current="page" className="block min-h-11 rounded-control bg-primary-subtle px-3 py-3 text-label text-primary">Dashboard</Link>
-            <Link href="/groups" className="block min-h-11 rounded-control px-3 py-3 text-label text-foreground-muted hover:bg-surface-muted">Groups</Link>
+            <Link href="/dashboard" aria-current={isDashboardActive ? "page" : undefined} className={getMobileNavLinkClassName(isDashboardActive)}>Dashboard</Link>
+            <Link href="/groups" aria-current={isGroupsActive ? "page" : undefined} className={getMobileNavLinkClassName(isGroupsActive)}>Groups</Link>
             <div className="mt-1 border-t border-border pt-1"><LogoutForm /></div>
           </div>
         </details>

@@ -1,10 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function SectionError() {
+export function SectionError({
+  message = "This section couldn't be loaded. Please try again later.",
+}: {
+  message?: string;
+}) {
   return (
     <div className="rounded-control border border-danger bg-danger-subtle p-4 text-secondary text-danger" role="alert">
-      This section couldn&apos;t be loaded. Please try again later.
+      {message}
     </div>
   );
 }
@@ -29,16 +33,31 @@ export function SectionSkeleton({ rows = 3 }: { rows?: number }) {
 
 export function EmptyState({
   message,
+  description,
   action,
+  actionHref,
 }: {
   message: string;
+  description?: string;
   action?: string;
+  actionHref?: string;
 }) {
   return (
     <div className="rounded-control bg-surface-muted p-5 text-center">
-      <p className="text-secondary text-foreground-muted">{message}</p>
-      {action ? (
-        <Button type="button" variant="secondary" className="mt-4">
+      <p className="text-label text-foreground">{message}</p>
+      {description ? (
+        <p className="mt-1 text-secondary text-foreground-muted">{description}</p>
+      ) : null}
+      {action && actionHref ? (
+        <Button href={actionHref} variant="secondary" className="mt-4">
+          {action}
+        </Button>
+      ) : action ? (
+        <Button
+          type="button"
+          variant="secondary"
+          className="mt-4"
+        >
           {action}
         </Button>
       ) : null}

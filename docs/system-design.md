@@ -144,9 +144,10 @@ The following application tables exist:
 1. `profiles`
 2. `groups`
 3. `group_members`
-4. `expenses`
-5. `expense_splits`
-6. `settlements`
+4. `group_invitations`
+5. `expenses`
+6. `expense_splits`
+7. `settlements`
 
 Supabase's `auth.users` table is managed by Supabase Authentication and is not an application-created table.
 
@@ -176,9 +177,9 @@ expense_splits ◄────┘
 
 
 groups
-   │
-   ▼
-settlements
+   ├───────────────┐
+   ▼               ▼
+settlements   group_invitations
 ```
 
 ## Relationship details
@@ -206,6 +207,12 @@ Each expense can have multiple split records.
 ### Groups → Settlements
 
 Settlements belong to a group and represent money paid between members.
+
+### Groups → Group Invitations
+
+Group invitations represent pending email invitations. An invitation does not
+grant group access; it becomes a membership only after a user authenticates
+with the invited email address and accepts it.
 
 ---
 
@@ -266,6 +273,27 @@ member
 ```
 
 A user must not appear more than once in the same group.
+
+---
+
+## group_invitations
+
+Stores pending invitations for people who do not yet have a Splitly profile.
+
+```text
+id
+group_id
+email
+invited_by
+created_at
+expires_at
+accepted_at
+```
+
+Only group admins can create invitations. Direct table access is not exposed to
+application roles. Security-definer functions validate the group admin when an
+invitation is created and compare the authenticated JWT email when it is
+accepted.
 
 ---
 
@@ -622,6 +650,13 @@ A group member can read the membership of groups they belong to.
 
 Adding/removing members must be authorized.
 
+## Group Invitations
+
+Only group admins can invite an email address. An invitation does not make the
+recipient a member. Acceptance requires an authenticated user whose verified
+JWT email matches the normalized invitation email. Invitation records are not
+directly readable or writable by browser clients.
+
 ## Expenses
 
 A user can access expenses only when they belong to the associated group.
@@ -899,6 +934,24 @@ Required public variables:
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 ```
+
+Group invitation emails additionally require this server-only variable:
+
+```text
+SUPABASE_SECRET_KEY
+```
+
+Legacy projects may use `SUPABASE_SERVICE_ROLE_KEY` instead. It must never use a
+`NEXT_PUBLIC_` prefix or be imported into browser code.
+
+Supabase Auth URL configuration must allow the deployed application's invite
+acceptance route. For local development, this is:
+
+```text
+http://localhost:3000/invite/**
+```
+
+Production must configure the equivalent HTTPS URL for the deployed domain.
 
 Server-side Supabase utilities may also read `NEXT_SUPABASE_URL` and
 `NEXT_SUPABASE_PUBLISHABLE_KEY` for compatibility, but browser code must use

@@ -1,6 +1,8 @@
+import type { BalanceTone } from "@/lib/balances/types";
+
 export type LoadState = "ready" | "loading" | "error";
 
-export type BalanceTone = "success" | "danger" | "neutral";
+export type { BalanceTone };
 
 export type Expense = {
   id: string;
@@ -16,7 +18,12 @@ export type Group = {
   id: string;
   name: string;
   members: number;
-  detail: string;
+  balance: {
+    amountInMinorUnits: number;
+    label: string;
+    tone: BalanceTone;
+  };
+  href: string;
 };
 
 export type Debt = {

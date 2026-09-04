@@ -7,7 +7,7 @@ export function FormMessage({ tone, children }: FormMessageProps) {
   return (
     <div
       className={[
-        "rounded-control border px-4 py-3 text-secondary break-words",
+        "rounded-control border px-4 py-3 text-secondary wrap-break-word",
         tone === "success"
           ? "border-success bg-success-subtle text-success"
           : "border-danger bg-danger-subtle text-danger",

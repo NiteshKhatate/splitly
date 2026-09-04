@@ -5,9 +5,10 @@ import { DashboardWelcome } from "@/components/dashboard/dashboard-welcome";
 import { DebtSummary } from "@/components/dashboard/debt-summary";
 import { GroupSummary } from "@/components/dashboard/group-summary";
 import { RecentExpenses } from "@/components/dashboard/recent-expenses";
-import type { Debt, Expense, Group } from "@/components/dashboard/types";
+import type { Debt, Expense } from "@/components/dashboard/types";
 import { Button } from "@/components/ui/button";
 import { ensureUserProfile } from "@/lib/auth/profiles";
+import { getDashboardGroups } from "@/lib/groups/dashboard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
@@ -36,11 +37,14 @@ export default async function DashboardPage() {
     { id: "groceries", description: "Groceries", group: "Flatmates", date: "25 Aug", total: "₹850", impact: "you lent ₹567", impactTone: "success" },
     { id: "movie", description: "Movie tickets", group: "Weekend Trip", date: "22 Aug", total: "₹600", impact: "you owe ₹300", impactTone: "danger" },
   ];
-  const groups: Group[] = [
-    { id: "goa", name: "Goa Trip", members: 4, detail: "₹1,500 owed" },
-    { id: "flatmates", name: "Flatmates", members: 3, detail: "₹567 lent" },
-    { id: "weekend", name: "Weekend Trip", members: 5, detail: "₹500 lent" },
-  ];
+  const dashboardGroups = await getDashboardGroups(supabase, user.id);
+
+  if (dashboardGroups.error) {
+    console.warn("Supabase dashboard groups failed to load", {
+      message: dashboardGroups.error.message,
+    });
+  }
+
   const debts: Debt[] = [
     { id: "amit", description: "Amit owes you", amount: "₹1,000", tone: "success" },
     { id: "nitesh", description: "You owe Nitesh", amount: "₹500", tone: "danger" },
@@ -59,10 +63,15 @@ export default async function DashboardPage() {
         <div className="mt-8"><BalanceSummary /></div>
         <div className="mt-6 grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-3"><RecentExpenses expenses={expenses} /></div>
-          <div className="lg:col-span-2"><GroupSummary groups={groups} /></div>
+          <div className="lg:col-span-2">
+            <GroupSummary
+              groups={dashboardGroups.groups}
+              state={dashboardGroups.error ? "error" : "ready"}
+            />
+          </div>
         </div>
         <div className="mt-6"><DebtSummary debts={debts} /></div>
-        <p className="mt-6 text-center text-caption text-foreground-muted">Dashboard values are sample data while expense tracking is being connected.</p>
+        <p className="mt-6 text-center text-caption text-foreground-muted">Recent expenses and debt summaries are sample data while expense tracking is being connected.</p>
       </main>
     </div>
   );
