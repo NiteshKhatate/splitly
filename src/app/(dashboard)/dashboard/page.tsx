@@ -6,8 +6,8 @@ import { DebtSummary } from "@/components/dashboard/debt-summary";
 import { GroupSummary } from "@/components/dashboard/group-summary";
 import { RecentExpenses } from "@/components/dashboard/recent-expenses";
 import type { Debt, Expense } from "@/components/dashboard/types";
-import { Button } from "@/components/ui/button";
 import { ensureUserProfile } from "@/lib/auth/profiles";
+import { getDashboardBalanceSummaries } from "@/lib/balances/dashboard-balances";
 import { getDashboardGroups } from "@/lib/groups/dashboard";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
@@ -38,11 +38,21 @@ export default async function DashboardPage() {
     { id: "groceries", description: "Groceries", group: "Flatmates", date: "25 Aug", total: "₹850", impact: "you lent ₹567", impactTone: "success" },
     { id: "movie", description: "Movie tickets", group: "Weekend Trip", date: "22 Aug", total: "₹600", impact: "you owe ₹300", impactTone: "danger" },
   ];
-  const dashboardGroups = await getDashboardGroups(supabase, getDb(), user.id);
+  const database = getDb();
+  const [dashboardGroups, dashboardBalances] = await Promise.all([
+    getDashboardGroups(supabase, database, user.id),
+    getDashboardBalanceSummaries(database, user.id),
+  ]);
 
   if (dashboardGroups.error) {
     console.warn("Dashboard groups failed to load", {
       message: dashboardGroups.error.message,
+    });
+  }
+
+  if (dashboardBalances.error) {
+    console.warn("Dashboard balances failed to load", {
+      message: dashboardBalances.error.message,
     });
   }
 
@@ -56,12 +66,13 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-background">
       <DashboardHeader userName={displayName} avatarUrl={profile?.avatar_url} />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <DashboardWelcome userName={displayName} />
-          <Button type="button" className="w-full sm:w-auto" aria-describedby="expense-action-note">+ Add Expense</Button>
-          <span id="expense-action-note" className="sr-only">Expense creation is coming soon.</span>
+        <DashboardWelcome userName={displayName} />
+        <div className="mt-8">
+          <BalanceSummary
+            summaries={dashboardBalances.summaries}
+            state={dashboardBalances.error ? "error" : "ready"}
+          />
         </div>
-        <div className="mt-8"><BalanceSummary /></div>
         <div className="mt-6 grid gap-6 lg:grid-cols-5">
           <div className="lg:col-span-3"><RecentExpenses expenses={expenses} /></div>
           <div className="lg:col-span-2">

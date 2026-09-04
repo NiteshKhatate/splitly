@@ -987,26 +987,24 @@ This is the next development stage.
 
 ## Split Calculation Engine
 
-Create a pure, independently testable calculation module.
+* [x] Create a pure, independently testable calculation module.
 
 Support:
 
-```text
-Equal
-Exact Amount
-Percentage
-Shares/Weights
-```
+* [x] Equal splits.
+* [x] Exact-amount splits.
+* [x] Percentage splits using integer basis points.
+* [x] Shares/weights splits.
 
 The calculation engine must:
 
-* Use integer minor units.
-* Detect invalid inputs.
-* Detect totals that do not reconcile.
-* Handle rounding deterministically.
-* Allocate remainder deterministically.
-* Never produce negative owed amounts.
-* Never lose minor units.
+* [x] Use integer minor units.
+* [x] Detect invalid inputs.
+* [x] Detect totals that do not reconcile.
+* [x] Handle rounding deterministically.
+* [x] Allocate remainders with largest-remainder allocation and participant-ID tie-breaking.
+* [x] Never produce negative owed amounts.
+* [x] Never lose minor units.
 
 Example:
 
@@ -1018,22 +1016,22 @@ must produce integer minor-unit allocations whose sum is exactly ₹10.00.
 
 ## Add Expense
 
-Build the add-expense flow.
+* [x] Build the add-expense flow.
 
 The form should support:
 
-* Description
-* Amount
-* Currency
-* Date
-* Payer(s)
-* Participants
-* Split method
-* Split amounts
-* Notes
-* Category
+* [x] Description
+* [x] Amount
+* [x] Currency
+* [x] Date
+* [x] Payer(s)
+* [x] Participants
+* [x] Split method
+* [x] Split amounts
+* [x] Notes
+* [x] Category
 
-Use:
+* [x] Use React Hook Form with shared Zod validation.
 
 ```text
 React Hook Form
@@ -1041,13 +1039,13 @@ React Hook Form
 Zod
 ```
 
-The UI should provide a live, precise amount preview.
+* [x] Provide a live, precise amount preview.
 
-All values must be validated again on the server.
+* [x] Validate all values again on the server and recalculate shares there.
 
 ## Transaction
 
-Creating an expense must use one database transaction:
+* [x] Create an expense using one Prisma database transaction:
 
 ```text
 Expense
@@ -1065,7 +1063,7 @@ If any operation fails:
 rollback everything
 ```
 
-No partially created expense is acceptable.
+* [x] Propagate any failed write so Prisma rolls back the complete transaction.
 
 ## Expense List
 
@@ -1818,7 +1816,7 @@ Stage 1 — Identity & Groups
 ████████████████████ 100%
 
 Stage 2 — Expense Ledger
-████░░░░░░░░░░░░░░░░ 20%
+██████████░░░░░░░░░░ 50%
 
 Stage 3 — Balances & Settlements
 ░░░░░░░░░░░░░░░░░░░░ 0%
@@ -1832,17 +1830,17 @@ Stage 5 — Release Readiness
 
 ## Next Recommended Task
 
-**Continue Stage 2 with the pure split-calculation engine.**
+**Continue Stage 2 with the group expense list.**
 
 Implement:
 
 ```text
-Equal split
-Exact-amount split
-Percentage split
-Shares/weights split
-Deterministic remainder allocation
-Financial invariant tests
+Group expense ledger route
+Authorized Prisma data access
+Search and date/member/category filters
+Responsive expense rows/cards
+Loading, empty, error, and unauthorized states
+Data-access and interaction tests
 ```
 
-Build and test the engine independently before connecting it to the expense form or persistence layer.
+Build the list and filters as one read-only vertical slice before expense detail and mutations.
