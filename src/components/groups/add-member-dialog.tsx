@@ -252,7 +252,7 @@ export function AddMemberDialog({
               ) : invitableEmail ? (
                 <div className="rounded-control border border-border bg-surface-muted p-4">
                   <p className="text-label text-foreground">No Splitly account yet</p>
-                  <p className="mt-1 break-words text-secondary text-foreground-muted">
+                  <p className="mt-1 wrap-break-word text-secondary text-foreground-muted">
                     Send an invitation to {invitableEmail} to create an account and join this group.
                   </p>
                   <form onSubmit={handleInvite} className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

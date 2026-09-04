@@ -27,7 +27,7 @@ export function GroupHeader({
       </Link>
       <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h1 className="break-words text-page-heading">{name}</h1>
+          <h1 className="wrap-break-word text-page-heading">{name}</h1>
           <p className="mt-2 text-secondary text-foreground-muted">{memberLabel}</p>
           {description ? (
             <p className="mt-2 max-w-3xl text-secondary text-foreground-muted">{description}</p>

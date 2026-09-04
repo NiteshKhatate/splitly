@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
 import { ensureUserProfile } from "@/lib/auth/profiles";
+import { acceptGroupInvitation } from "@/lib/groups/member-actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   SIGNUP_PASSWORD_MIN_LENGTH,
@@ -21,6 +22,18 @@ type InvitationFormErrors = {
   password?: string;
   confirmPassword?: string;
 };
+
+function getInvitationAcceptanceMessage(status: string | null) {
+  if (status === "expired") {
+    return "This invitation has expired. Ask a group admin to send a new one.";
+  }
+
+  if (status === "not_found" || status === "permission_denied") {
+    return "This invitation doesn't match the account you're signed in with.";
+  }
+
+  return "We couldn't accept this invitation. Please try again.";
+}
 
 function cleanAuthParameters() {
   window.history.replaceState({}, document.title, window.location.pathname);
@@ -173,20 +186,22 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
         return;
       }
 
-      const response = await fetch(`/groups/${groupId}/invitations/accept`, {
-        method: "POST",
-      });
-      const data = await response.json() as {
-        message?: string;
-        redirectTo?: string;
-      };
+      const invitationResult = await acceptGroupInvitation(supabase, groupId);
 
-      if (!response.ok || !data.redirectTo) {
-        setMessage(data.message ?? "We couldn't accept this invitation. Please try again.");
+      if (invitationResult.error) {
+        setMessage("We couldn't accept this invitation. Please try again.");
         return;
       }
 
-      router.replace(data.redirectTo);
+      if (
+        invitationResult.data !== "accepted"
+        && invitationResult.data !== "already_member"
+      ) {
+        setMessage(getInvitationAcceptanceMessage(invitationResult.data));
+        return;
+      }
+
+      router.replace(`/groups/${groupId}`);
       router.refresh();
     } catch {
       setMessage("We couldn't accept this invitation. Please try again.");
