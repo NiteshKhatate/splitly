@@ -16,9 +16,17 @@ import {
 } from "@/lib/validations/auth";
 import { zodResolver } from "@/lib/validations/zod-resolver";
 
-type LoginFormProps = { redirectTo: string; initialMessage?: string };
+type LoginFormProps = {
+  redirectTo: string;
+  initialMessage?: string;
+  initialMessageTone?: "error" | "success";
+};
 
-export function LoginForm({ redirectTo, initialMessage }: LoginFormProps) {
+export function LoginForm({
+  redirectTo,
+  initialMessage,
+  initialMessageTone = "error",
+}: LoginFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string>();
   const {
@@ -65,10 +73,18 @@ export function LoginForm({ redirectTo, initialMessage }: LoginFormProps) {
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit(handleLoginSubmit)} noValidate>
-      {initialMessage ? <FormMessage tone="error">{initialMessage}</FormMessage> : null}
+      {initialMessage ? <FormMessage tone={initialMessageTone}>{initialMessage}</FormMessage> : null}
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
       <TextField id="login-email" label="Email" type="email" autoComplete="email" inputMode="email" error={errors.email?.message} required {...register("email")} />
       <TextField id="login-password" label="Password" type="password" autoComplete="current-password" error={errors.password?.message} required {...register("password")} />
+      <div className="text-right">
+        <Link
+          href="/forgot-password"
+          className="text-label text-primary hover:text-primary-hover focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        >
+          Forgot password?
+        </Link>
+      </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>{isSubmitting ? "Logging in..." : "Log in"}</Button>
       <p className="text-center text-secondary text-foreground-muted">Need an account? <Link href="/signup" className="text-label text-primary hover:text-primary-hover">Create one</Link></p>
     </form>

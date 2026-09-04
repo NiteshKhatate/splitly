@@ -6,9 +6,10 @@ import { LoginForm } from "./login-form";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirectTo?: string; message?: string }>;
+  searchParams: Promise<{ redirectTo?: string; message?: string; messageTone?: string }>;
 }) {
   const params = await searchParams;
+  const initialMessageTone = params.messageTone === "success" ? "success" : "error";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-16 lg:px-8">
@@ -34,6 +35,7 @@ export default async function LoginPage({
           <LoginForm
             redirectTo={getSafeRedirectPath(params.redirectTo)}
             initialMessage={params.message}
+            initialMessageTone={initialMessageTone}
           />
         </Card>
       </section>
