@@ -21,15 +21,15 @@ The current development target is **Phase 1**.
 
 # 2. Source of Truth
 
-The repository contains separate documents for different aspects of the project.
+The repository contains project-level documentation that must be followed.
 
-### Architecture and technical decisions
+### System and architecture
 
 ```text
 docs/system-design.md
 ```
 
-Source of truth for:
+This is the source of truth for:
 
 * System architecture
 * Technology choices
@@ -37,20 +37,17 @@ Source of truth for:
 * Data relationships
 * Authentication
 * Authorization
-* RLS
+* Supabase
+* Row Level Security
 * Data flows
-* Balance calculations
-* Settlement logic
+* Financial/business logic
 * Deployment architecture
+* Testing architecture
 * Phase 1 scope
 
-### UI and design
+### UI and visual design
 
-```text
-docs/system-design.md
-```
-
-Source of truth for:
+Use the project's designated UI/design documentation for:
 
 * Colors
 * Typography
@@ -60,7 +57,7 @@ Source of truth for:
 * Inputs
 * Forms
 * Cards
-* Modals
+* Dialogs
 * Tables
 * Badges
 * Component variants
@@ -68,28 +65,20 @@ Source of truth for:
 * Responsive behavior
 * Accessibility
 
-### Reusable UI implementation
-
-```text
-src/components/ui/
-```
-
-This directory contains reusable UI components implementing the design system.
+If a dedicated UI/design document exists, read it before making UI changes.
 
 ---
 
 # 3. Documentation Rules
 
-Do not require the user to repeatedly tell you to read project documentation.
-
 Before making changes:
 
-* Follow this `AGENTS.md`.
-* Consult `docs/system-design.md` for architecture/backend/database work.
-* Consult `docs/system-design.md` for UI/form/component work.
-* Inspect existing implementation before creating new components or utilities.
+1. Read this `AGENTS.md`.
+2. Read `docs/system-design.md` when the task involves architecture, backend, database, authentication, authorization, Supabase, testing architecture, or data flow.
+3. Read the project's UI/design documentation when the task involves UI or UX.
+4. Inspect the existing implementation before creating new components, utilities, services, or database structures.
 
-These documents are the project's source of truth.
+Do not require the user to repeat these instructions in every prompt.
 
 ---
 
@@ -105,12 +94,14 @@ These documents are the project's source of truth.
 * Keep changes focused on the requested task.
 * Preserve existing working functionality.
 * Follow established project conventions consistently.
+* Prefer reusable components and utilities over duplicated implementations.
+* Keep business logic separate from presentation where practical.
 
 ---
 
 # 5. Technology Stack
 
-The project uses:
+Splitly uses:
 
 * Next.js
 * React
@@ -122,6 +113,7 @@ The project uses:
 * Supabase Row Level Security (RLS)
 * React Hook Form
 * Zod
+* Jest
 * Vercel
 * pnpm
 
@@ -140,7 +132,7 @@ User
 Vercel
  │
  ▼
-Next.js
+Next.js Application
  │
  ├── Supabase Auth
  │
@@ -152,7 +144,7 @@ Do not create a separate:
 * Express backend
 * NestJS backend
 * Node.js API server
-* Microservice
+* Backend microservice
 * API gateway
 
 unless explicitly approved.
@@ -193,7 +185,7 @@ unless there is a documented technical reason.
 
 Prefer:
 
-* Explicit types
+* Explicit types where useful
 * Type inference where appropriate
 * Shared domain types
 * Type-safe Supabase queries
@@ -207,15 +199,13 @@ Prefer:
 
 Use:
 
-* `react-hook-form` for form state, submission state, touched/dirty state, and field management.
-* `zod` for schema definitions and validation.
-* `@hookform/resolvers/zod` to connect Zod schemas to React Hook Form.
+* `react-hook-form` for form state and submission state.
+* `zod` for validation schemas.
+* `@hookform/resolvers/zod` to connect Zod with React Hook Form.
 
 Do not introduce another form-management or validation library without explicit approval.
 
-### Standard pattern
-
-Forms should generally follow:
+The standard architecture is:
 
 ```text
 Zod Schema
@@ -224,9 +214,9 @@ zodResolver
     ↓
 React Hook Form
     ↓
-Reusable Form UI Components
+Reusable Form UI
     ↓
-Server/API action
+Server boundary
     ↓
 Supabase
 ```
@@ -248,55 +238,59 @@ const form = useForm<FormValues>({
 });
 ```
 
-Use the inferred Zod type rather than manually duplicating the form type.
+Prefer Zod-inferred types instead of duplicating form types manually.
 
 ---
 
-# 10. Form Validation Rules
+# 10. Form Validation
 
-Validation must happen at multiple layers where appropriate.
+Validation must happen at the appropriate layers.
 
-### Client-side
+### Client
 
 Use Zod + React Hook Form for immediate user feedback.
 
-### Server-side
+### Server
 
-Validate submitted data again before performing privileged or persistent operations.
-
-Do not trust client-side validation as a security boundary.
+Validate submitted data again before important database operations.
 
 ### Database
 
-Use database constraints and RLS to enforce data integrity and authorization.
+Use PostgreSQL constraints and RLS for data integrity and authorization.
 
-The layers serve different purposes:
+These layers have different responsibilities:
 
 ```text
 React Hook Form
     ↓
-User interaction/form state
+Form state
 
 Zod
     ↓
 Input validation
 
-Server-side validation
+Server
     ↓
-Security/data boundary
+Trusted application boundary
 
-Supabase/PostgreSQL
+PostgreSQL + RLS
     ↓
 Data integrity + authorization
 ```
 
+Never treat client-side validation as a security boundary.
+
 ---
 
-# 11. Form Schema Location
+# 11. Validation Schemas
 
-Keep reusable validation schemas outside UI components where appropriate.
+Prefer reusable validation schemas under:
 
-Prefer a structure such as:
+```text
+src/lib/validations/
+```
+
+For example:
 
 ```text
 src/lib/validations/
@@ -308,9 +302,9 @@ src/lib/validations/
 
 Adapt to the existing project structure.
 
-Do not create duplicate schemas for the same domain object.
+Do not duplicate validation rules.
 
-For simple page-specific forms, a local schema is acceptable when it is genuinely not reusable.
+Use local schemas for genuinely page-specific forms when appropriate.
 
 ---
 
@@ -320,7 +314,7 @@ Use React Hook Form for interactive forms.
 
 Prefer:
 
-```tsx
+```ts
 const form = useForm<FormValues>({
   resolver: zodResolver(schema),
 });
@@ -332,23 +326,21 @@ Use:
 form.handleSubmit(...)
 ```
 
-for submission.
+for form submission.
 
-Do not manually manage every field using separate `useState` calls when React Hook Form already provides the required functionality.
+Do not manually manage every form field with separate `useState` calls when React Hook Form already provides the required functionality.
 
 Avoid unnecessary controlled components.
 
-Use React Hook Form's standard registration mechanisms where possible.
-
-Use `Controller` only when required by a third-party or fully controlled component.
+Use `Controller` only when required by a controlled/third-party component.
 
 ---
 
 # 13. Form Components
 
-Forms must use reusable UI components where available.
+Use reusable UI components for forms.
 
-Prefer a structure such as:
+Preferred structure:
 
 ```text
 Form
@@ -358,10 +350,12 @@ Form
  │    ├── Description
  │    └── ErrorMessage
  │
- └── Button
+ └── FormActions
+      ├── Cancel
+      └── Submit
 ```
 
-Use components from:
+Reuse components from:
 
 ```text
 src/components/ui/
@@ -371,132 +365,110 @@ Do not create one-off form styling.
 
 ---
 
-# 14. Validation Error Handling
+# 14. Form Error Handling
 
-Zod validation errors should be displayed through the standardized form error UI.
-
-Errors should:
+Validation errors should:
 
 * Appear close to the relevant field.
 * Be understandable to users.
-* Not expose implementation details.
-* Be accessible to assistive technologies.
-* Follow `docs/system-design.md`.
+* Be accessible.
+* Follow the UI/design documentation.
+* Not expose technical details.
 
-Do not manually format Zod errors differently on every page.
+Prefer:
+
+```text
+Email address is required.
+```
+
+over:
+
+```text
+Validation failed.
+```
+
+Server/database errors must be converted into appropriate user-facing messages.
+
+Do not expose:
+
+* SQL errors
+* Database constraint names
+* Stack traces
+* Supabase internals
+* Secrets
 
 ---
 
-# 15. Submit State
+# 15. Form Submission
 
-All asynchronous forms must correctly handle submission state.
+Asynchronous forms must correctly handle:
+
+* Loading state
+* Duplicate submission prevention
+* Successful submission
+* Server errors
+* Retry behavior
 
 During submission:
 
-* Prevent duplicate submissions.
 * Disable the submit action where appropriate.
+* Preserve user input.
 * Show the standard loading state.
-* Preserve entered values.
-* Do not reset the form prematurely.
-
-After successful submission:
-
-* Reset the form only when appropriate.
-* Display the appropriate success state/message.
-* Update the relevant UI/data.
+* Do not reset prematurely.
 
 After failure:
 
-* Preserve user input.
-* Display a user-friendly error.
-* Allow the user to retry.
+* Preserve entered values.
+* Show a useful error.
+* Allow retry.
 
 ---
 
-# 16. Server and Database Validation
-
-Never rely exclusively on React Hook Form or Zod running in the browser.
-
-For important operations:
-
-```text
-Client
-  ↓
-Zod validation
-  ↓
-Server boundary
-  ↓
-Zod/domain validation
-  ↓
-Supabase
-  ↓
-PostgreSQL constraints + RLS
-```
-
-The server must not blindly trust values sent from the client.
-
----
-
-# 17. Supabase
+# 16. Supabase
 
 Supabase is the primary backend/data platform.
 
-Use the existing Supabase configuration and utilities.
+Use the existing Supabase client/server utilities.
 
 Never expose the Supabase service-role key to browser/client-side code.
 
-Only use privileged Supabase credentials in secure server-side environments.
+Privileged credentials may only be used in secure server-side environments where explicitly required.
 
 ---
 
-# 18. Row Level Security
+# 17. Row Level Security
 
-RLS is a fundamental part of Splitly's security model.
+RLS is a fundamental security boundary.
 
-Never bypass RLS simply to make an operation work.
+Never disable RLS to make a feature work.
 
-Do not disable RLS.
+Never bypass RLS from client-side code.
 
-Do not weaken RLS policies without explicit approval.
+Do not create permissive policies such as:
 
-Do not use client-side validation as a substitute for RLS.
-
-Authorization must ultimately be enforced by the server/database security model.
-
----
-
-# 19. Database
-
-The Phase 1 application tables are:
-
-```text
-profiles
-groups
-group_members
-expenses
-expense_splits
-settlements
+```sql
+WITH CHECK (true)
 ```
 
-Supabase's:
+unless there is an explicitly documented and security-reviewed reason.
 
-```text
-auth.users
+Use authenticated user identity through:
+
+```sql
+auth.uid()
 ```
 
-is managed by Supabase Authentication.
+where appropriate.
 
-Do not recreate `auth.users`.
-
-Do not modify the existing database schema unless explicitly requested or required to fix a confirmed issue.
+Do not rely on client-side authorization checks as the only security mechanism.
 
 ---
 
-# 20. Authentication
+# 18. Authentication
 
 Use Supabase Authentication.
 
-The authentication flow supports:
+Authentication supports:
 
 * Signup
 * Email confirmation where enabled
@@ -508,31 +480,418 @@ The authentication flow supports:
 
 Do not implement a second authentication system.
 
-Do not store passwords in the application database.
+Do not store passwords in application tables.
 
-Use Zod + React Hook Form for authentication forms.
+Authentication forms must use React Hook Form + Zod.
 
 ---
 
-# 21. UI Development
+# 19. Database
 
-Splitly uses a centralized design system.
+Phase 1 application tables are:
 
-Before creating or modifying UI:
+```text
+profiles
+groups
+group_members
+expenses
+expense_splits
+settlements
+```
 
-1. Check `docs/system-design.md`.
+Supabase manages:
+
+```text
+auth.users
+```
+
+Do not recreate `auth.users`.
+
+Do not modify the database schema unless explicitly requested or required by a confirmed feature need.
+
+When schema changes are necessary, use reproducible database migrations.
+
+---
+
+# 20. Database Changes
+
+Before changing the schema:
+
+1. Inspect the existing schema.
+2. Inspect existing relationships.
+3. Inspect existing constraints.
+4. Inspect existing RLS policies.
+5. Determine whether existing tables already support the requirement.
+
+Avoid creating duplicate tables.
+
+Do not create tables such as:
+
+```text
+dashboard
+balances
+user_groups
+group_users
+```
+
+when existing tables already provide the required relationship/data.
+
+---
+
+# 21. Business Logic
+
+Keep business logic separate from presentation components where practical.
+
+For example:
+
+```text
+src/lib/
+├── balances/
+├── expenses/
+├── settlements/
+├── validations/
+└── ...
+```
+
+Components should primarily handle presentation and user interaction.
+
+Business calculations should not be duplicated across React components.
+
+---
+
+# 22. Financial Data
+
+Splitly handles financial information.
+
+Financial calculations must be deterministic.
+
+Be careful with floating-point precision.
+
+Where practical, represent monetary values using integer minor units or another precision-safe representation defined by the system design.
+
+Test financial calculations thoroughly.
+
+Any rounding must follow the documented application rules and preserve totals.
+
+---
+
+# 23. Testing
+
+Jest is the standard testing framework for Splitly.
+
+Tests should be added whenever they provide meaningful protection against regressions.
+
+Do not blindly create tests for every component or line.
+
+Test behavior and business logic rather than implementation details.
+
+---
+
+# 24. Testing Priorities
+
+Highest priority:
+
+* Financial calculations
+* Balance calculations
+* Expense splitting
+* Settlement calculations
+* Zod validation schemas
+* Authentication behavior
+* Authorization behavior
+* Group membership logic
+* Server actions/data-access functions
+* Important form behavior
+* Security-sensitive logic
+
+Medium priority:
+
+* Interactive components
+* Dashboard behavior
+* Group behavior
+* Loading states
+* Empty states
+* Error states
+* Important user interactions
+
+Lower priority:
+
+* Static markup
+* Styling
+* Tailwind classes
+* Trivial wrappers
+* Third-party library behavior
+* Internal React state
+
+---
+
+# 25. Unit Tests
+
+Use unit tests for isolated logic.
+
+Examples:
+
+```text
+src/lib/balances/
+src/lib/expenses/
+src/lib/settlements/
+src/lib/validations/
+```
+
+Test:
+
+* Normal cases
+* Edge cases
+* Boundary conditions
+* Invalid inputs
+* Empty collections
+* Rounding
+* Financial precision
+* Domain rules
+
+Unit tests should be fast and deterministic.
+
+They should not require production services.
+
+---
+
+# 26. Zod Tests
+
+Important shared Zod schemas should have unit tests.
+
+Test:
+
+* Valid input
+* Invalid input
+* Required fields
+* Minimum/maximum lengths
+* Invalid formats
+* Boundary values
+* Domain-specific rules
+* Whitespace behavior where applicable
+
+Test the actual production schema.
+
+Do not duplicate schema logic inside tests.
+
+---
+
+# 27. React Hook Form Tests
+
+Do not test React Hook Form itself.
+
+Test application behavior.
+
+Important forms should test:
+
+* Fields render
+* User input
+* Validation errors
+* Invalid submission
+* Valid submission
+* Loading state
+* Server errors
+* Successful submission
+* Duplicate submission prevention where relevant
+
+Important forms include:
+
+```text
+Signup
+Login
+Create Group
+Add Person
+Add Expense
+Settlement
+```
+
+---
+
+# 28. Component Tests
+
+For interactive components, test user-visible behavior.
+
+Prefer:
+
+```ts
+getByRole()
+getByLabelText()
+getByText()
+```
+
+where appropriate.
+
+Avoid tests based on:
+
+* CSS classes
+* Internal React state
+* DOM nesting
+* Implementation-specific function calls
+* Third-party internals
+
+---
+
+# 29. Supabase Tests
+
+Do not make normal Jest tests dependent on a production Supabase database.
+
+Mock external Supabase boundaries where appropriate.
+
+Do not test Supabase's implementation.
+
+Keep application data access behind clear boundaries so application behavior can be tested independently.
+
+---
+
+# 30. RLS Testing
+
+Jest mocks cannot prove that PostgreSQL RLS works.
+
+Application tests may verify:
+
+* Authorization decisions
+* Error handling
+* Correct data-access behavior
+
+Actual RLS behavior should be tested through a suitable Supabase/database integration environment when available.
+
+Never weaken RLS to make tests pass.
+
+---
+
+# 31. Authentication Tests
+
+Test application behavior around:
+
+* Login
+* Signup
+* Logout
+* Protected routes
+* Missing sessions
+* Authentication errors
+* User identity handling
+
+Do not test Supabase Auth internals.
+
+---
+
+# 32. Regression Testing
+
+When fixing a bug:
+
+1. Reproduce the bug.
+2. Add a regression test.
+3. Fix the implementation.
+4. Confirm the test passes.
+5. Run the relevant existing test suite.
+
+Bug fixes without appropriate regression coverage should be avoided.
+
+---
+
+# 33. Test Organization
+
+Follow the existing repository convention.
+
+If no convention exists, colocate tests with the code they cover where practical.
+
+Examples:
+
+```text
+src/lib/balances/calculateBalance.ts
+src/lib/balances/calculateBalance.test.ts
+```
+
+and:
+
+```text
+src/components/groups/AddMemberDialog.tsx
+src/components/groups/AddMemberDialog.test.tsx
+```
+
+Avoid unnecessarily complex test structures.
+
+---
+
+# 34. Test Data
+
+Tests must use deterministic test data.
+
+Never use:
+
+* Production data
+* Real credentials
+* Real user information
+* Production database credentials
+* Service-role keys
+
+Use fixtures/factories when test data is repeated.
+
+---
+
+# 35. Test Independence
+
+Tests must be independent.
+
+Do not rely on:
+
+* Test execution order
+* Shared mutable state
+* Previous test results
+* Production services
+
+Reset mocks and shared state appropriately.
+
+---
+
+# 36. Coverage
+
+Do not chase 100% coverage.
+
+Use coverage to identify meaningful gaps.
+
+Prioritize coverage of:
+
+```text
+Business logic
+Financial calculations
+Validation
+Authorization
+Critical user flows
+Error handling
+```
+
+A smaller suite of meaningful tests is preferable to a large brittle suite.
+
+---
+
+# 37. Regression and Existing Functionality
+
+When implementing a feature:
+
+* Preserve existing behavior.
+* Do not rewrite unrelated functionality.
+* Add regression tests for discovered bugs.
+* Run the relevant existing tests.
+
+---
+
+# 38. UI Development
+
+Before modifying UI:
+
+1. Read the project's UI/design documentation.
 2. Inspect `src/components/ui/`.
-3. Reuse an existing component whenever possible.
-4. If a required component does not exist, create a reusable component.
-5. Follow the design-system specification.
+3. Reuse existing components.
+4. Follow established variants and states.
+5. Create reusable components when necessary.
 
-Do not create one-off UI implementations when an existing reusable component is appropriate.
+Do not create one-off styles when an existing component can be reused.
 
 ---
 
-# 22. Reusable Components
+# 39. Reusable UI Components
 
-Common reusable UI components should live under:
+Common components should live under:
 
 ```text
 src/components/ui/
@@ -548,10 +907,11 @@ Select
 Checkbox
 Radio
 Switch
+Form
 FormField
 Card
-Modal
 Dialog
+Modal
 Badge
 Avatar
 Toast
@@ -564,47 +924,40 @@ Use component variants rather than duplicating CSS.
 
 ---
 
-# 23. Business Logic
+# 40. Accessibility
 
-Keep business logic separate from presentation components where practical.
+All user-facing UI should be accessible.
 
-For example:
+Follow appropriate practices for:
 
-```text
-src/lib/
-├── balances/
-├── expenses/
-├── validations/
-└── ...
-```
+* Semantic HTML
+* Form labels
+* Keyboard navigation
+* Focus states
+* Button semantics
+* Input errors
+* Dialog accessibility
+* Screen-reader-friendly messaging
 
-Components should primarily handle presentation and interaction.
-
-Validation schemas should not be duplicated between components.
-
----
-
-# 24. Financial Data
-
-Splitly handles financial information.
-
-Treat monetary calculations carefully.
-
-Never use floating-point arithmetic for financial calculations where precision could be lost.
-
-Balance calculations must account for:
-
-* Expenses
-* Expense splits
-* Settlements
-
-Do not silently round away money.
-
-Any rounding must be deterministic and preserve the original total.
+Use native HTML semantics whenever possible.
 
 ---
 
-# 25. Error Handling
+# 41. Responsive Design
+
+All pages must work across:
+
+* Mobile
+* Tablet
+* Desktop
+
+Follow the project's UI/design documentation.
+
+Do not simply shrink desktop layouts for mobile.
+
+---
+
+# 42. Error Handling
 
 Handle errors explicitly.
 
@@ -619,62 +972,22 @@ Not found
 Unexpected error
 ```
 
-User-facing messages should be clear.
+User-facing messages must be clear.
 
-Do not expose:
-
-* Database internals
-* Stack traces
-* Secrets
-* Service-role credentials
-* Sensitive implementation details
+Never expose sensitive implementation details.
 
 ---
 
-# 26. Accessibility
-
-All UI should be accessible by default.
-
-Follow appropriate practices for:
-
-* Semantic HTML
-* Form labels
-* Keyboard navigation
-* Focus states
-* Button semantics
-* Input errors
-* Dialog accessibility
-* Screen-reader-friendly messaging
-
-Validation messages must be associated with their fields.
-
----
-
-# 27. Responsive Design
-
-All user-facing pages must work across:
-
-* Mobile
-* Tablet
-* Desktop
-
-Follow responsive rules in:
-
-```text
-docs/system-design.md
-```
-
----
-
-# 28. Dependencies
+# 43. Dependencies
 
 Before adding a dependency:
 
-1. Check whether existing dependencies already solve the problem.
-2. Check existing project utilities.
-3. Add a dependency only when there is a meaningful benefit.
+1. Check existing dependencies.
+2. Check existing utilities/components.
+3. Determine whether the problem can be solved without another dependency.
+4. Add a dependency only when there is a meaningful benefit.
 
-Current standard form dependencies are:
+Current standard form dependencies:
 
 ```text
 react-hook-form
@@ -682,15 +995,21 @@ zod
 @hookform/resolvers
 ```
 
-Do not replace them with another form/validation solution without explicit approval.
+Current testing framework:
+
+```text
+jest
+```
+
+Do not replace these without explicit approval.
 
 ---
 
-# 29. File Organization
+# 44. File Organization
 
 Follow the existing project structure.
 
-Expected structure:
+A typical structure is:
 
 ```text
 src/
@@ -702,15 +1021,18 @@ src/
 │   └── expenses/
 ├── lib/
 │   ├── supabase/
-│   ├── expenses/
 │   ├── balances/
+│   ├── expenses/
+│   ├── settlements/
 │   └── validations/
 └── types/
 ```
 
+Adapt this to the actual repository.
+
 ---
 
-# 30. Scope Control
+# 45. Scope Control
 
 When asked to implement a feature:
 
@@ -719,13 +1041,13 @@ When asked to implement a feature:
 * Do not redesign unrelated pages.
 * Do not refactor unrelated code.
 * Do not introduce future-phase functionality.
-* Do not change architecture unless necessary.
+* Do not change architecture without justification.
 
 ---
 
-# 31. Documentation Updates
+# 46. Documentation Updates
 
-When implementation changes an important architectural or design decision, update the appropriate documentation.
+When an implementation changes an important architectural or design decision, update the appropriate documentation.
 
 Architecture:
 
@@ -733,71 +1055,68 @@ Architecture:
 docs/system-design.md
 ```
 
-UI/design:
+UI:
 
 ```text
-docs/system-design.md
+[project's designated UI/design documentation]
 ```
 
-Do not duplicate the same specification across multiple files unnecessarily.
+Do not duplicate the same specification unnecessarily.
 
 ---
 
-# 32. Testing and Verification
+# 47. Verification
 
-After making changes, run the relevant project checks.
+After making changes, run relevant checks.
 
-At minimum, when available:
+Where configured:
 
-```text
+```bash
+pnpm test
 pnpm lint
 pnpm typecheck
 pnpm build
 ```
 
-For forms, verify:
+For coverage:
 
-* Valid submission
-* Required fields
-* Invalid values
-* Field-level error messages
-* Server errors
-* Loading state
-* Duplicate submission prevention
-* Successful submission
-* Form reset behavior where appropriate
-* Keyboard accessibility
+```bash
+pnpm test -- --coverage
+```
+
+Inspect `package.json` before assuming exact command names.
 
 ---
 
-# 33. Git and Changes
+# 48. Security
 
-Keep changes focused.
+Never:
 
-Do not:
+* Commit secrets
+* Expose environment secrets
+* Expose service-role credentials
+* Disable RLS
+* Trust client-side authorization
+* Log sensitive user information unnecessarily
+* Bypass authentication
+* Introduce insecure database policies for convenience
 
-* Delete unrelated files.
-* Rewrite unrelated components.
-* Change configuration without a reason.
-* Commit secrets.
-* Add `.env` files containing credentials.
-
-Never expose environment secrets in source code.
+Security-sensitive changes require careful review.
 
 ---
 
-# 34. When Requirements Are Ambiguous
+# 49. When Requirements Are Ambiguous
 
-Use the existing documentation and codebase to infer low-risk decisions.
+Use existing documentation and code to make low-risk decisions.
 
 Ask the user before making significant decisions involving:
 
 * Architecture
 * Database schema
 * Authentication
-* Security/RLS
+* Authorization
+* RLS
 * Major UX changes
-* New infrastructure
 * External services
 * Breaking changes
 
@@ -805,28 +1124,29 @@ Do not silently make major architectural decisions.
 
 ---
 
-# 35. Definition of Done
+# 50. Definition of Done
 
 A task is complete when:
 
 * Requested functionality is implemented.
 * Existing functionality continues to work.
-* `AGENTS.md` is followed.
-* Relevant system-design rules are followed.
-* Relevant design-system rules are followed.
-* Existing reusable components are reused.
+* Relevant documentation has been followed.
+* Existing reusable components have been reused.
 * Forms use React Hook Form + Zod where applicable.
 * Client and server validation are appropriately separated.
 * RLS is respected.
+* Important behavior is tested.
+* Regression tests are added when appropriate.
 * TypeScript checks pass.
 * Lint passes.
+* Tests pass.
 * Build passes when applicable.
 * No secrets are exposed.
 * No unnecessary dependencies or infrastructure are introduced.
 
 ---
 
-# 36. Core Principle
+# 51. Core Principle
 
 When implementing Splitly, optimize for:
 
@@ -835,6 +1155,7 @@ Consistency
 Security
 Simplicity
 Type safety
+Testability
 Maintainability
 User experience
 ```
