@@ -11,7 +11,7 @@ export type Expense = {
   date: string;
   total: string;
   impact: string;
-  impactTone: Exclude<BalanceTone, "neutral">;
+  impactTone: BalanceTone;
 };
 
 export type Group = {

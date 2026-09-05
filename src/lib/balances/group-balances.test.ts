@@ -71,9 +71,9 @@ describe("group balance calculations", () => {
         },
       ],
       settlements: [
-        { groupId: "group-1", payerId: "user-2", payeeId: "user-1", amount: "15.00" },
-        { groupId: "group-1", payerId: "user-1", payeeId: "user-2", amount: "5.00" },
-        { groupId: "group-2", payerId: "user-1", payeeId: "user-3", amount: "10.00" },
+        { groupId: "group-1", payerId: "user-2", payeeId: "user-1", amountMinor: 1500 },
+        { groupId: "group-1", payerId: "user-1", payeeId: "user-2", amountMinor: 500 },
+        { groupId: "group-2", payerId: "user-1", payeeId: "user-3", amountMinor: 1000 },
       ],
     });
 
@@ -113,6 +113,9 @@ describe("group balance calculations", () => {
         }),
       }),
     );
+    expect(database.settlement.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { groupId: { in: ["group-1"] }, status: "CONFIRMED" },
+    }));
   });
 
   it("returns a safe error when the ledger query fails", async () => {

@@ -2,6 +2,9 @@
   "name": "splitly",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "predev": "prisma generate",
     "dev": "next dev",
@@ -30,15 +33,16 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@eslint/compat": "^2.1.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
+    "eslint": "^10.10.0",
     "eslint-config-next": "16.3.4",
     "jest": "^30.5.1",
     "jest-environment-jsdom": "^30.5.1",
@@ -46,5 +50,11 @@
     "tailwindcss": "^4",
     "typescript": "^5"
   },
-  "packageManager": "pnpm@10.33.4"
+  "packageManager": "pnpm@10.33.4",
+  "pnpm": {
+    "overrides": {
+      "babel-plugin-istanbul>test-exclude": "8.0.0",
+      "jsdom": "30.0.1"
+    }
+  }
 }

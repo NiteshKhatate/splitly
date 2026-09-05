@@ -188,6 +188,7 @@ Do not create one-off styling when an existing UI component can be reused.
 * Next.js App Router
 * TypeScript
 * Tailwind CSS
+* Node.js 22.x
 
 ## Database
 
@@ -969,10 +970,10 @@ Tasks:
 Status:
 
 ```text
-[ ] Incomplete
+[x] Complete
 ```
 
-This is the next development stage.
+This stage is complete.
 
 ## Database
 
@@ -987,26 +988,24 @@ This is the next development stage.
 
 ## Split Calculation Engine
 
-Create a pure, independently testable calculation module.
+* [x] Create a pure, independently testable calculation module.
 
 Support:
 
-```text
-Equal
-Exact Amount
-Percentage
-Shares/Weights
-```
+* [x] Equal splits.
+* [x] Exact-amount splits.
+* [x] Percentage splits using integer basis points.
+* [x] Shares/weights splits.
 
 The calculation engine must:
 
-* Use integer minor units.
-* Detect invalid inputs.
-* Detect totals that do not reconcile.
-* Handle rounding deterministically.
-* Allocate remainder deterministically.
-* Never produce negative owed amounts.
-* Never lose minor units.
+* [x] Use integer minor units.
+* [x] Detect invalid inputs.
+* [x] Detect totals that do not reconcile.
+* [x] Handle rounding deterministically.
+* [x] Allocate remainders with largest-remainder allocation and participant-ID tie-breaking.
+* [x] Never produce negative owed amounts.
+* [x] Never lose minor units.
 
 Example:
 
@@ -1018,22 +1017,22 @@ must produce integer minor-unit allocations whose sum is exactly ₹10.00.
 
 ## Add Expense
 
-Build the add-expense flow.
+* [x] Build the add-expense flow.
 
 The form should support:
 
-* Description
-* Amount
-* Currency
-* Date
-* Payer(s)
-* Participants
-* Split method
-* Split amounts
-* Notes
-* Category
+* [x] Description
+* [x] Amount
+* [x] Currency
+* [x] Date
+* [x] Payer(s)
+* [x] Participants
+* [x] Split method
+* [x] Split amounts
+* [x] Notes
+* [x] Category
 
-Use:
+* [x] Use React Hook Form with shared Zod validation.
 
 ```text
 React Hook Form
@@ -1041,13 +1040,13 @@ React Hook Form
 Zod
 ```
 
-The UI should provide a live, precise amount preview.
+* [x] Provide a live, precise amount preview.
 
-All values must be validated again on the server.
+* [x] Validate all values again on the server and recalculate shares there.
 
 ## Transaction
 
-Creating an expense must use one database transaction:
+* [x] Create an expense using one Prisma database transaction:
 
 ```text
 Expense
@@ -1065,11 +1064,11 @@ If any operation fails:
 rollback everything
 ```
 
-No partially created expense is acceptable.
+* [x] Propagate any failed write so Prisma rolls back the complete transaction.
 
 ## Expense List
 
-Implement:
+* [x] Implement:
 
 ```text
 /groups/[groupId]/expenses
@@ -1077,21 +1076,21 @@ Implement:
 
 Support:
 
-* Expense list
-* Date
-* Description
-* Payer
-* Amount
-* Category
-* Participants
-* Empty state
-* Loading state
-* Error state
-* Responsive/mobile layout
+* [x] Expense list
+* [x] Date
+* [x] Description
+* [x] Payer
+* [x] Amount
+* [x] Category
+* [x] Participants
+* [x] Empty state
+* [x] Loading state
+* [x] Error state
+* [x] Responsive/mobile layout
 
 ## Expense Detail
 
-Implement:
+* [x] Implement:
 
 ```text
 /expenses/[expenseId]
@@ -1099,36 +1098,36 @@ Implement:
 
 Display:
 
-* Description
-* Total
-* Currency
-* Date
-* Payers
-* Participants
-* Individual shares
-* Split method
-* Notes
-* Activity information where appropriate
+* [x] Description
+* [x] Total
+* [x] Currency
+* [x] Date
+* [x] Payers
+* [x] Participants
+* [x] Individual shares
+* [x] Split method
+* [x] Notes
+* [x] Activity information where appropriate
 
 ## Edit/Delete
 
-Allow editing/deletion according to authorization rules.
+* [x] Allow editing/deletion for the expense creator or group owner.
 
-Use transactions.
+* [x] Use Prisma transactions.
 
-Write activity events for financially material changes.
+* [x] Write activity events for financially material changes.
 
-Prefer soft deletion where required for audit/history.
+* [x] Soft-delete expenses to preserve audit/history.
 
 ## Filters
 
-Add:
+* [x] Add:
 
-* Date filter
-* Member filter
-* Category filter
+* [x] Date filter
+* [x] Member filter
+* [x] Category filter
 
-Search should be implemented where appropriate.
+* [x] Add description search.
 
 ## Receipts
 
@@ -1140,20 +1139,20 @@ Only expose receipt UI if the storage architecture is already configured.
 
 The system can:
 
-* Create expenses for 2–10 members.
-* Support equal splits.
-* Support exact splits.
-* Support percentage splits.
-* Support shares/weights.
-* Support multiple payers.
-* Correctly handle rounding.
-* Prevent invalid totals.
-* Persist all records transactionally.
-* Display expenses.
-* View expense details.
-* Edit authorized expenses.
-* Delete authorized expenses.
-* Record appropriate activity events.
+* [x] Create expenses for 2–10 members.
+* [x] Support equal splits.
+* [x] Support exact splits.
+* [x] Support percentage splits.
+* [x] Support shares/weights.
+* [x] Support multiple payers.
+* [x] Correctly handle rounding.
+* [x] Prevent invalid totals.
+* [x] Persist all records transactionally.
+* [x] Display expenses.
+* [x] View expense details.
+* [x] Edit authorized expenses.
+* [x] Delete authorized expenses.
+* [x] Record appropriate activity events.
 
 No financial amount may be lost through rounding.
 
@@ -1164,29 +1163,29 @@ No financial amount may be lost through rounding.
 Status:
 
 ```text
-[ ] Incomplete
+[x] Complete
 ```
 
 ## Balance Engine
 
-Implement pure tested functions for:
+* [x] Implement pure tested functions for:
 
-* Member net balances
-* Group balances
-* Currency isolation
-* Settlement adjustments
-* Debt simplification
+* [x] Member net balances
+* [x] Group balances
+* [x] Currency isolation
+* [x] Settlement adjustments
+* [x] Debt simplification
 
 Tests must include:
 
-* Multiple expenses
-* Multiple payers
-* Unequal splits
-* Zero balances
-* Partial settlements
-* Multiple settlements
-* Rounding
-* Multiple currencies where applicable
+* [x] Multiple expenses
+* [x] Multiple payers
+* [x] Unequal splits
+* [x] Zero balances
+* [x] Partial settlements
+* [x] Multiple settlements
+* [x] Rounding
+* [x] Multiple currencies where applicable
 
 ## Dashboard
 
@@ -1198,12 +1197,12 @@ Implement/update:
 
 Display:
 
-* Total owed to user
-* Total user owes
-* Net position
-* Recent activity
-* Groups
-* Group-level summaries
+* [x] Total owed to user
+* [x] Total user owes
+* [x] Net position
+* [x] Recent activity
+* [x] Groups
+* [x] Group-level summaries
 
 Preserve the existing Splitly UI.
 
@@ -1217,11 +1216,11 @@ Implement:
 
 Display:
 
-* Raw member balances
-* Who owes whom
-* Suggested repayments
-* Currency
-* Settlement history
+* [x] Raw member balances
+* [x] Who owes whom
+* [x] Suggested repayments
+* [x] Currency
+* [x] Settlement history
 
 Clearly distinguish:
 
@@ -1235,7 +1234,7 @@ Never rely solely on color.
 
 ## Settlement
 
-Create the `Settlement` Prisma model/migration.
+* [x] Create the `Settlement` Prisma model/migration.
 
 Build:
 
@@ -1245,46 +1244,47 @@ Record settlement
 
 The form should support:
 
-* Payer
-* Payee
-* Amount
-* Date
-* Note
+* [x] Authenticated user shown as the fixed payer
+* [x] Payee
+* [x] Amount
+* [x] Date
+* [x] Note
 
 Use React Hook Form + Zod.
 
 Validate:
 
-* Payer exists
-* Payee exists
-* Payer != payee
-* Both are active members
-* Amount > 0
-* Currency is valid
+* [x] Authenticated payer exists
+* [x] Payee exists
+* [x] Payer != payee
+* [x] Both are active members
+* [x] Amount > 0
+* [x] Currency is valid
 
-Write settlement and activity in one transaction.
+* [x] Write settlement and activity in one transaction.
+* [x] Create settlements as pending until the recipient confirms them.
+* [x] Allow only the recipient to confirm a pending settlement.
+* [x] Exclude pending settlements from balances and dashboard activity.
 
 ## Settle Up
 
 Allow a suggested debt to prefill:
 
-```text
-payer
-payee
-amount
-```
+* [x] Payer
+* [x] Payee
+* [x] Amount
 
-Allow a valid partial amount.
+* [x] Allow a valid partial amount.
 
 ### Stage 3 Acceptance
 
-* [ ] Every posted expense changes balances correctly.
-* [ ] Every settlement changes balances correctly.
-* [ ] Group balances reconcile to zero.
-* [ ] Debt simplification is deterministic.
-* [ ] Raw balances remain available.
-* [ ] Suggested transfers resolve outstanding balances.
-* [ ] Historical expenses remain unchanged.
+* [x] Every posted expense changes balances correctly.
+* [x] Every settlement changes balances correctly.
+* [x] Group balances reconcile to zero.
+* [x] Debt simplification is deterministic.
+* [x] Raw balances remain available.
+* [x] Suggested transfers resolve outstanding balances.
+* [x] Historical expenses remain unchanged.
 
 ---
 
@@ -1818,10 +1818,10 @@ Stage 1 — Identity & Groups
 ████████████████████ 100%
 
 Stage 2 — Expense Ledger
-████░░░░░░░░░░░░░░░░ 20%
+████████████████████ 100%
 
 Stage 3 — Balances & Settlements
-░░░░░░░░░░░░░░░░░░░░ 0%
+████████████████████ 100%
 
 Stage 4 — Supporting Workflows & Polish
 ░░░░░░░░░░░░░░░░░░░░ 0%
@@ -1832,17 +1832,14 @@ Stage 5 — Release Readiness
 
 ## Next Recommended Task
 
-**Continue Stage 2 with the pure split-calculation engine.**
+**Begin Stage 4 with the authorized activity history.**
 
 Implement:
 
 ```text
-Equal split
-Exact-amount split
-Percentage split
-Shares/weights split
-Deterministic remainder allocation
-Financial invariant tests
+Authorized personal activity feed
+Authorized group activity feeds
+Activity type and group filters
+Pagination or load-more behavior
+Loading, empty, error, and responsive states
 ```
-
-Build and test the engine independently before connecting it to the expense form or persistence layer.

@@ -7,10 +7,17 @@ const toneClasses: Record<BalanceTone, string> = {
   neutral: "bg-surface-muted text-foreground",
 };
 
-export function BalanceCard({ label, amount, tone, description }: { label: string; amount: string; tone: BalanceTone; description: string }) {
+const currencySymbols: Record<string, string> = {
+  EUR: "€",
+  GBP: "£",
+  INR: "₹",
+  USD: "$",
+};
+
+export function BalanceCard({ label, amount, tone, description, currency = "INR" }: { label: string; amount: string; tone: BalanceTone; description: string; currency?: string }) {
   return (
     <Card className="min-w-0">
-      <div className={`mb-4 flex size-10 items-center justify-center rounded-full ${toneClasses[tone]}`} aria-hidden="true">₹</div>
+      <div className={`mb-4 flex size-10 items-center justify-center rounded-full ${toneClasses[tone]}`} aria-hidden="true">{currencySymbols[currency] ?? "¤"}</div>
       <p className="text-label text-foreground-muted">{label}</p>
       <p className={`mt-1 text-large-amount ${tone === "neutral" ? "text-foreground" : tone === "success" ? "text-success" : "text-danger"}`}>{amount}</p>
       <p className="mt-2 text-caption text-foreground-muted">{description}</p>
