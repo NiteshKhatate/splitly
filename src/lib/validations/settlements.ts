@@ -13,9 +13,6 @@ export const settlementFormSchema = z.object({
   date: z.iso.date("Choose a valid date."),
   note: z.string().trim().max(SETTLEMENT_NOTE_MAX_LENGTH, `Note must be ${SETTLEMENT_NOTE_MAX_LENGTH} characters or less.`),
   payeeId: z.string().uuid("Choose who received the payment."),
-  payerId: z.string().uuid("Choose who paid."),
-}).refine(({ payeeId, payerId }) => payeeId !== payerId, {
-  message: "Payer and recipient must be different people.", path: ["payeeId"],
 });
 
 export type SettlementFormValues = z.infer<typeof settlementFormSchema>;

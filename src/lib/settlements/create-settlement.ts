@@ -26,14 +26,17 @@ export async function createSettlement(
       select: {
         defaultCurrency: true,
         expenses: { where: { currency: data.currency, deletedAt: null }, select: { id: true }, take: 1 },
-        members: { where: { userId: { in: [actorId, data.payerId, data.payeeId] } }, select: { userId: true } },
+        members: { where: { userId: { in: [actorId, data.payeeId] } }, select: { userId: true } },
       },
     });
     if (!group) throw new SettlementError("Group not found.", "NOT_FOUND");
     const memberIds = new Set(group.members.map(({ userId }) => userId));
     if (!memberIds.has(actorId)) throw new SettlementError("You are not a member of this group.", "FORBIDDEN");
-    if (!memberIds.has(data.payerId) || !memberIds.has(data.payeeId)) {
-      throw new SettlementError("Payer and recipient must be active group members.", "INVALID_INPUT");
+    if (!memberIds.has(data.payeeId)) {
+      throw new SettlementError("Recipient must be an active group member.", "INVALID_INPUT");
+    }
+    if (data.payeeId === actorId) {
+      throw new SettlementError("Choose another group member as the recipient.", "INVALID_INPUT");
     }
     if (data.currency !== group.defaultCurrency && group.expenses.length === 0) {
       throw new SettlementError("Currency must match this group's financial activity.", "INVALID_INPUT");
@@ -43,14 +46,15 @@ export async function createSettlement(
       data: {
         amountMinor, createdBy: actorId, currency: data.currency,
         date: new Date(`${data.date}T00:00:00.000Z`), groupId,
-        note: data.note || null, payeeId: data.payeeId, payerId: data.payerId,
+        note: data.note || null, payeeId: data.payeeId, payerId: actorId,
+        status: "PENDING",
       },
       select: { id: true },
     });
     await transaction.activityEvent.create({
       data: {
         actorId, entityId: settlement.id, entityType: "SETTLEMENT", groupId,
-        metadata: { amountMinor, currency: data.currency, payeeId: data.payeeId, payerId: data.payerId } as Prisma.InputJsonValue,
+        metadata: { amountMinor, currency: data.currency, payeeId: data.payeeId, payerId: actorId, status: "PENDING" } as Prisma.InputJsonValue,
         type: "SETTLEMENT_CREATED",
       },
     });

@@ -50,6 +50,7 @@ export async function getDashboardBalanceSummaries(
         where: {
           group: { members: { some: { userId } } },
           OR: [{ payerId: userId }, { payeeId: userId }],
+          status: "CONFIRMED",
         },
         select: {
           amountMinor: true,

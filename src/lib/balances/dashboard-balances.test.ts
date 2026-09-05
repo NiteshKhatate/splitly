@@ -65,6 +65,9 @@ describe("dashboard balance summaries", () => {
         ],
       },
     }));
+    expect(database.settlement.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ status: "CONFIRMED" }),
+    }));
   });
 
   it("returns a safe error when the ledger cannot be loaded", async () => {

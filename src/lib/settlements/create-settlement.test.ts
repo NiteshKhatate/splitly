@@ -4,7 +4,7 @@ const actorId = "00000000-0000-4000-8000-000000000001";
 const payeeId = "00000000-0000-4000-8000-000000000002";
 
 function validSettlement() {
-  return { amount: "8.00", currency: "INR", date: "2026-09-04", note: "Partial payment", payeeId, payerId: actorId };
+  return { amount: "8.00", currency: "INR", date: "2026-09-04", note: "Partial payment", payeeId };
 }
 
 function createTransaction() {
@@ -34,6 +34,7 @@ describe("createSettlement", () => {
     expect(database.$transaction).toHaveBeenCalledTimes(1);
     expect(transaction.settlement.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
       amountMinor: 800, createdBy: actorId, currency: "INR", groupId: "group-1", payeeId, payerId: actorId,
+      status: "PENDING",
     }) }));
     expect(transaction.activityEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({
       entityId: "settlement-1", type: "SETTLEMENT_CREATED",
@@ -55,6 +56,14 @@ describe("createSettlement", () => {
       new SettlementError("You are not a member of this group.", "FORBIDDEN"),
     );
     expect(transaction.settlement.create).not.toHaveBeenCalled();
+  });
+
+  it("always records the authenticated actor as payer", async () => {
+    const { database, transaction } = createDatabase();
+    await createSettlement(database as never, "group-1", actorId, { ...validSettlement(), payerId: payeeId });
+    expect(transaction.settlement.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ payerId: actorId, status: "PENDING" }),
+    }));
   });
 
   it("permits ledger currencies and rejects unrelated currencies", async () => {

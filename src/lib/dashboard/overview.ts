@@ -39,7 +39,7 @@ export async function getDashboardOverview(
         },
       }),
       database.settlement.findMany({
-        where: { group: { members: { some: { userId } } } },
+        where: { group: { members: { some: { userId } } }, status: "CONFIRMED" },
         orderBy: [{ createdAt: "desc" }],
         take: RECENT_EXPENSE_LIMIT,
         select: {
@@ -70,6 +70,7 @@ export async function getDashboardOverview(
           members: { select: { user: { select: { id: true, name: true } } } },
           name: true,
           settlements: {
+            where: { status: "CONFIRMED" },
             select: { amountMinor: true, currency: true, payeeId: true, payerId: true },
           },
         },

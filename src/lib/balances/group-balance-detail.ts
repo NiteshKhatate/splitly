@@ -35,6 +35,7 @@ export async function getGroupBalanceDetail(
           select: {
             amountMinor: true, currency: true, date: true, id: true, note: true,
             payee: { select: { id: true, name: true } }, payer: { select: { id: true, name: true } },
+            status: true,
           },
         },
       },
@@ -51,7 +52,7 @@ export async function getGroupBalanceDetail(
         totalMinor: expense.totalMinor,
       })),
       memberIds: group.members.map(({ user }) => user.id),
-      settlements: group.settlements.map((settlement) => ({
+      settlements: group.settlements.filter((settlement) => settlement.status === "CONFIRMED").map((settlement) => ({
         amountMinor: settlement.amountMinor, currency: settlement.currency,
         payeeId: settlement.payee.id, payerId: settlement.payer.id,
       })),
@@ -84,8 +85,10 @@ export async function getGroupBalanceDetail(
           date: new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "UTC" }).format(settlement.date),
           id: settlement.id,
           note: settlement.note,
+          payeeId: settlement.payee.id,
           payeeName: settlement.payee.name,
           payerName: settlement.payer.name,
+          status: settlement.status,
         })),
       },
       error: null,

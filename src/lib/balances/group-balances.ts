@@ -87,7 +87,7 @@ export async function getCurrentUserGroupBalances(
         },
       }),
       database.settlement.findMany({
-        where: { groupId: { in: groupIds } },
+        where: { groupId: { in: groupIds }, status: "CONFIRMED" },
         select: {
           amountMinor: true,
           groupId: true,

@@ -58,7 +58,7 @@ describe("getDashboardOverview", () => {
       description: "Sam paid Alex", impact: "you received ₹3", impactTone: "success",
     });
     expect(database.settlement.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { group: { members: { some: { userId } } } },
+      where: { group: { members: { some: { userId } } }, status: "CONFIRMED" },
     }));
   });
 

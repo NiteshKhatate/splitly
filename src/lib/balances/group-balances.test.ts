@@ -113,6 +113,9 @@ describe("group balance calculations", () => {
         }),
       }),
     );
+    expect(database.settlement.findMany).toHaveBeenCalledWith(expect.objectContaining({
+      where: { groupId: { in: ["group-1"] }, status: "CONFIRMED" },
+    }));
   });
 
   it("returns a safe error when the ledger query fails", async () => {

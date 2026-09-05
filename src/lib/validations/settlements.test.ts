@@ -1,6 +1,5 @@
 import { SETTLEMENT_NOTE_MAX_LENGTH, settlementFormSchema } from "./settlements";
 
-const payerId = "00000000-0000-4000-8000-000000000001";
 const payeeId = "00000000-0000-4000-8000-000000000002";
 
 function validSettlement() {
@@ -10,7 +9,6 @@ function validSettlement() {
     date: "2026-09-04",
     note: "Paid by bank transfer",
     payeeId,
-    payerId,
   };
 }
 
@@ -26,9 +24,9 @@ describe("settlementFormSchema", () => {
     expect(settlementFormSchema.safeParse({ ...validSettlement(), amount }).success).toBe(false);
   });
 
-  it("requires distinct valid members, an ISO currency, and a valid date", () => {
+  it("requires a valid recipient, ISO currency, and date", () => {
     const result = settlementFormSchema.safeParse({
-      ...validSettlement(), currency: "inr", date: "04/09/2026", payeeId: payerId,
+      ...validSettlement(), currency: "inr", date: "04/09/2026", payeeId: "not-a-user",
     });
     expect(result.success).toBe(false);
     if (!result.success) {

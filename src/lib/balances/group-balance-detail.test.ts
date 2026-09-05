@@ -23,6 +23,7 @@ describe("getGroupBalanceDetail", () => {
       settlements: [{
         amountMinor: 400, currency: "INR", date: new Date("2026-09-04T00:00:00.000Z"), id: "settlement-1",
         note: "Partial", payee: { id: alexId, name: "Alex" }, payer: { id: samId, name: "Sam" },
+        status: "CONFIRMED",
       }],
     });
 

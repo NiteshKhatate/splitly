@@ -92,6 +92,7 @@ This document describes **how the system works**.
 * React
 * TypeScript
 * Tailwind CSS
+* Node.js 22.x runtime
 
 ## Forms
 
@@ -883,6 +884,8 @@ Settlement
 ├── currency
 ├── date
 ├── note
+├── status
+├── confirmedAt
 ├── createdBy
 ├── createdAt
 └── updatedAt
@@ -892,9 +895,12 @@ Rules:
 
 ```text
 payer !== payee
+ payer === authenticated creator
 amountMinor > 0
 payer ∈ active group members
 payee ∈ active group members
+pending settlements do not affect balances
+only the payee may confirm a pending settlement
 ```
 
 A settlement does not modify historical expenses.
@@ -1340,7 +1346,7 @@ The output must be deterministic.
 # 41. Settlement Flow
 
 ```text
-User selects suggested debt
+Authenticated payer selects suggested debt
         ↓
 Settlement form
         ↓
@@ -1354,20 +1360,28 @@ Authenticate
         ↓
 Verify membership
         ↓
-Verify payer/payee
+Use authenticated user as payer
+Verify payee
         ↓
 Server-side validation
         ↓
 Prisma transaction
-        ├── Settlement
+        ├── Pending Settlement
         └── ActivityEvent
         ↓
-Recalculate balance
+Recipient confirms settlement
+        ↓
+Prisma transaction
+        ├── Confirm Settlement
+        └── ActivityEvent
+        ↓
+Recalculate balance from confirmed settlements
         ↓
 Update UI
 ```
 
-A settlement is an additional ledger event.
+A confirmed settlement is an additional ledger event. A pending settlement is
+an auditable request but is excluded from balance calculations.
 
 It does not modify expenses.
 

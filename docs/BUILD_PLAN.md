@@ -188,6 +188,7 @@ Do not create one-off styling when an existing UI component can be reused.
 * Next.js App Router
 * TypeScript
 * Tailwind CSS
+* Node.js 22.x
 
 ## Database
 
@@ -1243,7 +1244,7 @@ Record settlement
 
 The form should support:
 
-* [x] Payer
+* [x] Authenticated user shown as the fixed payer
 * [x] Payee
 * [x] Amount
 * [x] Date
@@ -1253,7 +1254,7 @@ Use React Hook Form + Zod.
 
 Validate:
 
-* [x] Payer exists
+* [x] Authenticated payer exists
 * [x] Payee exists
 * [x] Payer != payee
 * [x] Both are active members
@@ -1261,6 +1262,9 @@ Validate:
 * [x] Currency is valid
 
 * [x] Write settlement and activity in one transaction.
+* [x] Create settlements as pending until the recipient confirms them.
+* [x] Allow only the recipient to confirm a pending settlement.
+* [x] Exclude pending settlements from balances and dashboard activity.
 
 ## Settle Up
 
