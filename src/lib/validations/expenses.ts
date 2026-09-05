@@ -109,6 +109,19 @@ export const expenseFormSchema = z.object({
 
 export type ExpenseFormValues = z.infer<typeof expenseFormSchema>;
 
+export const expenseFiltersSchema = z.object({
+  category: z.enum(EXPENSE_CATEGORIES).optional(),
+  from: z.iso.date().optional(),
+  memberId: z.string().uuid().optional(),
+  search: z.string().trim().max(100).optional(),
+  to: z.iso.date().optional(),
+}).refine(
+  ({ from, to }) => !from || !to || from <= to,
+  { message: "The start date must be before the end date.", path: ["to"] },
+);
+
+export type ExpenseFilters = z.infer<typeof expenseFiltersSchema>;
+
 export function parseDecimalToMinor(value: string): number {
   const normalized = value.trim();
   if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) return Number.NaN;

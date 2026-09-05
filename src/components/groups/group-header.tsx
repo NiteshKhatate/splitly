@@ -36,6 +36,12 @@ export function GroupHeader({
           ) : null}
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
+          <Button href={`/groups/${groupId}/balances`} variant="secondary" className="w-full sm:w-auto">
+            Balances
+          </Button>
+          <Button href={`/groups/${groupId}/expenses`} variant="secondary" className="w-full sm:w-auto">
+            View expenses
+          </Button>
           <Button href={`/groups/${groupId}/expenses/new`} className="w-full sm:w-auto">
             + Add expense
           </Button>

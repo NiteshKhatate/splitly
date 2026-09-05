@@ -1,4 +1,4 @@
-import { expenseFormSchema, parseDecimalToMinor } from "./expenses";
+import { expenseFiltersSchema, expenseFormSchema, parseDecimalToMinor } from "./expenses";
 
 const memberA = "00000000-0000-4000-8000-000000000001";
 const memberB = "00000000-0000-4000-8000-000000000002";
@@ -83,5 +83,23 @@ describe("expense validation", () => {
       expect.objectContaining({ message: "Each payer can appear only once." }),
       expect.objectContaining({ message: "Each participant can appear only once." }),
     ]));
+  });
+});
+
+describe("expense filter validation", () => {
+  it("accepts supported filters", () => {
+    expect(expenseFiltersSchema.safeParse({
+      category: "DINING",
+      from: "2026-09-01",
+      memberId: memberA,
+      search: "dinner",
+      to: "2026-09-30",
+    }).success).toBe(true);
+  });
+
+  it("rejects reversed dates and invalid filter values", () => {
+    expect(expenseFiltersSchema.safeParse({ from: "2026-09-30", to: "2026-09-01" }).success).toBe(false);
+    expect(expenseFiltersSchema.safeParse({ category: "INVALID" }).success).toBe(false);
+    expect(expenseFiltersSchema.safeParse({ memberId: "not-a-uuid" }).success).toBe(false);
   });
 });

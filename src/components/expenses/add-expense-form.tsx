@@ -50,18 +50,22 @@ function buildPreviewInput(values: ExpenseFormValues): SplitCalculationInput {
 
 export function AddExpenseForm({
   currency,
+  expenseId,
   groupId,
+  initialValues,
   members,
 }: {
   currency: string;
+  expenseId?: string;
   groupId: string;
+  initialValues?: ExpenseFormValues;
   members: ExpenseMember[];
 }) {
   const router = useRouter();
   const [serverMessage, setServerMessage] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<ExpenseFormValues>({
-    defaultValues: {
+    defaultValues: initialValues ?? {
       amount: "",
       category: "GENERAL",
       currency,
@@ -92,17 +96,20 @@ export function AddExpenseForm({
     setIsSubmitting(true);
     setServerMessage(undefined);
     try {
-      const response = await fetch(`/groups/${groupId}/expenses/create`, {
+      const response = await fetch(
+        expenseId ? `/expenses/${expenseId}/update` : `/groups/${groupId}/expenses/create`,
+        {
         body: JSON.stringify(valuesToSubmit),
         headers: { "Content-Type": "application/json" },
         method: "POST",
-      });
+        },
+      );
       const result = await response.json() as { message?: string };
       if (!response.ok) {
         setServerMessage(result.message ?? "We couldn't save that expense. Please try again.");
         return;
       }
-      router.push(`/groups/${groupId}`);
+      router.push(expenseId ? `/expenses/${expenseId}` : `/groups/${groupId}`);
       router.refresh();
     } catch {
       setServerMessage("We couldn't save that expense. Please try again.");
@@ -174,8 +181,8 @@ export function AddExpenseForm({
 
       <Textarea id="expense-notes" label="Notes" maxLength={EXPENSE_NOTES_MAX_LENGTH} helperText="Optional." error={form.formState.errors.notes?.message} {...form.register("notes")} />
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Button href={`/groups/${groupId}`} variant="secondary" className="w-full sm:w-auto">Cancel</Button>
-        <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save expense"}</Button>
+        <Button href={expenseId ? `/expenses/${expenseId}` : `/groups/${groupId}`} variant="secondary" className="w-full sm:w-auto">Cancel</Button>
+        <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>{isSubmitting ? "Saving..." : expenseId ? "Update expense" : "Save expense"}</Button>
       </div>
     </form>
   );

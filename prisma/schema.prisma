@@ -76,6 +76,7 @@ model User {
   expenseShares       ExpenseShare[]
   settlementsPaid     Settlement[]     @relation("SettlementPayer")
   settlementsReceived Settlement[]     @relation("SettlementPayee")
+  createdSettlements  Settlement[]     @relation("SettlementCreator")
   activityEvents      ActivityEvent[]  @relation("ActivityActor")
 
   @@map("profiles")
@@ -189,18 +190,22 @@ model ExpenseShare {
 }
 
 model Settlement {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  groupId        String   @map("group_id") @db.Uuid
-  payerId        String   @map("paid_by") @db.Uuid
-  payeeId        String   @map("paid_to") @db.Uuid
-  amount         Decimal  @db.Decimal
-  settlementDate DateTime @default(now()) @map("settlement_date") @db.Date
-  notes          String?
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId     String   @map("group_id") @db.Uuid
+  payerId     String   @map("paid_by") @db.Uuid
+  payeeId     String   @map("paid_to") @db.Uuid
+  amountMinor Int      @map("amount_minor")
+  currency    String
+  date        DateTime @default(now()) @db.Date
+  note        String?
+  createdBy   String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
   payer User  @relation("SettlementPayer", fields: [payerId], references: [id], onDelete: Restrict)
   payee User  @relation("SettlementPayee", fields: [payeeId], references: [id], onDelete: Restrict)
+  creator User @relation("SettlementCreator", fields: [createdBy], references: [id], onDelete: Restrict)
 
   @@index([groupId], map: "idx_settlements_group_id")
   @@index([payerId], map: "idx_settlements_paid_by")

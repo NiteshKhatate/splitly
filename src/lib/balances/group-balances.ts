@@ -89,7 +89,7 @@ export async function getCurrentUserGroupBalances(
       database.settlement.findMany({
         where: { groupId: { in: groupIds } },
         select: {
-          amount: true,
+          amountMinor: true,
           groupId: true,
           payeeId: true,
           payerId: true,
@@ -114,7 +114,7 @@ export async function getCurrentUserGroupBalances(
     }
 
     for (const settlement of settlements) {
-      const amountMinor = parseAmountToMinorUnits(settlement.amount.toString());
+      const amountMinor = settlement.amountMinor;
 
       if (settlement.payeeId === userId) {
         balanceAmounts.set(

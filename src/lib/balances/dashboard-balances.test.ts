@@ -29,8 +29,8 @@ describe("dashboard balance summaries", () => {
         { currency: "INR", groupId: "group-2", payments: [], shares: [{ owedMinor: 400 }] },
       ],
       settlements: [
-        { amount: "2.00", group: { defaultCurrency: "INR" }, groupId: "group-1", payeeId: "user-1", payerId: "user-2" },
-        { amount: "1.00", group: { defaultCurrency: "INR" }, groupId: "group-2", payeeId: "user-3", payerId: "user-1" },
+        { amountMinor: 200, currency: "INR", groupId: "group-1", payeeId: "user-1", payerId: "user-2" },
+        { amountMinor: 100, currency: "INR", groupId: "group-2", payeeId: "user-3", payerId: "user-1" },
       ],
     });
 
@@ -58,6 +58,7 @@ describe("dashboard balance summaries", () => {
     expect(database.expense.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: {
         deletedAt: null,
+        group: { members: { some: { userId: "user-1" } } },
         OR: [
           { payments: { some: { payerId: "user-1" } } },
           { shares: { some: { participantId: "user-1" } } },

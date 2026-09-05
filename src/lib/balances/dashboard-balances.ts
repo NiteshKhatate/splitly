@@ -1,7 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
 import type { BalanceTone } from "./types";
-import { parseAmountToMinorUnits } from "./group-balances";
 
 export type DashboardBalanceSummary = {
   currency: string;
@@ -34,6 +33,7 @@ export async function getDashboardBalanceSummaries(
       database.expense.findMany({
         where: {
           deletedAt: null,
+          group: { members: { some: { userId } } },
           OR: [
             { payments: { some: { payerId: userId } } },
             { shares: { some: { participantId: userId } } },
@@ -47,10 +47,13 @@ export async function getDashboardBalanceSummaries(
         },
       }),
       database.settlement.findMany({
-        where: { OR: [{ payerId: userId }, { payeeId: userId }] },
+        where: {
+          group: { members: { some: { userId } } },
+          OR: [{ payerId: userId }, { payeeId: userId }],
+        },
         select: {
-          amount: true,
-          group: { select: { defaultCurrency: true } },
+          amountMinor: true,
+          currency: true,
           groupId: true,
           payeeId: true,
           payerId: true,
@@ -69,9 +72,9 @@ export async function getDashboardBalanceSummaries(
     }
 
     for (const settlement of settlements) {
-      const currency = settlement.group.defaultCurrency;
+      const currency = settlement.currency;
       const key = balanceKey(settlement.groupId, currency);
-      const amountMinor = parseAmountToMinorUnits(settlement.amount.toString());
+      const amountMinor = settlement.amountMinor;
       const adjustment = settlement.payerId === userId ? amountMinor : -amountMinor;
       const current = groupBalances.get(key)?.netMinor ?? 0;
       groupBalances.set(key, { currency, netMinor: current + adjustment });

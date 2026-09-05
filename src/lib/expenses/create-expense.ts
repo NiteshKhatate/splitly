@@ -49,12 +49,7 @@ function buildSplitInput(data: ExpenseFormValues, totalMinor: number): SplitCalc
   };
 }
 
-export async function createExpense(
-  database: ExpenseDatabase,
-  groupId: string,
-  actorId: string,
-  input: unknown,
-): Promise<{ expenseId: string }> {
+export function prepareExpenseData(input: unknown) {
   const validation = expenseFormSchema.safeParse(input);
   if (!validation.success) {
     throw new ExpenseCreationError("The expense details are invalid.", "INVALID_INPUT");
@@ -82,6 +77,17 @@ export async function createExpense(
   } catch {
     throw new ExpenseCreationError("Split amounts must reconcile with the expense total.", "INVALID_INPUT");
   }
+
+  return { data, payerAmounts, shares, totalMinor };
+}
+
+export async function createExpense(
+  database: ExpenseDatabase,
+  groupId: string,
+  actorId: string,
+  input: unknown,
+): Promise<{ expenseId: string }> {
+  const { data, payerAmounts, shares, totalMinor } = prepareExpenseData(input);
 
   return database.$transaction(async (transaction) => {
     const group = await transaction.group.findUnique({
