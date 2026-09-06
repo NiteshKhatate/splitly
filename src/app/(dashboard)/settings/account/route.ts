@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { AccountUpdateError, updateAccount } from "@/lib/settings/update-account";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
 
@@ -11,8 +12,16 @@ export async function PATCH(request: Request) {
   if (!user) return NextResponse.json({ message: "Sign in to update your account." }, { status: 401 });
 
   try {
+    const database = getDb();
+    const rateLimit = await consumeRateLimit(database, "account-update", user.id, 10, 900);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { message: "Too many account updates. Please wait, then try again." },
+        { headers: { "Retry-After": String(rateLimit.retryAfterSeconds) }, status: 429 },
+      );
+    }
     const result = await updateAccount(
-      getDb(),
+      database,
       supabase,
       user,
       await request.json().catch(() => null),
