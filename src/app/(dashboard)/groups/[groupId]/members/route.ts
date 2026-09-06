@@ -7,7 +7,9 @@ import {
   getSupabaseErrorDetails,
 } from "@/lib/groups/member-actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { validateGroupMemberEmail } from "@/lib/validations/groups";
+import { getDb } from "@/server/db";
 
 type AddMemberRouteContext = {
   params: Promise<{
@@ -33,6 +35,12 @@ export async function POST(request: NextRequest, context: AddMemberRouteContext)
   if (!user) {
     return NextResponse.json({ message: "Please log in to continue." }, { status: 401 });
   }
+
+  const rateLimit = await consumeRateLimit(getDb(), `group-member:${groupId}`, user.id, 10, 600);
+  if (!rateLimit.allowed) return NextResponse.json(
+    { message: "Too many member requests. Please try again shortly." },
+    { headers: { "Retry-After": String(rateLimit.retryAfterSeconds) }, status: 429 },
+  );
 
   const result = await addGroupMemberByEmail(supabase, groupId, email);
 

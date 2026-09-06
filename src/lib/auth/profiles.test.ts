@@ -16,6 +16,15 @@ function createInsertQuery(result: unknown) {
   };
 }
 
+function createUpdateQuery(result: unknown) {
+  return {
+    update: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    single: jest.fn().mockResolvedValue(result),
+  };
+}
+
 const user = {
   id: "user-1",
   email: "ada@example.com",
@@ -60,6 +69,20 @@ describe("ensureUserProfile", () => {
       full_name: "Ada Byron",
       email: "ada@example.com",
     });
+  });
+
+  it("synchronizes a confirmed authentication email to the profile", async () => {
+    const existingProfile = { id: "user-1", full_name: "Ada", email: "old@example.com", avatar_url: null };
+    const updatedProfile = { ...existingProfile, email: "ada@example.com" };
+    const selectQuery = createSelectQuery({ data: existingProfile, error: null });
+    const updateQuery = createUpdateQuery({ data: updatedProfile, error: null });
+    const supabase = { from: jest.fn().mockReturnValueOnce(selectQuery).mockReturnValueOnce(updateQuery) };
+
+    const result = await ensureUserProfile(supabase as never, user as never);
+
+    expect(updateQuery.update).toHaveBeenCalledWith({ email: "ada@example.com" });
+    expect(updateQuery.eq).toHaveBeenCalledWith("id", "user-1");
+    expect(result).toEqual({ data: updatedProfile, error: null });
   });
 
   it("re-reads the profile when insert hits a duplicate key race", async () => {

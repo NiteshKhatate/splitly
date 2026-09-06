@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { XIcon } from "@phosphor-icons/react";
 import { useForm } from "react-hook-form";
@@ -28,6 +28,8 @@ export function AddMemberDialog({
   variant?: "button" | "link";
 }) {
   const router = useRouter();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState<FormMessageState>();
   const [candidate, setCandidate] = useState<AddMemberCandidate>();
@@ -48,6 +50,48 @@ export function AddMemberDialog({
     },
     resolver: zodResolver(groupMemberEmailFormSchema),
   });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const dialog = dialogRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialog?.querySelector<HTMLElement>("button, input, select, textarea, a[href]")?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setIsOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || !dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]',
+      ));
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      returnFocusRef.current?.focus();
+    };
+  }, [isOpen]);
+
+  function openDialog() {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setIsOpen(true);
+  }
 
   function clearSearchResult() {
     clearErrors("email");
@@ -187,35 +231,37 @@ export function AddMemberDialog({
       {variant === "link" ? (
         <button
           type="button"
-          className="rounded-control text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          onClick={() => setIsOpen(true)}
+          className="inline-flex min-h-11 items-center rounded-control text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          onClick={openDialog}
         >
           + Add people
         </button>
       ) : (
-        <Button type="button" className="w-full sm:w-auto" onClick={() => setIsOpen(true)}>
+        <Button type="button" className="w-full sm:w-auto" onClick={openDialog}>
           + Add people
         </Button>
       )}
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 px-4 py-6">
           <div
+            ref={dialogRef}
+            aria-describedby="add-member-description"
             aria-labelledby="add-member-title"
             aria-modal="true"
-            className="w-full max-w-lg rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6"
+            className="max-h-full w-full max-w-lg overflow-y-auto rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6"
             role="dialog"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 id="add-member-title" className="text-card-heading">Add people</h2>
-                <p className="mt-1 text-secondary text-foreground-muted">
+                <p id="add-member-description" className="mt-1 text-secondary text-foreground-muted">
                   Add an existing Splitly user or invite someone new by email.
                 </p>
               </div>
               <button
                 type="button"
-                className="rounded-control px-2 py-1 text-label text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control text-label text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 onClick={() => setIsOpen(false)}
                 aria-label="Close add people dialog"
               >

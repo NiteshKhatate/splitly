@@ -1,16 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { isProtected } from "@/lib/auth/protected-routes";
+
 import { getSupabasePublishableKey, getSupabaseUrl } from "./env";
+import { secureCookieOptions } from "./cookie-options";
 
-const protectedPrefixes = ["/dashboard", "/groups", "/expenses"];
 const publicOnlyPaths = ["/login", "/signup"];
-
-function isProtected(pathname: string) {
-  return protectedPrefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
-}
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -31,7 +27,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
+            response.cookies.set(name, value, secureCookieOptions(options)),
           );
         },
       },

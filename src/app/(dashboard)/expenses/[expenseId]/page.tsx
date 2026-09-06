@@ -2,11 +2,14 @@ import { notFound, redirect } from "next/navigation";
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DeleteExpenseButton } from "@/components/expenses/delete-expense-button";
+import { ReceiptList } from "@/components/receipts/receipt-list";
+import { ReceiptUploadForm } from "@/components/receipts/receipt-upload-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { getExpenseDetail } from "@/lib/expenses/expense-detail";
+import { listExpenseAttachments } from "@/lib/receipts/attachments";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
 
@@ -15,9 +18,11 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/login?redirectTo=/expenses/${expenseId}`);
-  const [profileResult, result] = await Promise.all([
+  const database = getDb();
+  const [profileResult, result, receipts] = await Promise.all([
     ensureUserProfile(supabase, user),
-    getExpenseDetail(getDb(), expenseId, user.id),
+    getExpenseDetail(database, expenseId, user.id),
+    listExpenseAttachments(database, expenseId, user.id),
   ]);
   const metadataName = typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name.trim() : "";
   const displayName = profileResult.data?.full_name?.trim() || metadataName || user.email?.split("@")[0] || "there";
@@ -41,6 +46,11 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           <Card><h2 className="text-card-heading">Split between</h2><p className="mt-1 text-caption text-foreground-muted">{detail.splitMethod} split</p><ul className="mt-4 space-y-3">{detail.shares.map((item, index) => <li key={`${item.name}-${index}`} className="flex justify-between gap-4 text-secondary"><span>{item.name}</span><span>{item.amount}</span></li>)}</ul></Card>
         </div>
         {detail.notes ? <Card className="mt-6"><h2 className="text-card-heading">Notes</h2><p className="mt-2 whitespace-pre-wrap text-secondary">{detail.notes}</p></Card> : null}
+        <Card className="mt-6">
+          <h2 className="text-card-heading">Receipts</h2>
+          <ReceiptList attachments={receipts.attachments} expenseId={expenseId} />
+          <ReceiptUploadForm expenseId={expenseId} />
+        </Card>
         <Card className="mt-6"><h2 className="text-card-heading">Activity</h2>{detail.activity.length ? <ul className="mt-4 space-y-3">{detail.activity.map((event, index) => <li key={`${event.date}-${index}`} className="text-secondary"><span className="text-label">{event.actor}</span> {event.label}<span className="block text-caption text-foreground-muted">{event.date}</span></li>)}</ul> : <p className="mt-2 text-secondary text-foreground-muted">No activity recorded.</p>}</Card>
         {detail.canManage ? <div className="mt-6 flex flex-col gap-3 sm:flex-row"><Button href={`/expenses/${expenseId}/edit`}>Edit expense</Button><DeleteExpenseButton expenseId={expenseId} groupId={detail.groupId} /></div> : null}
       </main>

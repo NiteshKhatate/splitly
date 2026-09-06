@@ -1,11 +1,15 @@
 import { notFound, redirect } from "next/navigation";
 
+import { ActivityFeed } from "@/components/activity/activity-feed";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { SectionError } from "@/components/dashboard/section-state";
 import { GroupBalanceSummary } from "@/components/groups/group-balance-summary";
 import { GroupExpenseSummary } from "@/components/groups/group-expense-summary";
 import { GroupHeader } from "@/components/groups/group-header";
 import { GroupMembers } from "@/components/groups/group-members";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { listActivity } from "@/lib/activity/list-activity";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { getGroupDetail } from "@/lib/groups/details";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -35,7 +39,11 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
     });
   }
 
-  const groupDetail = await getGroupDetail(supabase, getDb(), groupId, user.id);
+  const database = getDb();
+  const [groupDetail, groupActivity] = await Promise.all([
+    getGroupDetail(supabase, database, groupId, user.id),
+    listActivity(database, user.id, { groupId }, 5),
+  ]);
 
   if (groupDetail.error && groupDetail.error.message === "Group not found.") {
     notFound();
@@ -44,6 +52,12 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
   if (groupDetail.error) {
     console.warn("Group detail failed to load", {
       message: groupDetail.error.message,
+    });
+  }
+
+  if (groupActivity.error && groupDetail.group) {
+    console.warn("Group activity failed to load", {
+      message: groupActivity.error.message,
     });
   }
 
@@ -82,6 +96,22 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
                 <GroupExpenseSummary expenses={groupDetail.group.recentExpenses} />
               </div>
             </div>
+            <section aria-labelledby="group-activity-heading" className="mt-6">
+              <Card>
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+                  <h2 id="group-activity-heading" className="text-card-heading">Group activity</h2>
+                  <Button href={`/activity?groupId=${groupDetail.group.id}`} variant="secondary">View all</Button>
+                </div>
+                {groupActivity.error ? (
+                  <SectionError message="This group's activity couldn't be loaded. Please try again later." />
+                ) : (
+                  <ActivityFeed
+                    items={groupActivity.items}
+                    emptyDescription="New expenses and settlements for this group will appear here."
+                  />
+                )}
+              </Card>
+            </section>
           </>
         ) : (
           <SectionError message="This group couldn't be loaded. Please try again later." />

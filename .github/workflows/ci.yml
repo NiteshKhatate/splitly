@@ -47,5 +47,11 @@ jobs:
       - name: Test
         run: pnpm test --runInBand
 
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser tests
+        run: pnpm test:e2e
+
       - name: Build
         run: pnpm build

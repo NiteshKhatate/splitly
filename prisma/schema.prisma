@@ -68,13 +68,22 @@ enum ActivityEntityType {
   @@map("activity_entity_type")
 }
 
+enum ReminderDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+
+  @@map("reminder_delivery_status")
+}
+
 model User {
-  id        String   @id @db.Uuid
-  name      String   @map("full_name")
-  email     String
-  avatarUrl String?  @map("avatar_url")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id               String   @id @db.Uuid
+  name             String   @map("full_name")
+  email            String
+  avatarUrl        String?  @map("avatar_url")
+  remindersEnabled Boolean  @default(true) @map("reminders_enabled")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   createdGroups       Group[]          @relation("GroupCreator")
   memberships         GroupMember[]
@@ -86,6 +95,8 @@ model User {
   settlementsReceived Settlement[]     @relation("SettlementPayee")
   createdSettlements  Settlement[]     @relation("SettlementCreator")
   activityEvents      ActivityEvent[]  @relation("ActivityActor")
+  reminderDeliveries  ReminderDelivery[]
+  attachments         Attachment[]
 
   @@map("profiles")
 }
@@ -105,6 +116,7 @@ model Group {
   expenses       Expense[]
   settlements    Settlement[]
   activityEvents ActivityEvent[]
+  reminderDeliveries ReminderDelivery[]
 
   @@index([createdBy], map: "idx_groups_created_by")
   @@map("groups")
@@ -160,6 +172,7 @@ model Expense {
   creator  User             @relation("ExpenseCreator", fields: [createdBy], references: [id], onDelete: Restrict)
   payments ExpensePayment[]
   shares   ExpenseShare[]
+  attachments Attachment[]
 
   @@index([groupId, date], map: "idx_expenses_group_id_date")
   @@index([createdBy], map: "idx_expenses_created_by")
@@ -241,4 +254,54 @@ model ActivityEvent {
   @@index([actorId], map: "idx_activity_events_actor_id")
   @@index([entityType, entityId], map: "idx_activity_events_entity")
   @@map("activity_events")
+}
+
+model ReminderDelivery {
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  groupId     String                 @map("group_id") @db.Uuid
+  recipientId String                 @map("recipient_id") @db.Uuid
+  amountMinor Int                    @map("amount_minor")
+  currency    String
+  status      ReminderDeliveryStatus @default(PENDING)
+  dedupeKey   String                 @unique(map: "reminder_deliveries_dedupe_key_key") @map("dedupe_key")
+  providerId  String?                @map("provider_id")
+  failureCode String?                @map("failure_code")
+  sentAt      DateTime?              @map("sent_at") @db.Timestamptz(6)
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  group     Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  recipient User  @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt], map: "idx_reminder_deliveries_recipient_created_at")
+  @@index([groupId, createdAt], map: "idx_reminder_deliveries_group_created_at")
+  @@map("reminder_deliveries")
+}
+
+model Attachment {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expenseId  String   @map("expense_id") @db.Uuid
+  storageKey String   @unique(map: "attachments_storage_key_key") @map("storage_key")
+  fileName   String   @map("file_name")
+  mimeType   String   @map("mime_type")
+  byteSize   Int      @map("byte_size")
+  uploadedBy String   @map("uploaded_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  uploader User    @relation(fields: [uploadedBy], references: [id], onDelete: Restrict)
+
+  @@index([expenseId, createdAt], map: "idx_attachments_expense_created_at")
+  @@index([uploadedBy], map: "idx_attachments_uploaded_by")
+  @@map("attachments")
+}
+
+model RateLimitBucket {
+  key         String   @id
+  count       Int
+  windowStart DateTime @map("window_start") @db.Timestamptz(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([windowStart], map: "idx_rate_limit_buckets_window_start")
+  @@map("rate_limit_buckets")
 }

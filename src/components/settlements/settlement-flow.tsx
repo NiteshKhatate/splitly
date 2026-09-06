@@ -4,6 +4,7 @@ import {
   createContext,
   type ReactNode,
   useContext,
+  useEffect,
   useState,
 } from "react";
 
@@ -38,6 +39,10 @@ export function SettlementFlow({
   payer: SettlementMember;
 }) {
   const [selected, setSelected] = useState<SettlementSelection>();
+
+  useEffect(() => {
+    if (selected) document.getElementById("settlement-amount")?.focus();
+  }, [selected]);
 
   return (
     <SettlementSelectionContext.Provider value={{ selected, select: setSelected }}>

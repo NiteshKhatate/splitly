@@ -40,6 +40,9 @@ export default async function GroupExpensesPage({
   };
   const validation = expenseFiltersSchema.safeParse(rawFilters);
   const filters: ExpenseFilters = validation.success ? validation.data : {};
+  const exportParams = new URLSearchParams({ groupId });
+  if (filters.from) exportParams.set("from", filters.from);
+  if (filters.to) exportParams.set("to", filters.to);
   const [profileResult, result] = await Promise.all([
     ensureUserProfile(supabase, user),
     getGroupExpenses(getDb(), groupId, user.id, filters),
@@ -62,7 +65,10 @@ export default async function GroupExpensesPage({
                 <h1 className="mt-5 text-page-heading">{result.group.name} expenses</h1>
                 <p className="mt-2 text-secondary text-foreground-muted">Search and filter the group ledger.</p>
               </div>
-              <Button href={`/groups/${groupId}/expenses/new`}>+ Add expense</Button>
+              <div className="flex flex-wrap gap-3">
+                <Button href={`/exports/expenses.csv?${exportParams.toString()}`} variant="secondary">Export CSV</Button>
+                <Button href={`/groups/${groupId}/expenses/new`}>+ Add expense</Button>
+              </div>
             </div>
             <Card className="mt-6">
               {!validation.success ? <div className="mb-4"><FormMessage tone="error">Check the filters and try again.</FormMessage></div> : null}
