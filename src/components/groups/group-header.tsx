@@ -23,7 +23,7 @@ export function GroupHeader({
     <div>
       <Link
         href="/groups"
-        className="rounded-control text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="inline-flex min-h-11 items-center rounded-control text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         Back to groups
       </Link>

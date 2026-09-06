@@ -25,7 +25,7 @@ export function ExpenseLedger({ expenses, groupId }: { expenses: ExpenseListItem
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="wrap-break-word text-card-heading">
-                    <Link className="rounded-control hover:text-primary focus-visible:outline-2 focus-visible:outline-primary" href={`/expenses/${expense.id}`}>{expense.description}</Link>
+                    <Link className="inline-flex min-h-11 items-center rounded-control hover:text-primary focus-visible:outline-2 focus-visible:outline-primary" href={`/expenses/${expense.id}`}>{expense.description}</Link>
                   </h2>
                   <Badge>{expense.category}</Badge>
                 </div>

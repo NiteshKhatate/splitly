@@ -6,7 +6,7 @@ import { SectionCard } from "./section-card";
 import type { Group, LoadState } from "./types";
 
 export function GroupSummary({ groups, state = "ready" }: { groups: Group[]; state?: LoadState }) {
-  const action = <Link href="/groups" className="rounded-control text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">View all <span aria-hidden="true">→</span></Link>;
+  const action = <Link href="/groups" className="inline-flex min-h-11 items-center rounded-control text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">View all <span aria-hidden="true">→</span></Link>;
   return (
     <section aria-labelledby="groups-heading">
       <SectionCard id="groups-heading" title="Your Groups" action={action}>

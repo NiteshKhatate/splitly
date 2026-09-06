@@ -9,7 +9,9 @@ import {
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { validateGroupMemberEmail } from "@/lib/validations/groups";
+import { getDb } from "@/server/db";
 
 type InvitationRouteContext = {
   params: Promise<{
@@ -35,6 +37,12 @@ export async function POST(request: NextRequest, context: InvitationRouteContext
   if (!user) {
     return NextResponse.json({ message: "Please log in to continue." }, { status: 401 });
   }
+
+  const rateLimit = await consumeRateLimit(getDb(), `group-invite:${groupId}`, user.id, 5, 3600);
+  if (!rateLimit.allowed) return NextResponse.json(
+    { message: "Too many invitations were requested. Please try again later." },
+    { headers: { "Retry-After": String(rateLimit.retryAfterSeconds) }, status: 429 },
+  );
 
   const profile = await ensureUserProfile(supabase, user);
 

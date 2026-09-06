@@ -141,7 +141,7 @@ export function AddExpenseForm({
         {members.map((member, index) => (
           <TextField key={member.id} id={`payer-${member.id}`} label={member.name} inputMode="decimal" placeholder="0.00" error={form.formState.errors.payers?.[index]?.amount?.message} {...form.register(`payers.${index}.amount`)} />
         ))}
-        {form.formState.errors.payers?.root?.message ? <p className="text-caption text-danger">{form.formState.errors.payers.root.message}</p> : null}
+        {form.formState.errors.payers?.root?.message ? <p className="text-caption text-danger" role="alert">{form.formState.errors.payers.root.message}</p> : null}
       </fieldset>
 
       <fieldset className="space-y-4">
@@ -169,7 +169,7 @@ export function AddExpenseForm({
             ) : null}
           </div>
         ))}
-        {form.formState.errors.participants?.root?.message ? <p className="text-caption text-danger">{form.formState.errors.participants.root.message}</p> : null}
+        {form.formState.errors.participants?.root?.message ? <p className="text-caption text-danger" role="alert">{form.formState.errors.participants.root.message}</p> : null}
       </fieldset>
 
       <div aria-live="polite" className="rounded-control border border-border bg-surface-muted p-4">

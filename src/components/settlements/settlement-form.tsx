@@ -70,18 +70,18 @@ export function SettlementForm({
       {message ? <FormMessage tone="error">{message}</FormMessage> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <input type="hidden" {...form.register("payeeId")} />
-        <div>
-          <p className="text-label">Payer</p>
-          <p className="mt-2 min-h-11 rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">
+        <dl>
+          <dt className="text-label">Payer</dt>
+          <dd className="mt-2 min-h-11 rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">
             {payer.name} (you)
-          </p>
-        </div>
-        <div>
-          <p className="text-label">Recipient</p>
-          <p className="mt-2 min-h-11 rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">
+          </dd>
+        </dl>
+        <dl>
+          <dt className="text-label">Recipient</dt>
+          <dd className="mt-2 min-h-11 rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">
             {payee.name}
-          </p>
-        </div>
+          </dd>
+        </dl>
         <TextField id="settlement-amount" label="Amount" inputMode="decimal" placeholder="0.00" error={form.formState.errors.amount?.message} {...form.register("amount")} />
         <SelectField id="settlement-currency" label="Currency" error={form.formState.errors.currency?.message} {...form.register("currency")}>
           {currencies.map((currency) => <option key={currency}>{currency}</option>)}

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import { AddMemberDialog } from "./add-member-dialog";
 
@@ -31,6 +31,35 @@ describe("AddMemberDialog", () => {
 
     expect(await screen.findByText("Enter a valid email address.")).toBeInTheDocument();
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("moves focus into the dialog and restores it after Escape", () => {
+    render(<AddMemberDialog groupId="group-1" />);
+    const trigger = screen.getByRole("button", { name: /\+ add people/i });
+    trigger.focus();
+    fireEvent.click(trigger);
+    expect(screen.getByRole("button", { name: "Close add people dialog" })).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
+  it("labels the dialog and keeps keyboard focus inside it", () => {
+    render(<AddMemberDialog groupId="group-1" />);
+    fireEvent.click(screen.getByRole("button", { name: /\+ add people/i }));
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveAccessibleName("Add people");
+    expect(dialog).toHaveAccessibleDescription(/existing Splitly user or invite/i);
+    const dialogButtons = within(dialog).getAllByRole("button");
+    const firstButton = dialogButtons[0];
+    const lastButton = dialogButtons.at(-1)!;
+
+    firstButton.focus();
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(lastButton).toHaveFocus();
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(firstButton).toHaveFocus();
   });
 
   it("searches for a valid email and shows a matching user", async () => {

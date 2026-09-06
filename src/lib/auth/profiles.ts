@@ -31,6 +31,14 @@ export async function ensureUserProfile(
   }
 
   if (existingProfile.data) {
+    if (user.email && existingProfile.data.email !== user.email) {
+      return supabase
+        .from("profiles")
+        .update({ email: user.email })
+        .eq("id", user.id)
+        .select("id, full_name, email, avatar_url")
+        .single<Profile>();
+    }
     return existingProfile;
   }
 

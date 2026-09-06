@@ -1,4 +1,5 @@
 import {
+  accountUpdateSchema,
   forgotPasswordFormSchema,
   loginFormSchema,
   resetPasswordFormSchema,
@@ -53,5 +54,16 @@ describe("auth validation schemas", () => {
     if (!result.success) {
       expect(result.error.flatten().fieldErrors.password).toContain("Use at least 8 characters.");
     }
+  });
+
+  it("validates each account update variant", () => {
+    expect(accountUpdateSchema.parse({ kind: "name", fullName: " Ada Byron " })).toEqual({ kind: "name", fullName: "Ada Byron" });
+    expect(accountUpdateSchema.parse({ kind: "email", email: " ADA@Example.COM " })).toEqual({ kind: "email", email: "ada@example.com" });
+    expect(accountUpdateSchema.safeParse({
+      kind: "password", currentPassword: "old-password", password: "new-password", confirmPassword: "different",
+    }).success).toBe(false);
+    expect(accountUpdateSchema.safeParse({
+      kind: "password", currentPassword: "same-password", password: "same-password", confirmPassword: "same-password",
+    }).success).toBe(false);
   });
 });

@@ -12,6 +12,8 @@ jest.mock("./settlement-form", () => ({
   }) => (
     <div>
       Settlement form for {payee.name}: {defaults.amount} {defaults.currency}
+      <label htmlFor="settlement-amount">Amount</label>
+      <input id="settlement-amount" />
     </div>
   ),
 }));
@@ -36,5 +38,6 @@ describe("SettlementFlow", () => {
     expect(screen.getByRole("heading", { name: "Record settlement" })).toBeInTheDocument();
     expect(screen.getByText("Settlement form for Sam: 8.00 INR")).toBeInTheDocument();
     expect(settleUpButton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByLabelText("Amount")).toHaveFocus();
   });
 });

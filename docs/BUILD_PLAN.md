@@ -934,6 +934,7 @@ Tasks:
 * [x] Configure protected application routes.
 * [x] Implement profile onboarding.
 * [x] Implement display name.
+* [x] Implement profile updates for name, confirmed email, and password.
 * [x] Implement preferred currency.
 * [x] Implement timezone.
 * [x] Create User schema.
@@ -1293,20 +1294,25 @@ Allow a suggested debt to prefill:
 Status:
 
 ```text
-[ ] Incomplete
+[x] Complete
 ```
 
 ## Activity
 
-Implement:
+- [x] Implement the authorized personal activity route:
 
 ```text
 /activity
 ```
 
-and group activity feeds.
+- [x] Add authorized activity feeds to group dashboards.
+- [x] Add group and activity-type filters.
+- [x] Add pagination with preserved filters.
+- [x] Add loading, empty, error, responsive, and accessible states.
+- [x] Build human-readable activity from structured event metadata and relationships.
+- [x] Record group creation and membership lifecycle events atomically in PostgreSQL.
 
-Support useful human-readable events such as:
+Implemented human-readable events include:
 
 ```text
 Alex added ₹2,400 grocery expense
@@ -1318,33 +1324,33 @@ Activity data must come from structured events.
 
 ## Reminders
 
-Implement reminder preferences.
+- [x] Implement reminder preferences.
 
-Scheduled reminders should:
+Scheduled reminders:
 
-* Target valid members.
-* Respect notification preferences.
-* Only contact members with outstanding balances.
-* Avoid duplicate notifications.
-* Log deliveries.
+* [x] Target valid members.
+* [x] Respect notification preferences.
+* [x] Only contact members with outstanding balances.
+* [x] Avoid duplicate notifications.
+* [x] Log deliveries.
 
 Do not implement a complex notification platform.
 
 ## CSV Export
 
-Support authorized export of expenses.
+- [x] Support authorized export of expenses.
 
 Allow:
 
-* Group filter
-* Date filter
-* Appropriate expense fields
+* [x] Group filter
+* [x] Date filter
+* [x] Appropriate expense fields
 
-Verify exported values are financially correct.
+- [x] Verify exported values are financially correct using integer minor-unit serialization tests.
 
 ## Receipt Upload
 
-Implement secure receipt uploads:
+- [x] Implement secure receipt uploads:
 
 ```text
 User
@@ -1362,31 +1368,31 @@ Signed retrieval URL
 
 Requirements:
 
-* Private objects
-* MIME checks
-* Size limits
-* Signed URLs
-* Authorization
-* Cleanup after deletion
+* [x] Private objects
+* [x] MIME checks
+* [x] Size limits
+* [x] Signed URLs
+* [x] Authorization
+* [x] Cleanup after deletion
 
 ## Accessibility
 
 Complete:
 
-* Keyboard navigation
-* Focus states
-* Screen-reader labels
-* Form errors
-* Dialog accessibility
-* Touch target checks
+* [x] Keyboard navigation across authenticated critical workflows
+* [x] Focus states across authenticated critical workflows
+* [x] Screen-reader labels and automated axe checks for public authentication screens
+* [x] Accessible form errors on authentication and tested financial forms
+* [x] Dialog accessibility audit
+* [x] Touch target audit
 
 ## Responsive QA
 
 Manually verify:
 
-* Mobile
-* Tablet
-* Desktop
+* [x] Mobile public authentication and protected-route behavior
+* [x] Tablet authenticated critical workflows
+* [x] Desktop public authentication and protected-route behavior
 
 Critical workflows:
 
@@ -1404,21 +1410,21 @@ Settle up
 
 Ensure all important screens have:
 
-* Loading
-* Empty
-* Error
-* Unauthorized
-* Success states
+* [x] Loading
+* [x] Empty
+* [x] Error
+* [x] Unauthorized
+* [x] Success states
 
 ### Stage 4 Acceptance
 
-Core workflows are polished on mobile and desktop.
+* [x] Core workflows are polished on mobile, tablet, and desktop.
 
-Exports are correct.
+* [x] Exports are correct.
 
-Receipts are securely handled.
+* [x] Receipts are securely handled.
 
-Optional workflows fail gracefully.
+* [x] Optional workflows fail gracefully.
 
 ---
 
@@ -1434,24 +1440,24 @@ Status:
 
 Add:
 
-* Rate limiting
-* Authentication endpoint protection
-* Invite endpoint protection
-* Upload limits
-* Mutation protection
-* Content Security Policy
-* Security headers
-* Secure cookies
-* Input size limits
+* [x] PostgreSQL-backed rate limiting for invitations, member lookup, and receipt uploads
+* [ ] Authentication provider endpoint protection and rate-limit configuration audit
+* [x] Invite endpoint protection
+* [x] Upload limits
+* [x] Same-origin mutation protection
+* [x] Content Security Policy
+* [x] Security headers
+* [x] Enforce Secure and SameSite attributes on production authentication cookies
+* [x] Input size limits
 
 ## Monitoring
 
 Add:
 
-* Error monitoring
-* PII redaction
-* Health checks
-* Uptime monitoring
+* [x] Optional server error-monitoring webhook integration
+* [x] Central server-log credential, PII, and financial-value redaction
+* [x] Database-aware health check
+* [ ] Uptime monitoring
 
 Do not log:
 
@@ -1471,7 +1477,7 @@ Confirm:
 * Restoration procedure
 * Disposable-project restoration test
 
-Document Prisma migration rollback procedures.
+- [x] Document Prisma migration rollback procedures in `docs/OPERATIONS.md`.
 
 ## Production Configuration
 
@@ -1824,7 +1830,7 @@ Stage 3 — Balances & Settlements
 ████████████████████ 100%
 
 Stage 4 — Supporting Workflows & Polish
-░░░░░░░░░░░░░░░░░░░░ 0%
+████████████████████ 100%
 
 Stage 5 — Release Readiness
 ░░░░░░░░░░░░░░░░░░░░ 0%
@@ -1832,14 +1838,13 @@ Stage 5 — Release Readiness
 
 ## Next Recommended Task
 
-**Begin Stage 4 with the authorized activity history.**
+**Begin Stage 5 with the authentication-provider security audit.**
 
 Implement:
 
 ```text
-Authorized personal activity feed
-Authorized group activity feeds
-Activity type and group filters
-Pagination or load-more behavior
-Loading, empty, error, and responsive states
+Supabase Auth abuse-protection settings
+Authentication rate-limit configuration
+Redirect and callback endpoint review
+Production evidence in the operations runbook
 ```

@@ -5,7 +5,7 @@ import { CaretDownIcon, ListIcon, SignOutIcon } from "@phosphor-icons/react/ssr"
 type DashboardHeaderProps = {
   userName: string;
   avatarUrl?: string | null;
-  activePath?: "/dashboard" | "/groups";
+  activePath?: "/activity" | "/dashboard" | "/groups" | "/settings";
 };
 
 /** Links the Splitly wordmark back to the dashboard home. */
@@ -42,7 +42,7 @@ function LogoutForm() {
 
 function getNavLinkClassName(isActive: boolean) {
   return [
-    "rounded-control px-4 py-2 text-label focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+    "inline-flex min-h-11 items-center rounded-control px-4 py-2 text-label focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
     isActive
       ? "bg-primary-subtle text-primary"
       : "text-foreground-muted hover:bg-surface-muted hover:text-foreground",
@@ -65,6 +65,8 @@ export function DashboardHeader({
 }: DashboardHeaderProps) {
   const isDashboardActive = activePath === "/dashboard";
   const isGroupsActive = activePath === "/groups";
+  const isActivityActive = activePath === "/activity";
+  const isSettingsActive = activePath === "/settings";
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-surface">
@@ -73,9 +75,11 @@ export function DashboardHeader({
         <div className="hidden items-center gap-2 md:flex">
           <Link href="/dashboard" aria-current={isDashboardActive ? "page" : undefined} className={getNavLinkClassName(isDashboardActive)}>Dashboard</Link>
           <Link href="/groups" aria-current={isGroupsActive ? "page" : undefined} className={getNavLinkClassName(isGroupsActive)}>Groups</Link>
+          <Link href="/activity" aria-current={isActivityActive ? "page" : undefined} className={getNavLinkClassName(isActivityActive)}>Activity</Link>
+          <Link href="/settings" aria-current={isSettingsActive ? "page" : undefined} className={getNavLinkClassName(isSettingsActive)}>Profile</Link>
         </div>
         <details className="group relative hidden md:block">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-control px-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <summary className="flex min-h-11 min-w-11 cursor-pointer list-none items-center gap-3 rounded-control px-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             <UserAvatar name={userName} src={avatarUrl} />
             <span className="max-w-36 truncate text-label">{userName}</span>
             <CaretDownIcon className="text-foreground-muted transition-transform group-open:rotate-180" size={16} weight="bold" aria-hidden="true" />
@@ -83,7 +87,7 @@ export function DashboardHeader({
           <div className="absolute right-0 mt-2 w-44 rounded-card border border-border bg-surface p-2 shadow-sm"><LogoutForm /></div>
         </details>
         <details className="group relative md:hidden">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-control px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <summary className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-control px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             <UserAvatar name={userName} src={avatarUrl} />
             <span className="sr-only">Open navigation menu</span>
             <ListIcon className="text-foreground" size={24} weight="bold" aria-hidden="true" />
@@ -92,6 +96,8 @@ export function DashboardHeader({
             <p className="truncate px-3 py-2 text-label">{userName}</p>
             <Link href="/dashboard" aria-current={isDashboardActive ? "page" : undefined} className={getMobileNavLinkClassName(isDashboardActive)}>Dashboard</Link>
             <Link href="/groups" aria-current={isGroupsActive ? "page" : undefined} className={getMobileNavLinkClassName(isGroupsActive)}>Groups</Link>
+            <Link href="/activity" aria-current={isActivityActive ? "page" : undefined} className={getMobileNavLinkClassName(isActivityActive)}>Activity</Link>
+            <Link href="/settings" aria-current={isSettingsActive ? "page" : undefined} className={getMobileNavLinkClassName(isSettingsActive)}>Profile</Link>
             <div className="mt-1 border-t border-border pt-1"><LogoutForm /></div>
           </div>
         </details>
