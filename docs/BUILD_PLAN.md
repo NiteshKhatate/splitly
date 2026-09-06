@@ -197,7 +197,7 @@ Do not create one-off styling when an existing UI component can be reused.
 
 ## Authentication
 
-* Auth.js
+* Supabase Authentication
 
 ## Forms
 
@@ -372,7 +372,7 @@ createdAt
 updatedAt
 ```
 
-Authentication identity comes from Auth.js.
+Authentication identity comes from Supabase Authentication.
 
 Do not duplicate password storage in the User table.
 
@@ -930,7 +930,7 @@ Tasks:
 * [x] Configure Prisma migrations using `DIRECT_URL`.
 * [x] Verify pooled runtime connection.
 * [x] Verify direct migration connection.
-* [x] Configure Auth.js.
+* [x] Configure Supabase Authentication.
 * [x] Configure protected application routes.
 * [x] Implement profile onboarding.
 * [x] Implement display name.
@@ -1433,15 +1433,18 @@ Ensure all important screens have:
 Status:
 
 ```text
-[ ] Incomplete
+[ ] External release verification pending
 ```
+
+Repository implementation is complete. The unchecked items below require access to the production Supabase, Vercel, GitHub, monitoring, or test-account configuration and must not be marked complete without recorded evidence.
 
 ## Security
 
 Add:
 
 * [x] PostgreSQL-backed rate limiting for invitations, member lookup, and receipt uploads
-* [ ] Authentication provider endpoint protection and rate-limit configuration audit
+* [x] Add a read-only Supabase Auth endpoint-protection and rate-limit audit command
+* [ ] Run the Supabase Auth audit against the production project and record evidence
 * [x] Invite endpoint protection
 * [x] Upload limits
 * [x] Same-origin mutation protection
@@ -1457,7 +1460,8 @@ Add:
 * [x] Optional server error-monitoring webhook integration
 * [x] Central server-log credential, PII, and financial-value redaction
 * [x] Database-aware health check
-* [ ] Uptime monitoring
+* [x] Scheduled application-and-database uptime workflow
+* [ ] Configure the production health URL and operator failure notifications
 
 Do not log:
 
@@ -1471,11 +1475,11 @@ Do not log:
 
 Confirm:
 
-* Supabase backup policy
-* PITR configuration where applicable
-* Recovery process
-* Restoration procedure
-* Disposable-project restoration test
+* [x] Recovery and restoration procedures are documented
+* [ ] Supabase backup policy
+* [ ] PITR configuration where applicable
+* [ ] Receipt-object recovery policy
+* [ ] Disposable-project restoration test
 
 - [x] Document Prisma migration rollback procedures in `docs/OPERATIONS.md`.
 
@@ -1486,11 +1490,13 @@ Configure:
 ```text
 DATABASE_URL
 DIRECT_URL
-Auth.js secrets
-Auth.js provider credentials
+Supabase publishable and server credentials
 Application URL
 Other required production variables
 ```
+
+- [x] Add strict, non-secret-printing production configuration validation
+- [ ] Run the production configuration check with Vercel Production variables
 
 All production secrets must be stored in Vercel/environment secret management.
 
@@ -1500,13 +1506,13 @@ Never commit them.
 
 Confirm:
 
-* GitHub repository connection
-* Preview deployments
-* Production deployment
-* Production environment variables
-* Build configuration
-* Domain
-* Health endpoint
+* [ ] GitHub repository connection
+* [ ] Preview deployments
+* [ ] Production deployment
+* [ ] Production environment variables
+* [x] Repository build configuration
+* [ ] Domain
+* [x] Health endpoint implementation
 
 Vercel handles application deployment.
 
@@ -1518,14 +1524,14 @@ Do not create a separate deployment server.
 
 Perform:
 
-* Accessibility audit
-* Performance audit
-* Security review
-* Mobile QA
-* Desktop QA
-* Fresh-account acceptance test
-* Database migration verification
-* Backup/recovery verification
+* [x] Automated accessibility audit
+* [ ] Performance audit against the production deployment
+* [x] Repository security review
+* [x] Automated mobile, tablet, and desktop QA coverage
+* [ ] Fresh-account acceptance test against a production-like environment
+* [x] Local Prisma schema and migration verification
+* [ ] Production database migration verification
+* [ ] Backup/recovery verification
 
 ### Stage 5 Acceptance
 
@@ -1691,7 +1697,7 @@ DATABASE_URL=
 DIRECT_URL=
 ```
 
-plus the required Auth.js and application variables.
+plus the required Supabase Authentication and application variables.
 
 Example documentation only:
 
@@ -1798,7 +1804,7 @@ A task is complete only when:
 4. **ORM:** Prisma.
 5. **Runtime database connection:** `DATABASE_URL`.
 6. **Migration database connection:** `DIRECT_URL`.
-7. **Authentication:** Auth.js.
+7. **Authentication:** Supabase Authentication.
 8. **Forms:** React Hook Form.
 9. **Validation:** Zod.
 10. **Unit/integration testing:** Jest.

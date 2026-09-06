@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 
 import { AccountUpdateError, updateAccount } from "@/lib/settings/update-account";
+import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
 
@@ -9,7 +10,8 @@ import { PATCH } from "./route";
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("next/server", () => ({
   NextResponse: {
-    json: (body: unknown, init?: { status?: number }) => ({
+    json: (body: unknown, init?: ResponseInit) => ({
+      headers: new Headers(init?.headers),
       json: async () => body,
       status: init?.status ?? 200,
     }),
@@ -21,6 +23,7 @@ jest.mock("@/lib/settings/update-account", () => ({
   },
   updateAccount: jest.fn(),
 }));
+jest.mock("@/lib/security/rate-limit", () => ({ consumeRateLimit: jest.fn() }));
 jest.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: jest.fn() }));
 jest.mock("@/server/db", () => ({ getDb: jest.fn(() => ({ user: {} })) }));
 
@@ -32,7 +35,10 @@ function request(body: unknown) {
 }
 
 describe("settings account route", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.mocked(consumeRateLimit).mockResolvedValue({ allowed: true, retryAfterSeconds: 0 });
+  });
 
   it("requires an authenticated user", async () => {
     jest.mocked(createSupabaseServerClient).mockResolvedValue({
@@ -56,6 +62,17 @@ describe("settings account route", () => {
       "https://splitly.test/auth/callback?next=/settings",
     );
     expect(revalidatePath).toHaveBeenCalledWith("/settings");
+  });
+
+  it("rate limits sensitive account updates", async () => {
+    jest.mocked(createSupabaseServerClient).mockResolvedValue({
+      auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { email: "ada@example.com", id: "user-1" } } }) },
+    } as never);
+    jest.mocked(consumeRateLimit).mockResolvedValue({ allowed: false, retryAfterSeconds: 120 });
+    const response = await PATCH(request({ kind: "password", currentPassword: "old-password", password: "new-password" }));
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("120");
+    expect(updateAccount).not.toHaveBeenCalled();
   });
 
   it("returns safe validation and unexpected errors", async () => {

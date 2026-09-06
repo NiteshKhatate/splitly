@@ -44,6 +44,12 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Validate Prisma schema
+        run: pnpm check:schema
+
+      - name: Audit production dependencies
+        run: pnpm audit:production
+
       - name: Test
         run: pnpm test --runInBand
 

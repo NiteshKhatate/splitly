@@ -9,7 +9,11 @@
     "predev": "prisma generate",
     "dev": "next dev",
     "build": "prisma generate && next build",
+    "check:auth-security": "node scripts/audit-supabase-auth.mjs",
     "check:production": "node scripts/check-production-readiness.mjs",
+    "check:schema": "prisma validate",
+    "check:uptime": "node scripts/check-uptime.mjs",
+    "audit:production": "pnpm audit --prod --audit-level moderate",
     "start": "next start",
     "postinstall": "prisma generate",
     "lint": "eslint",
@@ -59,7 +63,9 @@
   "pnpm": {
     "overrides": {
       "babel-plugin-istanbul>test-exclude": "8.0.0",
-      "jsdom": "30.0.1"
+      "deepmerge-ts": "8.0.0",
+      "jsdom": "30.0.1",
+      "mysql2": "3.23.1"
     }
   }
 }

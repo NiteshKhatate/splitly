@@ -14,10 +14,24 @@ Before release:
 4. Run `pnpm exec prisma migrate status` using the production `DIRECT_URL`.
 5. Confirm `/api/health` returns HTTP 200 without credentials or connection details.
 
+`pnpm check:production` rejects missing, malformed, short-secret, and example values. It does not print secret values.
+
+## Supabase Auth security audit
+
+The app delegates signup, login, password recovery, and token refresh protection to Supabase Auth. Before launch, create a short-lived, read-only Management API token with `auth_config_read`, then run:
+
+```bash
+SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... APP_URL=https://your-domain.example pnpm check:auth-security
+```
+
+The command reads `GET /v1/projects/{ref}/config/auth` and fails unless email confirmation, CAPTCHA, leaked-password protection, password reauthentication, refresh-token rotation, positive provider rate limits, and the production site URL are configured. Never store the Management API token in Vercel or commit it. Delete or revoke it after the audit.
+
 ## Monitoring and uptime
 
 - Configure `ERROR_MONITORING_WEBHOOK_URL` and optionally `ERROR_MONITORING_TOKEN` for the server error-ingestion destination.
 - Monitor `GET /api/health` externally at least every five minutes. Alert after two consecutive failures and on elevated latency.
+- Set the GitHub Actions repository variable `PRODUCTION_HEALTHCHECK_URL` to the production HTTPS `/api/health` URL. `.github/workflows/uptime.yml` probes application and database availability every five minutes and can also be dispatched manually. Configure GitHub Actions failure notifications for the operations owner.
+- Run `PRODUCTION_HEALTHCHECK_URL=https://your-domain.example/api/health pnpm check:uptime` for an on-demand probe.
 - Configure Vercel deployment-failure notifications and review function errors after every production deployment.
 - Logging passes through Splitly redaction before webhook ingestion. Never add passwords, tokens, cookies, email addresses, financial amounts, or notes as unredacted context.
 
@@ -79,3 +93,5 @@ For a destructive or data-corrupting fault, use the incident-recovery procedure 
 - Vercel GitHub connection, preview and production deployments, domain, environment scopes, and alerts
 - External uptime monitor status
 - Fresh-account, two-user production-like acceptance run
+
+Record the owner, date, environment, and private evidence location in `docs/RELEASE_CHECKLIST.md`. Do not place tokens, screenshots containing user data, or connection strings in the repository.

@@ -104,7 +104,7 @@ This document describes **how the system works**.
 
 ## Authentication
 
-* Auth.js
+* Supabase Authentication
 
 ## Database
 
@@ -448,7 +448,7 @@ Purpose:
 
 # 8. Authentication Architecture
 
-Auth.js is the authentication provider.
+Supabase Authentication is the authentication provider.
 
 Authentication determines the current user.
 
@@ -457,7 +457,7 @@ Application authorization determines what the user can access.
 ```text
 Request
    ↓
-Auth.js session
+Supabase Auth session
    ↓
 Current user
    ↓
@@ -705,9 +705,9 @@ User
 └── updatedAt
 ```
 
-Auth.js owns authentication identity.
+Supabase Authentication owns authentication identity.
 
-Do not store authentication passwords in the application User model when Auth.js handles identity.
+Do not store authentication passwords in the application User model when Supabase Authentication handles identity.
 
 ---
 
@@ -1813,7 +1813,7 @@ Examples:
 ```text
 DATABASE_URL
 DIRECT_URL
-Auth.js secrets
+Supabase server credentials
 OAuth credentials
 Other private API keys
 ```
@@ -2223,7 +2223,7 @@ Currency conversion is a separate future feature.
 | UI system                | Existing Splitly design system |
 | Forms                    | React Hook Form                |
 | Validation               | Zod                            |
-| Authentication           | Auth.js                        |
+| Authentication           | Supabase Authentication       |
 | Database                 | Supabase PostgreSQL            |
 | ORM                      | Prisma                         |
 | Runtime DB connection    | `DATABASE_URL`                 |
