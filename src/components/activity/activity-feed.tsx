@@ -40,8 +40,8 @@ export function ActivityFeed({
             href={item.href}
           >
             <div className="min-w-0">
-              <p className="text-secondary text-foreground">{item.description}</p>
-              <p className="mt-1 text-caption text-foreground-muted">
+              <p className="wrap-break-word text-secondary text-foreground">{item.description}</p>
+              <p className="mt-1 wrap-break-word text-caption text-foreground-muted">
                 {item.groupName} · <time dateTime={item.createdAt}>{formatActivityTime(item.createdAt)}</time>
               </p>
             </div>

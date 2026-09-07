@@ -26,9 +26,9 @@ export function ActivityFilters({
         <option value="">All activity</option>
         {ACTIVITY_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </SelectField>
-      <div className="flex flex-wrap gap-3 sm:col-span-2 lg:col-span-1">
-        <Button type="submit">Apply filters</Button>
-        {hasFilters ? <Button href="/activity" variant="secondary">Clear</Button> : null}
+      <div className="grid gap-3 sm:col-span-2 sm:flex sm:flex-wrap lg:col-span-1">
+        <Button className="w-full sm:w-auto" type="submit">Apply filters</Button>
+        {hasFilters ? <Button className="w-full sm:w-auto" href="/activity" variant="secondary">Clear</Button> : null}
       </div>
     </form>
   );

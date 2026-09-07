@@ -74,6 +74,7 @@ export function SettleUpButton({
 
   return (
     <Button
+      className="w-full sm:w-auto"
       type="button"
       variant="secondary"
       aria-controls="settle-up"

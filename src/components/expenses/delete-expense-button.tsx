@@ -32,16 +32,16 @@ export function DeleteExpenseButton({ expenseId, groupId }: { expenseId: string;
   }
 
   return (
-    <div>
+    <div className="w-full sm:w-auto">
       {message ? <div className="mb-3"><FormMessage tone="error">{message}</FormMessage></div> : null}
       {isConfirming ? (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
           <p className="text-secondary text-danger">Delete this expense from balances?</p>
-          <Button type="button" variant="secondary" onClick={() => setIsConfirming(false)} disabled={isDeleting}>Cancel</Button>
-          <Button type="button" onClick={deleteExpense} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Confirm delete"}</Button>
+          <Button className="w-full sm:w-auto" type="button" variant="secondary" onClick={() => setIsConfirming(false)} disabled={isDeleting}>Cancel</Button>
+          <Button className="w-full sm:w-auto" type="button" onClick={deleteExpense} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Confirm delete"}</Button>
         </div>
       ) : (
-        <Button type="button" variant="secondary" onClick={() => setIsConfirming(true)}>Delete expense</Button>
+        <Button className="w-full sm:w-auto" type="button" variant="secondary" onClick={() => setIsConfirming(true)}>Delete expense</Button>
       )}
     </div>
   );

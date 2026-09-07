@@ -22,9 +22,9 @@ export function ReceiptDeleteButton({ attachmentId, expenseId }: { attachmentId:
     setDeleting(false);
   }
   return (
-    <div>
+    <div className="w-full sm:w-auto">
       {message ? <div className="mb-3"><FormMessage tone="error">{message}</FormMessage></div> : null}
-      <Button aria-label="Delete receipt" disabled={deleting} onClick={remove} type="button" variant="secondary">{deleting ? "Deleting..." : "Delete"}</Button>
+      <Button aria-label="Delete receipt" className="w-full sm:w-auto" disabled={deleting} onClick={remove} type="button" variant="secondary">{deleting ? "Deleting..." : "Delete"}</Button>
     </div>
   );
 }

@@ -72,13 +72,13 @@ export function SettlementForm({
         <input type="hidden" {...form.register("payeeId")} />
         <dl>
           <dt className="text-label">Payer</dt>
-          <dd className="mt-2 min-h-11 rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">
+          <dd className="mt-2 min-h-11 wrap-break-word rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">
             {payer.name} (you)
           </dd>
         </dl>
         <dl>
           <dt className="text-label">Recipient</dt>
-          <dd className="mt-2 min-h-11 rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">
+          <dd className="mt-2 min-h-11 wrap-break-word rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">
             {payee.name}
           </dd>
         </dl>
@@ -90,7 +90,7 @@ export function SettlementForm({
       </div>
       <Textarea id="settlement-note" label="Note" maxLength={SETTLEMENT_NOTE_MAX_LENGTH} helperText="Optional." error={form.formState.errors.note?.message} {...form.register("note")} />
       <p className="text-caption text-foreground-muted">The recipient must confirm this payment before it changes balances.</p>
-      <Button type="submit" disabled={saving}>{saving ? "Recording..." : "Record settlement"}</Button>
+      <Button className="w-full sm:w-auto" type="submit" disabled={saving}>{saving ? "Recording..." : "Record settlement"}</Button>
     </form>
   );
 }

@@ -41,7 +41,7 @@ export function ReceiptUploadForm({ expenseId }: { expenseId: string }) {
           accept="image/jpeg,image/png,application/pdf"
           aria-describedby={form.formState.errors.receipt ? "receipt-file-help receipt-file-error" : "receipt-file-help"}
           aria-invalid={form.formState.errors.receipt ? "true" : undefined}
-          className="min-h-12 w-full rounded-control border border-border bg-surface px-3 py-2 text-secondary file:mr-3 file:rounded-control file:border-0 file:bg-primary-subtle file:px-3 file:py-1 file:text-label file:text-primary focus:ring-2 focus:ring-primary-subtle"
+          className="min-h-12 min-w-0 w-full max-w-full rounded-control border border-border bg-surface px-3 py-2 text-secondary file:mr-3 file:rounded-control file:border-0 file:bg-primary-subtle file:px-3 file:py-1 file:text-label file:text-primary focus:ring-2 focus:ring-primary-subtle"
           id="receipt-file"
           type="file"
           {...form.register("receipt")}
@@ -49,7 +49,7 @@ export function ReceiptUploadForm({ expenseId }: { expenseId: string }) {
         {form.formState.errors.receipt?.message ? <p id="receipt-file-error" className="mt-2 text-caption text-danger" role="alert">{form.formState.errors.receipt.message}</p> : null}
         <p id="receipt-file-help" className="mt-2 text-caption text-foreground-muted">JPEG, PNG, or PDF. Maximum 5 MB.</p>
       </div>
-      <Button disabled={form.formState.isSubmitting} type="submit">
+      <Button className="w-full sm:w-auto" disabled={form.formState.isSubmitting} type="submit">
         {form.formState.isSubmitting ? "Uploading..." : "Upload receipt"}
       </Button>
     </form>

@@ -53,7 +53,7 @@ export function ReminderPreferencesForm({ remindersEnabled }: { remindersEnabled
           </span>
         </span>
       </label>
-      <Button disabled={form.formState.isSubmitting} type="submit">
+      <Button className="w-full sm:w-auto" disabled={form.formState.isSubmitting} type="submit">
         {form.formState.isSubmitting ? "Saving..." : "Save preference"}
       </Button>
     </form>

@@ -4,7 +4,8 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { DashboardWelcome } from "@/components/dashboard/dashboard-welcome";
 import { DebtSummary } from "@/components/dashboard/debt-summary";
 import { GroupSummary } from "@/components/dashboard/group-summary";
-import { RecentExpenses } from "@/components/dashboard/recent-expenses";
+import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { listActivity } from "@/lib/activity/list-activity";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { getDashboardBalanceSummaries } from "@/lib/balances/dashboard-balances";
 import { getDashboardOverview } from "@/lib/dashboard/overview";
@@ -33,10 +34,11 @@ export default async function DashboardPage() {
   const displayName = profile?.full_name?.trim() || metadataName || user.email?.split("@")[0] || "there";
 
   const database = getDb();
-  const [dashboardGroups, dashboardBalances, dashboardOverview] = await Promise.all([
+  const [dashboardGroups, dashboardBalances, dashboardOverview, dashboardActivity] = await Promise.all([
     getDashboardGroups(supabase, database, user.id),
     getDashboardBalanceSummaries(database, user.id),
     getDashboardOverview(database, user.id),
+    listActivity(database, user.id, {}, 4),
   ]);
 
   if (dashboardGroups.error) {
@@ -52,7 +54,11 @@ export default async function DashboardPage() {
   }
 
   if (dashboardOverview.error) {
-    console.warn("Dashboard activity failed to load", { message: dashboardOverview.error.message });
+    console.warn("Dashboard debts failed to load", { message: dashboardOverview.error.message });
+  }
+
+  if (dashboardActivity.error) {
+    console.warn("Dashboard activity failed to load", { message: dashboardActivity.error.message });
   }
 
   return (
@@ -67,7 +73,7 @@ export default async function DashboardPage() {
           />
         </div>
         <div className="mt-6 grid gap-6 lg:grid-cols-5">
-          <div className="lg:col-span-3"><RecentExpenses expenses={dashboardOverview.expenses} state={dashboardOverview.error ? "error" : "ready"} /></div>
+          <div className="lg:col-span-3"><RecentActivity items={dashboardActivity.items} state={dashboardActivity.error ? "error" : "ready"} /></div>
           <div className="lg:col-span-2">
             <GroupSummary
               groups={dashboardGroups.groups}

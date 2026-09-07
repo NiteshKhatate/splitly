@@ -1,11 +1,9 @@
 import type { PrismaClient } from "@prisma/client";
 
-import type { Debt, Expense } from "@/components/dashboard/types";
+import type { Debt } from "@/components/dashboard/types";
 import { calculateMemberBalances, simplifyDebts } from "@/lib/balances/balance-engine";
 
-const RECENT_EXPENSE_LIMIT = 4;
-
-export type DashboardOverviewDatabase = Pick<PrismaClient, "expense" | "group" | "settlement">;
+export type DashboardOverviewDatabase = Pick<PrismaClient, "group">;
 
 function formatMinor(amountMinor: number, currency: string): string {
   return new Intl.NumberFormat("en-IN", {
@@ -19,103 +17,30 @@ function formatMinor(amountMinor: number, currency: string): string {
 export async function getDashboardOverview(
   database: DashboardOverviewDatabase,
   userId: string,
-): Promise<{ debts: Debt[]; expenses: Expense[]; error: { message: string } | null }> {
+): Promise<{ debts: Debt[]; error: { message: string } | null }> {
   try {
-    const [recentExpenses, recentSettlements, groups] = await Promise.all([
-      database.expense.findMany({
-        where: { deletedAt: null, group: { members: { some: { userId } } } },
-        orderBy: [{ date: "desc" }, { createdAt: "desc" }],
-        take: RECENT_EXPENSE_LIMIT,
-        select: {
-          currency: true,
-          createdAt: true,
-          date: true,
-          description: true,
-          group: { select: { name: true } },
-          id: true,
-          payments: { where: { payerId: userId }, select: { amountMinor: true } },
-          shares: { where: { participantId: userId }, select: { owedMinor: true } },
-          totalMinor: true,
-        },
-      }),
-      database.settlement.findMany({
-        where: { group: { members: { some: { userId } } }, status: "CONFIRMED" },
-        orderBy: [{ createdAt: "desc" }],
-        take: RECENT_EXPENSE_LIMIT,
-        select: {
-          amountMinor: true,
-          createdAt: true,
-          currency: true,
-          date: true,
-          group: { select: { name: true } },
-          id: true,
-          payee: { select: { id: true, name: true } },
-          payer: { select: { id: true, name: true } },
-        },
-      }),
-      database.group.findMany({
-        where: { members: { some: { userId } } },
-        select: {
-          defaultCurrency: true,
-          expenses: {
-            where: { deletedAt: null },
-            select: {
-              currency: true,
-              payments: { select: { amountMinor: true, payerId: true } },
-              shares: { select: { owedMinor: true, participantId: true } },
-              totalMinor: true,
-            },
-          },
-          id: true,
-          members: { select: { user: { select: { id: true, name: true } } } },
-          name: true,
-          settlements: {
-            where: { status: "CONFIRMED" },
-            select: { amountMinor: true, currency: true, payeeId: true, payerId: true },
+    const groups = await database.group.findMany({
+      where: { members: { some: { userId } } },
+      select: {
+        defaultCurrency: true,
+        expenses: {
+          where: { deletedAt: null },
+          select: {
+            currency: true,
+            payments: { select: { amountMinor: true, payerId: true } },
+            shares: { select: { owedMinor: true, participantId: true } },
+            totalMinor: true,
           },
         },
-      }),
-    ]);
-
-    const expenseActivity = recentExpenses.map((expense) => {
-      const paidMinor = expense.payments.reduce((sum, payment) => sum + payment.amountMinor, 0);
-      const owedMinor = expense.shares.reduce((sum, share) => sum + share.owedMinor, 0);
-      const impactMinor = paidMinor - owedMinor;
-      return { activityCreatedAt: expense.createdAt, item: {
-        date: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(expense.date),
-        description: expense.description,
-        group: expense.group.name,
-        id: expense.id,
-        impact: impactMinor > 0
-          ? `you lent ${formatMinor(impactMinor, expense.currency)}`
-          : impactMinor < 0
-            ? `you owe ${formatMinor(Math.abs(impactMinor), expense.currency)}`
-            : "no balance change",
-        impactTone: impactMinor > 0 ? "success" as const : impactMinor < 0 ? "danger" as const : "neutral" as const,
-        total: formatMinor(expense.totalMinor, expense.currency),
-      } };
+        id: true,
+        members: { select: { user: { select: { id: true, name: true } } } },
+        name: true,
+        settlements: {
+          where: { status: "CONFIRMED" },
+          select: { amountMinor: true, currency: true, payeeId: true, payerId: true },
+        },
+      },
     });
-    const settlementActivity = recentSettlements.map((settlement) => {
-      const isPayer = settlement.payer.id === userId;
-      const isPayee = settlement.payee.id === userId;
-      return { activityCreatedAt: settlement.createdAt, item: {
-        date: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(settlement.date),
-        description: `${settlement.payer.name} paid ${settlement.payee.name}`,
-        group: settlement.group.name,
-        id: `settlement:${settlement.id}`,
-        impact: isPayer
-          ? `you paid ${formatMinor(settlement.amountMinor, settlement.currency)}`
-          : isPayee
-            ? `you received ${formatMinor(settlement.amountMinor, settlement.currency)}`
-            : "group settlement",
-        impactTone: isPayee ? "success" as const : isPayer ? "danger" as const : "neutral" as const,
-        total: formatMinor(settlement.amountMinor, settlement.currency),
-      } };
-    });
-    const expenses = [...expenseActivity, ...settlementActivity]
-      .sort((left, right) => right.activityCreatedAt.getTime() - left.activityCreatedAt.getTime())
-      .slice(0, RECENT_EXPENSE_LIMIT)
-      .map(({ item }) => item);
 
     const debts = groups.flatMap((group) => {
       const names = new Map(group.members.map(({ user }) => [user.id, user.name]));
@@ -152,8 +77,8 @@ export async function getDashboardOverview(
         }));
     });
 
-    return { debts, expenses, error: null };
+    return { debts, error: null };
   } catch {
-    return { debts: [], expenses: [], error: { message: "Dashboard activity could not be loaded." } };
+    return { debts: [], error: { message: "Dashboard balances could not be loaded." } };
   }
 }

@@ -4,16 +4,6 @@ export type LoadState = "ready" | "loading" | "error";
 
 export type { BalanceTone };
 
-export type Expense = {
-  id: string;
-  description: string;
-  group: string;
-  date: string;
-  total: string;
-  impact: string;
-  impactTone: BalanceTone;
-};
-
 export type Group = {
   id: string;
   name: string;
