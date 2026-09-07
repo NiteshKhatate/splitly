@@ -175,7 +175,7 @@ export function AddExpenseForm({
       <div aria-live="polite" className="rounded-control border border-border bg-surface-muted p-4">
         <h2 className="text-label">Split preview</h2>
         {preview.length > 0 ? (
-          <ul className="mt-2 space-y-1 text-secondary">{preview.map((item) => <li key={item.participantId} className="flex justify-between gap-4"><span>{item.name}</span><span>{formatMoney(item.owedMinor, completeValues.currency)}</span></li>)}</ul>
+          <ul className="mt-2 space-y-2 text-secondary">{preview.map((item) => <li key={item.participantId} className="flex flex-col gap-1 min-[360px]:flex-row min-[360px]:justify-between min-[360px]:gap-4"><span className="min-w-0 wrap-break-word">{item.name}</span><span className="wrap-break-word min-[360px]:shrink-0 min-[360px]:text-right">{formatMoney(item.owedMinor, completeValues.currency)}</span></li>)}</ul>
         ) : <p className="mt-2 text-secondary text-foreground-muted">Enter valid split details to see the preview.</p>}
       </div>
 

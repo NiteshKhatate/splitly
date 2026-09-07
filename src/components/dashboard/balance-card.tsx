@@ -19,7 +19,7 @@ export function BalanceCard({ label, amount, tone, description, currency = "INR"
     <Card className="min-w-0">
       <div className={`mb-4 flex size-10 items-center justify-center rounded-full ${toneClasses[tone]}`} aria-hidden="true">{currencySymbols[currency] ?? "¤"}</div>
       <p className="text-label text-foreground-muted">{label}</p>
-      <p className={`mt-1 text-large-amount ${tone === "neutral" ? "text-foreground" : tone === "success" ? "text-success" : "text-danger"}`}>{amount}</p>
+      <p className={`mt-1 wrap-break-word text-large-amount ${tone === "neutral" ? "text-foreground" : tone === "success" ? "text-success" : "text-danger"}`}>{amount}</p>
       <p className="mt-2 text-caption text-foreground-muted">{description}</p>
     </Card>
   );

@@ -1201,7 +1201,7 @@ Display:
 * [x] Total owed to user
 * [x] Total user owes
 * [x] Net position
-* [x] Recent activity
+* [x] Recent activity, using the shared structured activity feed from `/activity`
 * [x] Groups
 * [x] Group-level summaries
 
@@ -1391,6 +1391,7 @@ Complete:
 Manually verify:
 
 * [x] Mobile public authentication and protected-route behavior
+* [x] Narrow-mobile (320 px) overflow and control-boundary regression coverage
 * [x] Tablet authenticated critical workflows
 * [x] Desktop public authentication and protected-route behavior
 

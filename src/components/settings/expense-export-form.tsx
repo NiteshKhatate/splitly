@@ -14,7 +14,7 @@ export function ExpenseExportForm({ groups }: { groups: { id: string; name: stri
       <TextField id="export-from" label="From" name="from" type="date" />
       <TextField id="export-to" label="To" name="to" type="date" />
       <div className="sm:col-span-2">
-        <Button disabled={groups.length === 0} type="submit">Download CSV</Button>
+        <Button className="w-full sm:w-auto" disabled={groups.length === 0} type="submit">Download CSV</Button>
       </div>
     </form>
   );

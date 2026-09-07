@@ -27,9 +27,9 @@ export function ExpenseFiltersForm({
           <option key={category} value={category}>{category.charAt(0) + category.slice(1).toLowerCase()}</option>
         ))}
       </SelectField>
-      <div className="flex gap-3 sm:col-span-2 lg:col-span-5 lg:justify-end">
-        <Button href={`/groups/${groupId}/expenses`} variant="secondary">Clear</Button>
-        <Button type="submit">Apply filters</Button>
+      <div className="grid grid-cols-2 gap-3 sm:col-span-2 sm:flex sm:justify-end lg:col-span-5">
+        <Button className="w-full sm:w-auto" href={`/groups/${groupId}/expenses`} variant="secondary">Clear</Button>
+        <Button className="w-full sm:w-auto" type="submit">Apply filters</Button>
       </div>
     </form>
   );

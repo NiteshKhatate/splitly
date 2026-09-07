@@ -295,8 +295,8 @@ export function AddMemberDialog({
               {candidate ? (
                 <div className="rounded-control border border-border bg-surface-muted p-4">
                   <p className="text-caption text-foreground-muted">A matching user was found:</p>
-                  <p className="mt-2 text-label text-foreground">{candidate.name}</p>
-                  <p className="mt-1 text-secondary text-foreground-muted">{candidate.email}</p>
+                  <p className="mt-2 wrap-break-word text-label text-foreground">{candidate.name}</p>
+                  <p className="mt-1 wrap-break-word text-secondary text-foreground-muted">{candidate.email}</p>
                   <form onSubmit={handleAddPerson} className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                     <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
                       Cancel

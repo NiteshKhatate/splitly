@@ -65,7 +65,7 @@ function NameForm({ currentName }: { currentName: string }) {
         required
         {...form.register("fullName", { onChange: () => setMessage(undefined) })}
       />
-      <Button disabled={form.formState.isSubmitting} type="submit">
+      <Button className="w-full sm:w-auto" disabled={form.formState.isSubmitting} type="submit">
         {form.formState.isSubmitting ? "Saving..." : "Update name"}
       </Button>
     </form>
@@ -99,7 +99,7 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
         {...form.register("email", { onChange: () => setMessage(undefined) })}
       />
       <p className="text-caption text-foreground-muted">You may need to confirm the change from your current and new inboxes.</p>
-      <Button disabled={form.formState.isSubmitting} type="submit">
+      <Button className="w-full sm:w-auto" disabled={form.formState.isSubmitting} type="submit">
         {form.formState.isSubmitting ? "Requesting..." : "Update email"}
       </Button>
     </form>
@@ -151,7 +151,7 @@ function PasswordForm() {
         type="password"
         {...form.register("confirmPassword", { onChange: () => setMessage(undefined) })}
       />
-      <Button disabled={form.formState.isSubmitting} type="submit">
+      <Button className="w-full sm:w-auto" disabled={form.formState.isSubmitting} type="submit">
         {form.formState.isSubmitting ? "Updating..." : "Update password"}
       </Button>
     </form>

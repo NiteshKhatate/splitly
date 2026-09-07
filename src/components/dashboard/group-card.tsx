@@ -29,7 +29,7 @@ export function GroupCard({ group }: { group: Group }) {
           </p>
         </div>
         <span
-          className={`shrink-0 rounded-control px-2.5 py-1 text-caption ${balanceClasses[group.balance.tone]}`}
+          className={`max-w-[45%] shrink-0 wrap-break-word rounded-control px-2.5 py-1 text-right text-caption ${balanceClasses[group.balance.tone]}`}
         >
           {group.balance.label}
         </span>
