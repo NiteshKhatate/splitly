@@ -1438,6 +1438,8 @@ Status:
 
 Repository implementation is complete. The unchecked items below require access to the production Supabase, Vercel, GitHub, monitoring, or test-account configuration and must not be marked complete without recorded evidence.
 
+The project currently has one shared production environment and no separate preview, staging, or test deployment. Destructive restoration tests and automated authenticated mutation tests must not run against that production environment; use a disposable Supabase project before completing those checks.
+
 ## Security
 
 Add:
@@ -1496,7 +1498,11 @@ Other required production variables
 ```
 
 - [x] Add strict, non-secret-printing production configuration validation
+- [x] Use one validated production origin for confirmation, password-reset, account-email, and invitation links
+- [x] Reject localhost email-link fallbacks in production
 - [ ] Run the production configuration check with Vercel Production variables
+
+Verification on 2026-09-07 using the operator-confirmed production `.env.local` failed because `APP_URL`, `CRON_SECRET`, `REMINDER_FROM_EMAIL`, and `RESEND_API_KEY` are not configured.
 
 All production secrets must be stored in Vercel/environment secret management.
 
@@ -1507,8 +1513,8 @@ Never commit them.
 Confirm:
 
 * [ ] GitHub repository connection
-* [ ] Preview deployments
-* [ ] Production deployment
+* [x] Preview/staging deployment intentionally deferred for the current single-environment release
+* [x] Production deployment (confirmed by the operator on 2026-09-07)
 * [ ] Production environment variables
 * [x] Repository build configuration
 * [ ] Domain
@@ -1530,7 +1536,7 @@ Perform:
 * [x] Automated mobile, tablet, and desktop QA coverage
 * [ ] Fresh-account acceptance test against a production-like environment
 * [x] Local Prisma schema and migration verification
-* [ ] Production database migration verification
+* [x] Production database migration verification (`prisma migrate status`: 8 migrations, schema up to date on 2026-09-07)
 * [ ] Backup/recovery verification
 
 ### Stage 5 Acceptance

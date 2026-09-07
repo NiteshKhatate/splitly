@@ -19,7 +19,7 @@ type Message = {
   text: string;
 };
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ applicationOrigin }: { applicationOrigin?: string }) {
   const [message, setMessage] = useState<Message | null>(null);
   const {
     formState: { errors, isSubmitting },
@@ -38,7 +38,7 @@ export function ForgotPasswordForm() {
     try {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${applicationOrigin ?? window.location.origin}/reset-password`,
       });
 
       if (error) {

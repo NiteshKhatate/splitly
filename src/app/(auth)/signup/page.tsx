@@ -1,8 +1,12 @@
 import Link from "next/link";
+
 import { Card } from "@/components/ui/card";
+import { getConfiguredApplicationOrigin } from "@/lib/urls/application-url";
+
 import { SignupForm } from "./signup-form";
 
 export default function SignupPage() {
+  const applicationOrigin = getConfiguredApplicationOrigin();
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-16 lg:px-8">
       <section className="w-full max-w-md" aria-labelledby="signup-heading">
@@ -26,7 +30,7 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <SignupForm />
+          <SignupForm applicationOrigin={applicationOrigin} />
         </Card>
       </section>
     </main>
