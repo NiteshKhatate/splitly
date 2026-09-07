@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { AccountUpdateError, updateAccount } from "@/lib/settings/update-account";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { buildApplicationUrl } from "@/lib/urls/application-url";
 import { getDb } from "@/server/db";
 
 export async function PATCH(request: Request) {
@@ -20,12 +21,16 @@ export async function PATCH(request: Request) {
         { headers: { "Retry-After": String(rateLimit.retryAfterSeconds) }, status: 429 },
       );
     }
+    const emailRedirectTo = buildApplicationUrl(
+      "/auth/callback?next=/settings",
+      new URL(request.url).origin,
+    );
     const result = await updateAccount(
       database,
       supabase,
       user,
       await request.json().catch(() => null),
-      `${new URL(request.url).origin}/auth/callback?next=/settings`,
+      emailRedirectTo,
     );
     revalidatePath("/settings");
     return NextResponse.json(result);

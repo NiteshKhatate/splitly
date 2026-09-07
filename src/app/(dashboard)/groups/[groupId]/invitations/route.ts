@@ -11,6 +11,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { validateGroupMemberEmail } from "@/lib/validations/groups";
+import { buildApplicationUrl } from "@/lib/urls/application-url";
 import { getDb } from "@/server/db";
 
 type InvitationRouteContext = {
@@ -115,12 +116,20 @@ export async function POST(request: NextRequest, context: InvitationRouteContext
     );
   }
 
-  const redirectUrl = new URL(`/invite/${groupId}`, request.nextUrl.origin);
+  let redirectUrl: string;
+  try {
+    redirectUrl = buildApplicationUrl(`/invite/${groupId}`, request.nextUrl.origin);
+  } catch {
+    return NextResponse.json(
+      { message: "Email invitations aren't configured for this deployment." },
+      { status: 503 },
+    );
+  }
   let inviteError: AuthError | null;
 
   try {
     const result = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: redirectUrl.toString(),
+      redirectTo: redirectUrl,
       data: {
         invited_to_group: groupId,
       },

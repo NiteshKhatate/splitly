@@ -60,7 +60,7 @@ function getFriendlySignupError(error: AuthError) {
   return "We could not create your account. Please try again.";
 }
 
-export function SignupForm() {
+export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }) {
   const router = useRouter();
   const [formMessage, setFormMessage] = useState<FormMessage | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -88,7 +88,7 @@ export function SignupForm() {
         email: values.email,
         password: values.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          emailRedirectTo: `${applicationOrigin ?? window.location.origin}/auth/callback?next=/dashboard`,
           data: {
             full_name: values.fullName,
           },

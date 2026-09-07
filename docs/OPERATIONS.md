@@ -16,6 +16,16 @@ Before release:
 
 `pnpm check:production` rejects missing, malformed, short-secret, and example values. It does not print secret values.
 
+`APP_URL` is the canonical HTTPS origin for every authentication confirmation, password reset, account email change, and group invitation link. Configure the same origin as Supabase Auth's Site URL and allow these redirect patterns before deploying:
+
+```text
+https://your-domain.example/auth/callback
+https://your-domain.example/reset-password
+https://your-domain.example/invite/*
+```
+
+The application uses Vercel's system-provided production URL only as a fallback. It refuses to generate a localhost email link while running in production.
+
 ## Supabase Auth security audit
 
 The app delegates signup, login, password recovery, and token refresh protection to Supabase Auth. Before launch, create a short-lived, read-only Management API token with `auth_config_read`, then run:
