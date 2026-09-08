@@ -12,21 +12,26 @@ function parseHttpsUrl(value) {
 function inspectProductionEnvironment(environment) {
   const required = [
     "APP_URL",
-    "CRON_SECRET",
     "DATABASE_URL",
     "DIRECT_URL",
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
     "NEXT_PUBLIC_SUPABASE_URL",
-    "REMINDER_FROM_EMAIL",
-    "RESEND_API_KEY",
     "SUPABASE_SECRET_KEY",
   ];
+  const reminderVariables = ["CRON_SECRET", "REMINDER_FROM_EMAIL", "RESEND_API_KEY"];
   const errors = [];
 
   for (const name of required) {
     const value = environment[name]?.trim();
     if (!value) errors.push(`${name} is missing.`);
     else if (PLACEHOLDER_PATTERN.test(value)) errors.push(`${name} still contains an example value.`);
+  }
+
+  const configuredReminderVariables = reminderVariables.filter((name) => environment[name]?.trim());
+  if (configuredReminderVariables.length > 0 && configuredReminderVariables.length < reminderVariables.length) {
+    for (const name of reminderVariables) {
+      if (!environment[name]?.trim()) errors.push(`${name} is required when scheduled email reminders are configured.`);
+    }
   }
 
   for (const name of ["APP_URL", "NEXT_PUBLIC_SUPABASE_URL"]) {
@@ -72,6 +77,13 @@ function inspectProductionEnvironment(environment) {
   return errors;
 }
 
+function inspectProductionEnvironmentWarnings(environment) {
+  const reminderVariables = ["CRON_SECRET", "REMINDER_FROM_EMAIL", "RESEND_API_KEY"];
+  return reminderVariables.every((name) => !environment[name]?.trim())
+    ? ["Scheduled email reminders are deferred until the customer configures an owned sending domain."]
+    : [];
+}
+
 function inspectAuthConfig(config, expectedSiteUrl) {
   const errors = [];
   const requiredPositiveLimits = [
@@ -83,18 +95,13 @@ function inspectAuthConfig(config, expectedSiteUrl) {
 
   if (config.external_email_enabled !== true) errors.push("Email authentication is not enabled.");
   if (config.mailer_autoconfirm !== false) errors.push("Email confirmation is disabled or could not be verified.");
-  if (config.security_captcha_enabled !== true) errors.push("CAPTCHA protection is not enabled.");
-  if (typeof config.security_captcha_provider !== "string" || !config.security_captcha_provider) {
+  if (
+    config.security_captcha_enabled === true
+    && (typeof config.security_captcha_provider !== "string" || !config.security_captcha_provider)
+  ) {
     errors.push("The CAPTCHA provider could not be verified.");
   }
-  if (config.password_hibp_enabled !== true) errors.push("Leaked-password protection is not enabled.");
-  if (!Number.isFinite(config.password_min_length) || config.password_min_length < 8) {
-    errors.push("The provider password minimum must be at least 8 characters.");
-  }
   if (config.refresh_token_rotation_enabled !== true) errors.push("Refresh-token rotation is not enabled.");
-  if (config.security_update_password_require_reauthentication !== true) {
-    errors.push("Password changes do not require reauthentication.");
-  }
   for (const name of requiredPositiveLimits) {
     if (!Number.isFinite(config[name]) || config[name] < 1) errors.push(`${name} must be a positive limit.`);
   }
@@ -107,6 +114,23 @@ function inspectAuthConfig(config, expectedSiteUrl) {
     }
   }
   return errors;
+}
+
+function inspectAuthConfigWarnings(config) {
+  const warnings = [];
+  if (config.security_captcha_enabled !== true) {
+    warnings.push("CAPTCHA protection is intentionally deferred for the Free-plan MVP.");
+  }
+  if (config.password_hibp_enabled !== true) {
+    warnings.push("Supabase leaked-password protection is unavailable on the configured Free plan.");
+  }
+  if (!Number.isFinite(config.password_min_length) || config.password_min_length < 8) {
+    warnings.push("The Supabase provider cannot enforce the desired 8-character minimum on the configured Free plan; Splitly still enforces it in application forms.");
+  }
+  if (config.security_update_password_require_reauthentication !== true) {
+    warnings.push("Supabase password-change reauthentication is unavailable on the configured Free plan; Splitly requires the current password for in-app changes.");
+  }
+  return warnings;
 }
 
 function inspectHealthResponse(status, body) {
@@ -123,6 +147,8 @@ function inspectHealthResponse(status, body) {
 
 module.exports = {
   inspectAuthConfig,
+  inspectAuthConfigWarnings,
   inspectHealthResponse,
   inspectProductionEnvironment,
+  inspectProductionEnvironmentWarnings,
 };

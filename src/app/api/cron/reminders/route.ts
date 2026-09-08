@@ -16,8 +16,8 @@ function validCronAuthorization(request: Request): boolean {
 }
 
 export async function GET(request: Request) {
-  if (!process.env.CRON_SECRET) {
-    return NextResponse.json({ message: "Reminder scheduling is not configured." }, { status: 503 });
+  if (!process.env.CRON_SECRET || !process.env.RESEND_API_KEY || !process.env.REMINDER_FROM_EMAIL) {
+    return NextResponse.json({ configured: false, message: "Reminder scheduling is not configured." });
   }
   if (!validCronAuthorization(request)) {
     return NextResponse.json({ message: "Unauthorized." }, { status: 401 });

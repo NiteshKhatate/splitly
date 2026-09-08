@@ -1,6 +1,9 @@
 import releaseChecks from "./lib/release-checks.js";
 
 const errors = releaseChecks.inspectProductionEnvironment(process.env);
+const warnings = releaseChecks.inspectProductionEnvironmentWarnings(process.env);
+
+for (const warning of warnings) console.warn(`Warning: ${warning}`);
 
 if (errors.length) {
   console.error("Production configuration is not ready:");

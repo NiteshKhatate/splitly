@@ -3,8 +3,10 @@
 
 const {
   inspectAuthConfig,
+  inspectAuthConfigWarnings,
   inspectHealthResponse,
   inspectProductionEnvironment,
+  inspectProductionEnvironmentWarnings,
 } = require("./release-checks");
 
 const validEnvironment = {
@@ -40,6 +42,23 @@ describe("release checks", () => {
     ]));
   });
 
+  it("allows deferred reminders but rejects partial reminder configuration", () => {
+    const deferredEnvironment = { ...validEnvironment };
+    delete deferredEnvironment.CRON_SECRET;
+    delete deferredEnvironment.REMINDER_FROM_EMAIL;
+    delete deferredEnvironment.RESEND_API_KEY;
+
+    expect(inspectProductionEnvironment(deferredEnvironment)).toEqual([]);
+    expect(inspectProductionEnvironmentWarnings(deferredEnvironment)).toEqual([
+      "Scheduled email reminders are deferred until the customer configures an owned sending domain.",
+    ]);
+    expect(inspectProductionEnvironment({ ...deferredEnvironment, CRON_SECRET: validEnvironment.CRON_SECRET }))
+      .toEqual(expect.arrayContaining([
+        "REMINDER_FROM_EMAIL is required when scheduled email reminders are configured.",
+        "RESEND_API_KEY is required when scheduled email reminders are configured.",
+      ]));
+  });
+
   it("audits security-sensitive Supabase Auth configuration", () => {
     const secureConfig = {
       external_email_enabled: true,
@@ -57,8 +76,18 @@ describe("release checks", () => {
       site_url: "https://splitly.test",
     };
     expect(inspectAuthConfig(secureConfig, "https://splitly.test")).toEqual([]);
-    expect(inspectAuthConfig({ ...secureConfig, security_captcha_enabled: false }, "https://splitly.test"))
-      .toContain("CAPTCHA protection is not enabled.");
+    const freePlanConfig = {
+      ...secureConfig,
+      password_hibp_enabled: false,
+      password_min_length: 6,
+      security_captcha_enabled: false,
+      security_update_password_require_reauthentication: false,
+    };
+    expect(inspectAuthConfig(freePlanConfig, "https://splitly.test")).toEqual([]);
+    expect(inspectAuthConfigWarnings(freePlanConfig)).toHaveLength(4);
+    expect(inspectAuthConfigWarnings(secureConfig)).toEqual([]);
+    expect(inspectAuthConfig({ ...secureConfig, security_captcha_provider: "" }, "https://splitly.test"))
+      .toContain("The CAPTCHA provider could not be verified.");
   });
 
   it("validates both health status and database availability", () => {
