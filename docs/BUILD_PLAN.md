@@ -1447,7 +1447,7 @@ Add:
 
 * [x] PostgreSQL-backed rate limiting for invitations, member lookup, and receipt uploads
 * [x] Add a read-only Supabase Auth endpoint-protection and rate-limit audit command
-* [ ] Run the Supabase Auth audit against the production project and record evidence
+* [x] Run the Supabase Auth audit against the production project and record evidence (passed under the documented Free-plan policy with expected non-blocking warnings; operator confirmed 2026-09-08)
 * [x] Invite endpoint protection
 * [x] Upload limits
 * [x] Same-origin mutation protection
@@ -1464,7 +1464,7 @@ Add:
 * [x] Central server-log credential, PII, and financial-value redaction
 * [x] Database-aware health check
 * [x] Scheduled application-and-database uptime workflow
-* [ ] Configure the production health URL and operator failure notifications
+* [x] Configure the production health URL and operator failure notifications (scheduled health workflow and failure email delivery verified 2026-09-08)
 
 Do not log:
 
@@ -1479,9 +1479,9 @@ Do not log:
 Confirm:
 
 * [x] Recovery and restoration procedures are documented
-* [ ] Supabase backup policy
-* [ ] PITR configuration where applicable
-* [ ] Receipt-object recovery policy
+* [x] Supabase backup policy (production uses the Free plan, which provides no managed backups; operator confirmed 2026-09-08)
+* [x] PITR configuration where applicable (unavailable on the production Free plan; operator confirmed 2026-09-08)
+* [x] Receipt-object recovery policy (best-effort attachments with no guaranteed recovery on the Free-plan MVP; users must retain originals)
 * [ ] Disposable-project restoration test
 
 - [x] Document Prisma migration rollback procedures in `docs/OPERATIONS.md`.
@@ -1501,9 +1501,9 @@ Other required production variables
 - [x] Add strict, non-secret-printing production configuration validation
 - [x] Use one validated production origin for confirmation, password-reset, account-email, and invitation links
 - [x] Reject localhost email-link fallbacks in production
-- [ ] Run the production configuration check with Vercel Production variables
+- [x] Run the production configuration check with Vercel Production variables (passed 2026-09-08; scheduled email reminders emitted the expected customer-handoff warning)
 
-Verification on 2026-09-07 using the operator-confirmed production `.env.local` failed because `APP_URL`, `CRON_SECRET`, `REMINDER_FROM_EMAIL`, and `RESEND_API_KEY` are not configured.
+Verification on 2026-09-07 using the operator-confirmed production `.env.local` failed because `APP_URL`, `CRON_SECRET`, `REMINDER_FROM_EMAIL`, and `RESEND_API_KEY` were not configured. After configuring `APP_URL` and classifying the three reminder-provider variables as an optional, all-or-none customer-handoff configuration, the production check passed on 2026-09-08 with the expected reminder-deferral warning.
 
 All production secrets must be stored in Vercel/environment secret management.
 
@@ -1513,12 +1513,12 @@ Never commit them.
 
 Confirm:
 
-* [ ] GitHub repository connection
+* [x] GitHub repository connection (`NiteshKhatate/splitly`, production branch `main`, automatic production deployments enabled; operator confirmed 2026-09-08)
 * [x] Preview/staging deployment intentionally deferred for the current single-environment release
-* [x] Production deployment (confirmed by the operator on 2026-09-07)
-* [ ] Production environment variables
+* [x] Production deployment (confirmed by the operator on 2026-09-07; `https://splitly-zeta.vercel.app` and its database-aware health endpoint independently verified on 2026-09-08)
+* [x] Production environment variables (core configuration validation passed 2026-09-08; customer-owned reminder configuration deferred)
 * [x] Repository build configuration
-* [ ] Domain
+* [x] Custom domain intentionally deferred to the customer handoff; the production `vercel.app` domain is verified
 * [x] Health endpoint implementation
 
 Vercel handles application deployment.
@@ -1532,7 +1532,7 @@ Do not create a separate deployment server.
 Perform:
 
 * [x] Automated accessibility audit
-* [ ] Performance audit against the production deployment
+* [x] Performance audit against the production deployment (Lighthouse mobile and desktop: Performance 100, Accessibility 95, Best Practices 100, SEO 100; operator confirmed 2026-09-08)
 * [x] Repository security review
 * [x] Automated mobile, tablet, and desktop QA coverage
 * [ ] Fresh-account acceptance test against a production-like environment

@@ -26,6 +26,9 @@ if (!response.ok) {
 
 const config = await response.json();
 const errors = releaseChecks.inspectAuthConfig(config, process.env.APP_URL);
+const warnings = releaseChecks.inspectAuthConfigWarnings(config);
+
+for (const warning of warnings) console.warn(`Warning: ${warning}`);
 
 if (errors.length) {
   console.error("Supabase Auth configuration is not release-ready:");
