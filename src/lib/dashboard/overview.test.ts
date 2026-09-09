@@ -43,4 +43,20 @@ describe("getDashboardOverview", () => {
       debts: [], error: { message: "Dashboard balances could not be loaded." },
     });
   });
+
+  it("fails closed when a group contains another currency", async () => {
+    const database = createDatabase({ groups: [{
+      defaultCurrency: "INR",
+      expenses: [{ currency: "USD", payments: [], shares: [], totalMinor: 100 }],
+      id: "group-1",
+      members: [{ user: { id: userId, name: "Alex" } }],
+      name: "Broken currency",
+      settlements: [],
+    }] });
+
+    await expect(getDashboardOverview(database as never, userId)).resolves.toEqual({
+      debts: [],
+      error: { message: "Dashboard balances could not be loaded." },
+    });
+  });
 });

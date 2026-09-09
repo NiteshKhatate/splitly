@@ -36,6 +36,7 @@ type GroupMemberRow = {
 };
 
 type ExpenseRow = {
+  currency: string;
   id: string;
   description: string;
   totalMinor: number;
@@ -103,22 +104,22 @@ function formatExpenseDate(date: Date | string | null) {
   }).format(new Date(date));
 }
 
-function createBalanceCards(amountInMinorUnits: number): GroupDetail["balances"] {
+function createBalanceCards(amountInMinorUnits: number, currency: string): GroupDetail["balances"] {
   const youOwe = amountInMinorUnits < 0 ? Math.abs(amountInMinorUnits) : 0;
   const youAreOwed = amountInMinorUnits > 0 ? amountInMinorUnits : 0;
   const netTone: BalanceTone = amountInMinorUnits > 0 ? "success" : amountInMinorUnits < 0 ? "danger" : "neutral";
 
   return {
     youOwe: {
-      amount: formatMinorUnits(youOwe),
+      amount: formatMinorUnits(youOwe, currency),
       tone: youOwe > 0 ? "danger" : "neutral",
     },
     youAreOwed: {
-      amount: formatMinorUnits(youAreOwed),
+      amount: formatMinorUnits(youAreOwed, currency),
       tone: youAreOwed > 0 ? "success" : "neutral",
     },
     net: {
-      amount: `${amountInMinorUnits > 0 ? "+" : amountInMinorUnits < 0 ? "-" : ""}${formatMinorUnits(Math.abs(amountInMinorUnits))}`,
+      amount: `${amountInMinorUnits > 0 ? "+" : amountInMinorUnits < 0 ? "-" : ""}${formatMinorUnits(Math.abs(amountInMinorUnits), currency)}`,
       tone: netTone,
       description:
         amountInMinorUnits > 0
@@ -167,11 +168,16 @@ export async function getGroupDetail(
         select: {
           date: true,
           description: true,
+          currency: true,
           id: true,
           totalMinor: true,
         },
       }),
-      getCurrentUserGroupBalances(database, userId, [groupId]),
+      getCurrentUserGroupBalances(
+        database,
+        userId,
+        new Map([[groupId, group.data.currency ?? "INR"]]),
+      ),
     ]);
   } catch {
     return { group: null, error: { message: "Group details could not be loaded." } };
@@ -205,22 +211,30 @@ export async function getGroupDetail(
 
   const currentUserMembership = members.find((member) => member.userId === userId);
   const balance = balancesResult.balances.get(groupId);
+  const currency = group.data.currency ?? "INR";
+
+  if ((expenses as ExpenseRow[]).some((expense) => expense.currency !== currency)) {
+    return {
+      group: null,
+      error: { message: "Group financial data has inconsistent currencies." },
+    };
+  }
 
   return {
     group: {
       id: group.data.id,
       name: group.data.name,
       description: group.data.description,
-      currency: group.data.currency ?? "INR",
+      currency,
       memberCount: members.length,
       currentUserRole: currentUserMembership?.role ?? "member",
       canAddMembers: currentUserMembership?.role === "admin",
-      balances: createBalanceCards(balance?.amountInMinorUnits ?? 0),
+      balances: createBalanceCards(balance?.amountInMinorUnits ?? 0, currency),
       members,
       recentExpenses: (expenses as ExpenseRow[]).map((expense) => ({
         id: expense.id,
         description: expense.description,
-        amount: formatMinorUnits(expense.totalMinor),
+        amount: formatMinorUnits(expense.totalMinor, currency),
         date: formatExpenseDate(expense.date),
       })),
     },

@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
 import { ensureUserProfile } from "@/lib/auth/profiles";
+import { createGroup } from "@/lib/groups/create-group";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CreateGroupFormState } from "@/lib/groups/create-group-form-state";
 import {
   type CreateGroupFormFields,
   validateCreateGroupForm,
 } from "@/lib/validations/groups";
+import { getDb } from "@/server/db";
 
 function getStringField(formData: FormData, field: keyof CreateGroupFormFields) {
   const value = formData.get(field);
@@ -64,22 +66,17 @@ export async function createGroupAction(
   }
 
   const groupId = crypto.randomUUID();
-  const createdGroup = await supabase
-    .from("groups")
-    .insert({
+  try {
+    await createGroup(getDb(), {
+      createdBy: user.id,
+      defaultCurrency: "INR",
+      description: data.description || null,
       id: groupId,
       name: data.name,
-      description: data.description || null,
-      created_by: user.id,
-      currency: "INR",
     });
-
-  if (createdGroup.error) {
-    console.warn("Supabase group creation failed", {
-      code: createdGroup.error.code,
-      details: createdGroup.error.details,
-      hint: createdGroup.error.hint,
-      message: createdGroup.error.message,
+  } catch {
+    console.warn("Atomic group creation failed", {
+      groupId,
       userId: user.id,
     });
 
@@ -87,30 +84,6 @@ export async function createGroupAction(
       fields,
       errors: {},
       message: "We couldn't create that group. Please try again.",
-    };
-  }
-
-  const membership = await supabase
-    .from("group_members")
-    .insert({
-      group_id: groupId,
-      user_id: user.id,
-      role: "admin",
-    });
-
-  if (membership.error) {
-    console.warn("Supabase group admin membership creation failed", {
-      code: membership.error.code,
-      details: membership.error.details,
-      hint: membership.error.hint,
-      message: membership.error.message,
-      userId: user.id,
-    });
-
-    return {
-      fields,
-      errors: {},
-      message: "The group was created, but your membership couldn't be saved. Please try again.",
     };
   }
 

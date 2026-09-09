@@ -22,7 +22,10 @@ function createTransaction(overrides: Record<string, unknown> = {}) {
     expense: { create: jest.fn().mockResolvedValue({ id: "expense-1" }) },
     expensePayment: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
     expenseShare: { createMany: jest.fn().mockResolvedValue({ count: 2 }) },
-    group: { findFirst: jest.fn(), findUnique: jest.fn().mockResolvedValue({ id: "group-1" }) },
+    group: {
+      findFirst: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ defaultCurrency: "INR", id: "group-1" }),
+    },
     groupMember: { findMany: jest.fn().mockResolvedValue([{ userId: actorId }, { userId: memberId }]) },
     ...overrides,
   };
@@ -67,6 +70,20 @@ describe("createExpense", () => {
     const { database } = createDatabase(transaction);
     await expect(createExpense(database as never, "group-1", actorId, validExpense())).rejects.toEqual(
       new ExpenseCreationError("You do not have permission to add expenses to this group.", "FORBIDDEN"),
+    );
+    expect(transaction.expense.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an expense that does not use the group currency", async () => {
+    const { database, transaction } = createDatabase();
+
+    await expect(createExpense(
+      database as never,
+      "group-1",
+      actorId,
+      { ...validExpense(), currency: "USD" },
+    )).rejects.toEqual(
+      new ExpenseCreationError("Currency must match the group currency.", "INVALID_INPUT"),
     );
     expect(transaction.expense.create).not.toHaveBeenCalled();
   });

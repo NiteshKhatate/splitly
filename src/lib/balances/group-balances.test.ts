@@ -44,7 +44,7 @@ describe("group balance calculations", () => {
   it("returns an empty balance map without querying Prisma when there are no groups", async () => {
     const database = createDatabase();
 
-    const result = await getCurrentUserGroupBalances(database as never, "user-1", []);
+    const result = await getCurrentUserGroupBalances(database as never, "user-1", new Map());
 
     expect(result).toEqual({ balances: new Map(), error: null });
     expect(database.expense.findMany).not.toHaveBeenCalled();
@@ -55,43 +55,48 @@ describe("group balance calculations", () => {
     const database = createDatabase({
       expenses: [
         {
+          currency: "INR",
           groupId: "group-1",
           payments: [{ amountMinor: 6000 }, { amountMinor: 4000 }],
           shares: [{ owedMinor: 2500 }],
         },
         {
+          currency: "INR",
           groupId: "group-1",
           payments: [],
           shares: [{ owedMinor: 2000 }],
         },
         {
+          currency: "USD",
           groupId: "group-2",
           payments: [],
           shares: [{ owedMinor: 3000 }],
         },
       ],
       settlements: [
-        { groupId: "group-1", payerId: "user-2", payeeId: "user-1", amountMinor: 1500 },
-        { groupId: "group-1", payerId: "user-1", payeeId: "user-2", amountMinor: 500 },
-        { groupId: "group-2", payerId: "user-1", payeeId: "user-3", amountMinor: 1000 },
+        { currency: "INR", groupId: "group-1", payerId: "user-2", payeeId: "user-1", amountMinor: 1500 },
+        { currency: "INR", groupId: "group-1", payerId: "user-1", payeeId: "user-2", amountMinor: 500 },
+        { currency: "USD", groupId: "group-2", payerId: "user-1", payeeId: "user-3", amountMinor: 1000 },
       ],
     });
 
     const result = await getCurrentUserGroupBalances(
       database as never,
       "user-1",
-      ["group-1", "group-2"],
+      new Map([["group-1", "INR"], ["group-2", "USD"]]),
     );
 
     expect(result.error).toBeNull();
     expect(result.balances.get("group-1")).toMatchObject({
       amountInMinorUnits: 4500,
+      currency: "INR",
       label: "You are owed ₹45",
       tone: "success",
     });
     expect(result.balances.get("group-2")).toMatchObject({
       amountInMinorUnits: -2000,
-      label: "You owe ₹20",
+      currency: "USD",
+      label: "You owe $20",
       tone: "danger",
     });
   });
@@ -99,7 +104,11 @@ describe("group balance calculations", () => {
   it("uses the new ledger relations and excludes soft-deleted expenses", async () => {
     const database = createDatabase();
 
-    await getCurrentUserGroupBalances(database as never, "user-1", ["group-1"]);
+    await getCurrentUserGroupBalances(
+      database as never,
+      "user-1",
+      new Map([["group-1", "INR"]]),
+    );
 
     expect(database.expense.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -122,9 +131,33 @@ describe("group balance calculations", () => {
     const database = createDatabase();
     database.expense.findMany.mockRejectedValue(new Error("missing legacy amount column"));
 
-    const result = await getCurrentUserGroupBalances(database as never, "user-1", ["group-1"]);
+    const result = await getCurrentUserGroupBalances(
+      database as never,
+      "user-1",
+      new Map([["group-1", "INR"]]),
+    );
 
     expect(result).toEqual({
+      balances: new Map(),
+      error: { message: "Group balances could not be loaded." },
+    });
+  });
+
+  it("fails closed when a financial record does not match its group currency", async () => {
+    const database = createDatabase({
+      expenses: [{
+        currency: "USD",
+        groupId: "group-1",
+        payments: [{ amountMinor: 1000 }],
+        shares: [{ owedMinor: 1000 }],
+      }],
+    });
+
+    await expect(getCurrentUserGroupBalances(
+      database as never,
+      "user-1",
+      new Map([["group-1", "INR"]]),
+    )).resolves.toEqual({
       balances: new Map(),
       error: { message: "Group balances could not be loaded." },
     });

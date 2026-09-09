@@ -73,12 +73,14 @@ describe("getGroupDetail", () => {
           {
             id: "expense-1",
             description: "Dinner",
+            currency: "INR",
             totalMinor: 12550,
             date: new Date("2026-09-04T00:00:00.000Z"),
           },
           {
             id: "expense-2",
             description: "Taxi",
+            currency: "INR",
             totalMinor: 8000,
             date: new Date("2026-09-03T00:00:00.000Z"),
           },
@@ -90,6 +92,7 @@ describe("getGroupDetail", () => {
         "group-1",
         {
           amountInMinorUnits: 12550,
+          currency: "INR",
           label: "You are owed ₹125.5",
           tone: "success",
         },
@@ -159,6 +162,7 @@ describe("getGroupDetail", () => {
       select: {
         date: true,
         description: true,
+        currency: true,
         id: true,
         totalMinor: true,
       },
@@ -166,7 +170,7 @@ describe("getGroupDetail", () => {
     expect(getCurrentUserGroupBalances).toHaveBeenCalledWith(
       database,
       "user-1",
-      ["group-1"],
+      new Map([["group-1", "INR"]]),
     );
   });
 
@@ -201,6 +205,45 @@ describe("getGroupDetail", () => {
     );
 
     expect(result).toEqual({ group: null, error });
+  });
+
+  it("fails closed when a recent expense differs from the group currency", async () => {
+    const groupQuery = createQueryResult({
+      id: "group-1",
+      name: "Goa trip",
+      description: null,
+      currency: "INR",
+      created_by: "user-1",
+    });
+    const membersQuery = createQueryResult([]);
+    const database = {
+      expense: { findMany: jest.fn().mockResolvedValue([{
+        currency: "USD",
+        date: new Date("2026-09-04T00:00:00.000Z"),
+        description: "Legacy expense",
+        id: "expense-1",
+        totalMinor: 1000,
+      }]) },
+    };
+    jest.mocked(getCurrentUserGroupBalances).mockResolvedValue({
+      balances: new Map(),
+      error: null,
+    });
+    const supabase = {
+      from: jest.fn()
+        .mockReturnValueOnce(groupQuery)
+        .mockReturnValueOnce(membersQuery),
+    };
+
+    await expect(getGroupDetail(
+      supabase as never,
+      database as never,
+      "group-1",
+      "user-1",
+    )).resolves.toEqual({
+      group: null,
+      error: { message: "Group financial data has inconsistent currencies." },
+    });
   });
 
   it("returns a safe error when recent expenses cannot be loaded", async () => {

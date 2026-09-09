@@ -41,6 +41,15 @@ export async function getGroupBalanceDetail(
       },
     });
     if (!group) return { detail: null, error: { message: "Group not found." } };
+    if (
+      group.expenses.some((expense) => expense.currency !== group.defaultCurrency)
+      || group.settlements.some((settlement) => settlement.currency !== group.defaultCurrency)
+    ) {
+      return {
+        detail: null,
+        error: { message: "Group financial data has inconsistent currencies." },
+      };
+    }
 
     const names = new Map(group.members.map(({ user }) => [user.id, user.name]));
     const balances = calculateMemberBalances({

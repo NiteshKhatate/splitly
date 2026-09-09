@@ -25,12 +25,12 @@ describe("dashboard balance summaries", () => {
   it("keeps group debts separate before producing currency totals", async () => {
     const database = createDatabase({
       expenses: [
-        { currency: "INR", groupId: "group-1", payments: [{ amountMinor: 1500 }], shares: [{ owedMinor: 500 }] },
-        { currency: "INR", groupId: "group-2", payments: [], shares: [{ owedMinor: 400 }] },
+        { currency: "INR", group: { defaultCurrency: "INR" }, groupId: "group-1", payments: [{ amountMinor: 1500 }], shares: [{ owedMinor: 500 }] },
+        { currency: "INR", group: { defaultCurrency: "INR" }, groupId: "group-2", payments: [], shares: [{ owedMinor: 400 }] },
       ],
       settlements: [
-        { amountMinor: 200, currency: "INR", groupId: "group-1", payeeId: "user-1", payerId: "user-2" },
-        { amountMinor: 100, currency: "INR", groupId: "group-2", payeeId: "user-3", payerId: "user-1" },
+        { amountMinor: 200, currency: "INR", group: { defaultCurrency: "INR" }, groupId: "group-1", payeeId: "user-1", payerId: "user-2" },
+        { amountMinor: 100, currency: "INR", group: { defaultCurrency: "INR" }, groupId: "group-2", payeeId: "user-3", payerId: "user-1" },
       ],
     });
 
@@ -47,8 +47,8 @@ describe("dashboard balance summaries", () => {
   it("isolates currencies and only queries ledger rows involving the user", async () => {
     const database = createDatabase({
       expenses: [
-        { currency: "USD", groupId: "group-1", payments: [{ amountMinor: 1000 }], shares: [] },
-        { currency: "INR", groupId: "group-2", payments: [], shares: [{ owedMinor: 500 }] },
+        { currency: "USD", group: { defaultCurrency: "USD" }, groupId: "group-1", payments: [{ amountMinor: 1000 }], shares: [] },
+        { currency: "INR", group: { defaultCurrency: "INR" }, groupId: "group-2", payments: [], shares: [{ owedMinor: 500 }] },
       ],
     });
 
@@ -68,6 +68,23 @@ describe("dashboard balance summaries", () => {
     expect(database.settlement.findMany).toHaveBeenCalledWith(expect.objectContaining({
       where: expect.objectContaining({ status: "CONFIRMED" }),
     }));
+  });
+
+  it("fails closed when a ledger row differs from its group currency", async () => {
+    const database = createDatabase({
+      expenses: [{
+        currency: "USD",
+        group: { defaultCurrency: "INR" },
+        groupId: "group-1",
+        payments: [{ amountMinor: 1000 }],
+        shares: [],
+      }],
+    });
+
+    await expect(getDashboardBalanceSummaries(database as never, "user-1")).resolves.toEqual({
+      summaries: [],
+      error: { message: "Dashboard balances could not be loaded." },
+    });
   });
 
   it("returns a safe error when the ledger cannot be loaded", async () => {

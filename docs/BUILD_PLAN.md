@@ -1535,10 +1535,10 @@ Perform:
 * [x] Performance audit against the production deployment (Lighthouse mobile and desktop: Performance 100, Accessibility 95, Best Practices 100, SEO 100; operator confirmed 2026-09-08)
 * [x] Repository security review
 * [x] Automated mobile, tablet, and desktop QA coverage
-* [ ] Fresh-account acceptance test against a production-like environment
+* [x] Fresh-account acceptance test against a production-like environment
 * [x] Local Prisma schema and migration verification
 * [x] Production database migration verification (`prisma migrate status`: 8 migrations, schema up to date on 2026-09-07)
-* [ ] Backup/recovery verification
+* [x] Backup/recovery verification
 
 ### Stage 5 Acceptance
 

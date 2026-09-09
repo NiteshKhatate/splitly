@@ -61,3 +61,54 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  database-integration:
+    name: PostgreSQL transactions and Supabase RLS
+    runs-on: ubuntu-latest
+    env:
+      INTEGRATION_TEST_CONFIRMATION: NON_PRODUCTION_DATABASE_CONFIRMED
+      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+      TEST_OUTSIDER_EMAIL: ${{ secrets.TEST_OUTSIDER_EMAIL }}
+      TEST_OUTSIDER_PASSWORD: ${{ secrets.TEST_OUTSIDER_PASSWORD }}
+      TEST_OWNER_EMAIL: ${{ secrets.TEST_OWNER_EMAIL }}
+      TEST_OWNER_PASSWORD: ${{ secrets.TEST_OWNER_PASSWORD }}
+      TEST_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.TEST_SUPABASE_PUBLISHABLE_KEY }}
+      TEST_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Require disposable integration configuration
+        run: |
+          test -n "$TEST_DATABASE_URL"
+          test -n "$TEST_SUPABASE_URL"
+          test -n "$TEST_SUPABASE_PUBLISHABLE_KEY"
+          test -n "$TEST_OWNER_EMAIL"
+          test -n "$TEST_OWNER_PASSWORD"
+          test -n "$TEST_OUTSIDER_EMAIL"
+          test -n "$TEST_OUTSIDER_PASSWORD"
+
+      - name: Verify disposable migration state
+        env:
+          DIRECT_URL: ${{ secrets.TEST_DATABASE_URL }}
+        run: pnpm exec prisma migrate status
+
+      - name: Run database integration tests
+        run: pnpm test:integration

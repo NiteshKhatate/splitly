@@ -49,6 +49,27 @@ describe("getGroupBalanceDetail", () => {
     });
   });
 
+  it("fails closed when legacy ledger currency differs from the group currency", async () => {
+    const database = createDatabase({
+      defaultCurrency: "INR",
+      expenses: [{
+        currency: "USD",
+        payments: [{ amountMinor: 1000, payerId: alexId }],
+        shares: [{ owedMinor: 1000, participantId: alexId }],
+        totalMinor: 1000,
+      }],
+      id: "group-1",
+      members: [{ user: { id: alexId, name: "Alex" } }],
+      name: "Broken currency",
+      settlements: [],
+    });
+
+    await expect(getGroupBalanceDetail(database as never, "group-1", alexId)).resolves.toEqual({
+      detail: null,
+      error: { message: "Group financial data has inconsistent currencies." },
+    });
+  });
+
   it("returns a safe error when the ledger is inconsistent or unavailable", async () => {
     const database = createDatabase({
       defaultCurrency: "INR", expenses: [], id: "group-1", members: [], name: "Broken", settlements: [],

@@ -83,4 +83,18 @@ describe("processBalanceReminders", () => {
       where: { id: "delivery-1" },
     });
   });
+
+  it("does not send reminders for a group with inconsistent currencies", async () => {
+    const mismatched = {
+      ...group,
+      expenses: group.expenses.map((expense) => ({ ...expense, currency: "USD" })),
+    };
+    const db = database(mismatched);
+    const send = jest.fn();
+
+    await expect(processBalanceReminders(db as never, send)).rejects.toThrow(
+      "Group financial data has inconsistent currencies.",
+    );
+    expect(send).not.toHaveBeenCalled();
+  });
 });

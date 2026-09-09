@@ -91,9 +91,12 @@ export async function createExpense(
 
   return database.$transaction(async (transaction) => {
     const group = await transaction.group.findUnique({
-      where: { id: groupId }, select: { id: true },
+      where: { id: groupId }, select: { defaultCurrency: true, id: true },
     });
     if (!group) throw new ExpenseCreationError("Group not found.", "NOT_FOUND");
+    if (data.currency !== group.defaultCurrency) {
+      throw new ExpenseCreationError("Currency must match the group currency.", "INVALID_INPUT");
+    }
 
     const referencedMemberIds = [...new Set([
       actorId,

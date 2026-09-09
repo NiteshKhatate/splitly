@@ -1162,6 +1162,502 @@ User experience
 
 Build the simplest solution that correctly satisfies the current Phase 1 requirements.
 
+## 52. Production Hardening Mode
+
+The MVP build plan is complete. The current engineering target is **Production Hardening / Stabilization**.
+
+Until the production-hardening gate is passed:
+
+* Do not add new product features unless explicitly approved.
+* Do not expand scope to improve UX, add integrations, or introduce optional functionality.
+* Prioritize correctness, security, recoverability, concurrency safety, operational readiness, and test evidence.
+* Treat the production-readiness audit and `docs/BUILD_PLAN.md` as the primary remediation references.
+* When an existing implementation conflicts with the documented architecture or production-hardening requirements, stop and resolve the discrepancy rather than silently working around it.
+
+The goal is to make the existing MVP safe and demonstrably reliable for production use, not to increase feature count.
+
+---
+
+## 53. Production Hardening Priority
+
+Work in this order unless a higher-severity production issue requires otherwise:
+
+1. Financial correctness and currency isolation.
+2. Production backup, recovery, and restoration evidence.
+3. Transactional integrity and membership invariants.
+4. Authentication, authorization, and redirect security.
+5. Real PostgreSQL/RLS integration testing.
+6. Migration ownership and deployment ordering.
+7. Concurrency protection and idempotency.
+8. Authenticated E2E coverage in CI.
+9. Financial history pagination and operational limits.
+10. Monitoring, security headers, receipt recovery, and performance.
+11. Documentation and build-plan reconciliation.
+12. Final production acceptance and go/no-go review.
+
+Do not declare production readiness based solely on unit tests, successful builds, or local development behavior.
+
+---
+
+## 54. Financial Correctness — Currency Isolation
+
+Currency handling is a production-critical invariant.
+
+Until multi-currency accounting is explicitly designed, implemented, and tested:
+
+* A group must use one currency for all financial records.
+* Expenses, shares, settlements, and balances belonging to a group must use the group's currency.
+* Do not aggregate amounts with different currencies.
+* Do not display mixed-currency totals as though they were one currency.
+* Reject currency mismatches at server-side validation and authorization boundaries.
+* Prefer deriving the effective currency from the group rather than trusting arbitrary client input.
+* Add regression tests proving that mixed-currency records cannot contaminate balances.
+* Any future multi-currency design must explicitly define conversion rates, conversion dates, precision, rounding, reporting semantics, and audit behavior before implementation.
+
+Currency isolation must be enforced server-side. UI restrictions alone are insufficient.
+
+---
+
+## 55. Financial Correctness — Money Representation
+
+All financial amounts must use integer minor units.
+
+Rules:
+
+* Never use JavaScript floating-point arithmetic for persisted financial calculations.
+* Never persist monetary values as floating-point database types.
+* Convert user-entered decimal amounts to integer minor units using deterministic decimal handling.
+* Preserve exact totals through deterministic rounding.
+* Use largest-remainder allocation where proportional allocation requires rounding.
+* Equal, percentage, and weighted splits must reconcile exactly to the expense total.
+* Reject invalid, negative, NaN, infinite, or otherwise malformed monetary input.
+* Currency exponent handling must be explicit and authoritative.
+* Do not assume every ISO currency has two decimal places.
+
+Any financial calculation change requires regression tests for normal values, rounding boundaries, zero values, and invalid input.
+
+---
+
+## 56. Database Transactions and Atomicity
+
+Any operation that changes multiple related financial or membership records must be atomic.
+
+Examples include:
+
+* Creating a group and its owner membership.
+* Creating or editing an expense and its shares.
+* Deleting an expense and all related state.
+* Confirming or reversing a settlement.
+* Changing membership where related financial authorization is affected.
+
+Rules:
+
+* Use Prisma transactions for multi-record state changes.
+* Do not perform partial writes followed by unrelated cleanup.
+* Do not rely on UI sequencing for consistency.
+* Validate all required invariants before committing.
+* If any operation fails, related writes must roll back.
+* Add integration tests that deliberately trigger failure after an intermediate write and verify that no partial state remains.
+
+A successful happy-path test is not sufficient evidence of atomicity.
+
+---
+
+## 57. Database Membership Integrity
+
+Users referenced as:
+
+* expense payers,
+* expense participants,
+* settlement participants,
+* group members,
+
+must be valid members of the relevant group when the operation is committed.
+
+Rules:
+
+* Never trust client-supplied membership identifiers.
+* Revalidate membership server-side immediately before financial writes.
+* Do not authorize an operation merely because a user ID exists.
+* Protect against membership changes occurring concurrently with financial writes.
+* Prefer database constraints, triggers, serializable transactions, or appropriate locking where required by the invariant.
+* Add two-user and concurrent membership-removal tests.
+
+Application-level checks are necessary but must not be treated as equivalent to a database invariant when a race condition can violate the invariant.
+
+---
+
+## 58. Real Database and RLS Testing
+
+Mock-only database tests are insufficient for production-hardening sign-off.
+
+The project must maintain a disposable PostgreSQL/Supabase integration environment capable of testing:
+
+* real foreign keys,
+* unique constraints,
+* check constraints,
+* transactions,
+* rollback behavior,
+* concurrent operations where relevant,
+* RLS policies,
+* cross-user isolation,
+* membership authorization,
+* server-only financial tables,
+* migration reproducibility.
+
+Tests must include at least two distinct users where authorization or RLS behavior is relevant.
+
+Do not mark RLS or transactional behavior as production-verified based solely on mocked Prisma calls.
+
+---
+
+## 59. Authentication and Redirect Security
+
+Authentication boundaries are security-critical.
+
+Rules:
+
+* Use Auth.js for application authentication and session handling.
+* Every protected server action and route must independently establish authorization.
+* Never trust client-side authentication state as authorization.
+* Redirect targets must be constrained to safe same-origin destinations.
+* Reject absolute URLs, protocol-relative URLs, backslash-based authority bypasses, encoded authority forms, control characters, and equivalent open-redirect variants.
+* Validate redirects after URL parsing against the canonical application origin.
+* Add regression tests for malicious redirect forms, including `/\evil.example` and encoded variants.
+* Do not weaken redirect validation merely to preserve a convenience navigation path.
+
+---
+
+## 60. Authorization at Data-Access Boundaries
+
+Authorization must occur as close as practical to the data-access operation.
+
+Rules:
+
+* Every group-scoped query must establish that the current user belongs to the group.
+* Every financial mutation must verify authorization for the affected group.
+* Do not fetch sensitive records broadly and filter authorization only in UI code.
+* Do not assume that a route-level authorization check protects downstream reusable data-access functions.
+* Reusable server-side data-access functions should make required authorization context explicit.
+* Server actions must independently validate identity, authorization, input, and invariants.
+
+A hidden or inaccessible UI element is not an authorization mechanism.
+
+---
+
+## 61. Concurrency Protection and Idempotency
+
+Financial writes must be safe under concurrent requests.
+
+Rules:
+
+* Protect expense edits and deletes against stale writes.
+* Use optimistic concurrency/version checks or an equivalent database-safe mechanism.
+* Recheck relevant state inside the transaction before committing.
+* Prevent an edit from overwriting a newer edit.
+* Prevent an edit from silently modifying an expense that was concurrently deleted.
+* Design settlement confirmation to be idempotent.
+* Retries must not create duplicate financial effects.
+* Add tests for concurrent edit/edit, edit/delete, duplicate settlement confirmation, and retry behavior.
+
+Do not assume browser serialization prevents concurrent requests.
+
+---
+
+## 62. Split-Method Preservation
+
+Editing an expense must preserve its original split method and semantics unless the user explicitly changes the method.
+
+Supported split methods currently include:
+
+* exact,
+* equal,
+* percentage,
+* weighted.
+
+Rules:
+
+* Do not silently convert all edited expenses to `EXACT`.
+* Preserve the original method and source inputs where the edit does not change the split definition.
+* Recalculate derived shares deterministically when relevant inputs change.
+* Validate that resulting shares reconcile exactly with the expense total.
+* Add regression tests covering create → edit → read behavior for every supported split method.
+
+---
+
+## 63. Recovery and Production Data
+
+Production data must be demonstrably recoverable.
+
+Before production approval:
+
+* Establish the provider-supported backup/PITR strategy.
+* Document retention and recovery procedures.
+* Ensure database backups are protected appropriately.
+* Ensure receipt/file data has an explicit recovery strategy.
+* Perform a clean restoration into a disposable environment.
+* Verify that restored schema, users, groups, expenses, shares, settlements, and balances reconcile with the source.
+* Record restoration evidence and the date of the latest successful drill.
+* Do not treat "the provider probably has backups" as recovery evidence.
+
+A backup strategy without a successful restoration drill is incomplete.
+
+---
+
+## 64. Migration Ownership
+
+There must be one authoritative migration history for the application database.
+
+Rules:
+
+* Prisma migrations are authoritative for Prisma-managed schema changes unless the architecture explicitly establishes another source of truth.
+* Database functions, triggers, RLS policies, and other required database behavior must have deterministic ownership.
+* Do not maintain conflicting or partially overlapping migration histories without explicit justification.
+* A clean database must be reproducible from the authoritative migration chain.
+* Migration configuration must not depend on missing seed files or undocumented local state.
+* Any migration-history reconciliation must preserve existing production data.
+
+Before release, verify that a fresh database can be built deterministically from source control.
+
+---
+
+## 65. Database Connection Roles
+
+Runtime and migration database connections must be intentionally separated.
+
+Rules:
+
+* `DATABASE_URL` is the runtime connection.
+* `DIRECT_URL` is reserved for Prisma migrations/admin operations and must resolve to the provider's intended direct/non-pooled endpoint.
+* Do not assume a URL is direct merely because it is stored in `DIRECT_URL`.
+* Verify host, port, role behavior, and provider documentation.
+* Runtime pooling and migration connectivity must both be tested in the target environment.
+* Never expose privileged database credentials to browser code.
+
+---
+
+## 66. Migration-Before-Deployment Ordering
+
+Schema changes must be compatible with the deployed application during rollout.
+
+The release process must explicitly define:
+
+1. Backup/recovery checkpoint.
+2. Database migration.
+3. Migration verification.
+4. Application deployment.
+5. Smoke tests.
+6. Rollback/forward-fix ownership.
+
+Do not deploy application code that requires a schema change before the required migration is applied.
+
+Prefer backward-compatible migration patterns for changes that cannot be deployed atomically.
+
+---
+
+## 67. Authenticated E2E Tests in CI
+
+Authenticated Playwright tests are part of the production gate.
+
+Rules:
+
+* CI must provision deterministic test accounts and required test data.
+* Authenticated tests must not silently skip because credentials are unavailable.
+* Missing required CI credentials/configuration must fail the appropriate CI job.
+* Run critical authenticated workflows on both desktop and mobile/tablet profiles where supported.
+* Keep test data isolated from production.
+* Verify critical flows including authentication, group access, expense creation/edit/delete, settlement confirmation, and authorization boundaries.
+
+A locally passing authenticated suite does not compensate for a skipped CI suite.
+
+---
+
+## 68. Financial History and Pagination
+
+Financial history must not silently truncate.
+
+Rules:
+
+* Do not impose an undocumented hard `take` limit that causes older records to disappear from the UI.
+* Implement cursor pagination, load-more, or another explicit history pagination strategy.
+* Keep server-side filtering and ordering deterministic.
+* Document the pagination behavior.
+* Add tests for datasets larger than the default page size.
+* Ensure pagination cannot cause duplicate or missing records between pages.
+
+---
+
+## 69. Request Limits and Abuse Protection
+
+User-controlled inputs must have explicit server-side bounds.
+
+At minimum review:
+
+* request body size,
+* participant count,
+* expense description length,
+* notes/comments length,
+* receipt size,
+* receipt count,
+* pagination limits,
+* export range,
+* batch operation size.
+
+Do not rely exclusively on `Content-Length` because it may be absent or unreliable.
+
+Limits must be enforced at the server boundary and covered by tests.
+
+---
+
+## 70. Receipt Security and Recovery
+
+Receipt uploads are untrusted input.
+
+Rules:
+
+* Validate file size server-side.
+* Validate MIME type using actual file content where practical; do not blindly trust client metadata.
+* Restrict allowed file types explicitly.
+* Prevent unauthorized users from accessing receipts.
+* Ensure receipt deletion and associated database state cannot leave inconsistent references.
+* Include receipt data in the production recovery strategy.
+* Test unauthorized access and invalid-file cases.
+
+---
+
+## 71. Security Headers and Monitoring
+
+Production security and observability must be explicit.
+
+Review and verify:
+
+* Content Security Policy,
+* HSTS,
+* X-Content-Type-Options,
+* frame protections,
+* referrer policy,
+* permissions policy where applicable,
+* secure cookie configuration,
+* structured error logging,
+* handled 5xx monitoring,
+* webhook timeout/error handling,
+* alerting for critical production failures.
+
+Do not treat security headers as complete merely because a subset is configured.
+
+---
+
+## 72. Production Documentation Integrity
+
+Documentation must describe the implementation that actually exists.
+
+Before release:
+
+* Reconcile `docs/BUILD_PLAN.md` with `prisma/schema.prisma` and implemented workflows.
+* Do not mark functionality complete if the schema or workflow is absent.
+* Explicitly label deferred functionality.
+* Update `docs/OPERATIONS.md` with verified recovery, migration, deployment, and rollback procedures.
+* Update `docs/RELEASE_CHECKLIST.md` with evidence-based production gates.
+* Keep README onboarding instructions accurate.
+* Do not claim an operational capability has been verified without evidence.
+
+Documentation is part of the production system.
+
+---
+
+## 73. Production Hardening Workflow
+
+For each remediation:
+
+1. Identify the audit finding or production invariant.
+2. Inspect the current implementation before editing.
+3. Make the smallest safe change that resolves the underlying issue.
+4. Add or update regression tests.
+5. Run targeted tests.
+6. Run relevant integration tests.
+7. Run lint and TypeScript checks.
+8. Run the production build when applicable.
+9. Update documentation when behavior or operational procedure changes.
+10. Record remaining limitations.
+11. Re-run the production-readiness audit after the high-severity remediation batch.
+
+Do not close a finding merely because code was changed. Close it only when the required behavior and verification evidence exist.
+
+---
+
+## 74. Verification Standards
+
+Production-hardening verification must distinguish:
+
+* **Unit verified** — behavior tested in isolation.
+* **Integration verified** — behavior tested against a real database/service boundary.
+* **E2E verified** — behavior tested through the actual application workflow.
+* **Operationally verified** — deployment, backup, restore, monitoring, or recovery behavior demonstrated in a realistic environment.
+
+A production-critical control should use the strongest applicable verification level.
+
+For financial correctness, authorization, RLS, transaction rollback, concurrency, migration reproducibility, and recovery, mocks alone are not sufficient.
+
+---
+
+## 75. Production-Hardening Definition of Done
+
+Production hardening is complete only when:
+
+* Mixed currencies cannot be combined incorrectly.
+* Financial calculations use deterministic integer-minor-unit arithmetic.
+* Group creation and other multi-record writes are atomic.
+* Membership invariants are protected against race conditions.
+* Authentication and redirect handling resist open redirects.
+* Authorization is enforced server-side at relevant data-access boundaries.
+* Real PostgreSQL/RLS integration tests pass.
+* Concurrent financial writes are protected against stale updates.
+* Settlement operations are idempotent.
+* Expense split methods are preserved during edits.
+* Financial history is paginated rather than silently truncated.
+* Database migrations have one authoritative source of truth.
+* Migration-before-deployment ordering is tested/documented.
+* Runtime and migration database connections are correctly configured.
+* Authenticated Playwright coverage runs in CI without silent skips.
+* Production database restoration has been successfully demonstrated.
+* Receipt recovery/access controls are verified.
+* Security headers and monitoring are production-appropriate.
+* Documentation accurately reflects implemented behavior.
+* The release checklist is complete with evidence.
+* No critical or high-severity production-readiness finding remains unresolved or explicitly accepted by the project owner.
+
+---
+
+## 76. Prohibitions During Production Hardening
+
+Unless explicitly approved, do not:
+
+* Add unrelated product features.
+* Rewrite stable modules solely for stylistic reasons.
+* Replace the established stack.
+* Introduce a new backend service.
+* Introduce a second ORM.
+* Bypass Prisma authorization checks.
+* Move financial logic into the browser.
+* Disable RLS to make tests pass.
+* Disable security checks to make E2E tests pass.
+* Silence failing tests or convert meaningful failures into skips.
+* Delete regression tests because they expose a real defect.
+* Mark audit findings resolved without verification evidence.
+* Use floating-point arithmetic for financial persistence or reconciliation.
+* Treat client validation as sufficient for security or financial correctness.
+* Treat successful local development as production readiness.
+
+---
+
+## 77. Final Engineering Principle
+
+**Correctness before convenience. Recoverability before launch. Security before speed. Evidence before claims.**
+
+When choosing between a faster implementation and one that provides stronger financial integrity, authorization, concurrency safety, recovery, or operational evidence, choose the safer implementation.
+
+The MVP already exists. The remaining job is to make it trustworthy.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

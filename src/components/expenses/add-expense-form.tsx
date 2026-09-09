@@ -127,7 +127,7 @@ export function AddExpenseForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField id="expense-amount" label="Total amount" inputMode="decimal" placeholder="0.00" required error={form.formState.errors.amount?.message} {...form.register("amount")} />
         <SelectField id="expense-currency" label="Currency" error={form.formState.errors.currency?.message} {...form.register("currency")}>
-          {[currency, "INR", "USD", "EUR", "GBP"].filter((item, index, all) => all.indexOf(item) === index).map((code) => <option key={code}>{code}</option>)}
+          <option>{currency}</option>
         </SelectField>
         <TextField id="expense-date" label="Date" type="date" required error={form.formState.errors.date?.message} {...form.register("date")} />
         <SelectField id="expense-category" label="Category" error={form.formState.errors.category?.message} {...form.register("category")}>

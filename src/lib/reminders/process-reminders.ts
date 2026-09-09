@@ -60,6 +60,13 @@ export async function processBalanceReminders(
   const result = { attempted: 0, failed: 0, sent: 0, skipped: 0 };
 
   for (const group of groups) {
+    if (
+      group.expenses.some((expense) => expense.currency !== group.defaultCurrency)
+      || group.settlements.some((settlement) => settlement.currency !== group.defaultCurrency)
+    ) {
+      throw new Error("Group financial data has inconsistent currencies.");
+    }
+
     const members = group.members.map(({ user }) => user);
     const balances = calculateMemberBalances({
       currencies: [group.defaultCurrency],

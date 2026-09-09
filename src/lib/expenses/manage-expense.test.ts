@@ -41,7 +41,7 @@ function database(tx: ReturnType<typeof transaction>) {
 
 describe("expense management", () => {
   it("updates the expense, replaces ledger rows, and records activity atomically", async () => {
-    const tx = transaction({ createdBy: actorId, group: { members: [{ role: "MEMBER" }] }, groupId: "group-1" });
+    const tx = transaction({ createdBy: actorId, group: { defaultCurrency: "INR", members: [{ role: "MEMBER" }] }, groupId: "group-1" });
 
     await expect(updateExpense(database(tx) as never, "expense-1", actorId, input)).resolves.toEqual({ expenseId: "expense-1", groupId: "group-1" });
     expect(tx.expense.update).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ totalMinor: 1000 }) }));
@@ -51,16 +51,16 @@ describe("expense management", () => {
   });
 
   it("allows an owner and rejects an unrelated member", async () => {
-    const ownerTx = transaction({ createdBy: "someone-else", group: { members: [{ role: "OWNER" }] }, groupId: "group-1" });
+    const ownerTx = transaction({ createdBy: "someone-else", group: { defaultCurrency: "INR", members: [{ role: "OWNER" }] }, groupId: "group-1" });
     await expect(updateExpense(database(ownerTx) as never, "expense-1", actorId, input)).resolves.toBeDefined();
 
-    const memberTx = transaction({ createdBy: "someone-else", group: { members: [{ role: "MEMBER" }] }, groupId: "group-1" });
+    const memberTx = transaction({ createdBy: "someone-else", group: { defaultCurrency: "INR", members: [{ role: "MEMBER" }] }, groupId: "group-1" });
     await expect(updateExpense(database(memberTx) as never, "expense-1", actorId, input)).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(memberTx.expense.update).not.toHaveBeenCalled();
   });
 
   it("soft deletes without removing historical ledger rows", async () => {
-    const tx = transaction({ createdBy: actorId, description: "Dinner", group: { members: [{ role: "MEMBER" }] }, groupId: "group-1" });
+    const tx = transaction({ createdBy: actorId, description: "Dinner", group: { defaultCurrency: "INR", members: [{ role: "MEMBER" }] }, groupId: "group-1" });
 
     await expect(deleteExpense(database(tx) as never, "expense-1", actorId)).resolves.toEqual({ groupId: "group-1" });
     expect(tx.expense.update).toHaveBeenCalledWith({ where: { id: "expense-1" }, data: { deletedAt: expect.any(Date) } });
@@ -70,9 +70,25 @@ describe("expense management", () => {
   });
 
   it("propagates mutation failures for transaction rollback", async () => {
-    const tx = transaction({ createdBy: actorId, group: { members: [{ role: "MEMBER" }] }, groupId: "group-1" });
+    const tx = transaction({ createdBy: actorId, group: { defaultCurrency: "INR", members: [{ role: "MEMBER" }] }, groupId: "group-1" });
     tx.expenseShare.createMany.mockRejectedValue(new Error("write failed"));
     await expect(updateExpense(database(tx) as never, "expense-1", actorId, input)).rejects.toThrow("write failed");
     expect(tx.activityEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects an update that does not use the group currency", async () => {
+    const tx = transaction({
+      createdBy: actorId,
+      group: { defaultCurrency: "INR", members: [{ role: "MEMBER" }] },
+      groupId: "group-1",
+    });
+
+    await expect(updateExpense(
+      database(tx) as never,
+      "expense-1",
+      actorId,
+      { ...input, currency: "USD" },
+    )).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    expect(tx.expense.update).not.toHaveBeenCalled();
   });
 });

@@ -41,6 +41,7 @@ export async function getDashboardBalanceSummaries(
         },
         select: {
           currency: true,
+          group: { select: { defaultCurrency: true } },
           groupId: true,
           payments: { where: { payerId: userId }, select: { amountMinor: true } },
           shares: { where: { participantId: userId }, select: { owedMinor: true } },
@@ -55,6 +56,7 @@ export async function getDashboardBalanceSummaries(
         select: {
           amountMinor: true,
           currency: true,
+          group: { select: { defaultCurrency: true } },
           groupId: true,
           payeeId: true,
           payerId: true,
@@ -65,6 +67,9 @@ export async function getDashboardBalanceSummaries(
     const groupBalances = new Map<string, { currency: string; netMinor: number }>();
 
     for (const expense of expenses) {
+      if (expense.currency !== expense.group.defaultCurrency) {
+        throw new Error("Expense currency does not match its group currency.");
+      }
       const key = balanceKey(expense.groupId, expense.currency);
       const paidMinor = expense.payments.reduce((sum, payment) => sum + payment.amountMinor, 0);
       const owedMinor = expense.shares.reduce((sum, share) => sum + share.owedMinor, 0);
@@ -73,6 +78,9 @@ export async function getDashboardBalanceSummaries(
     }
 
     for (const settlement of settlements) {
+      if (settlement.currency !== settlement.group.defaultCurrency) {
+        throw new Error("Settlement currency does not match its group currency.");
+      }
       const currency = settlement.currency;
       const key = balanceKey(settlement.groupId, currency);
       const amountMinor = settlement.amountMinor;

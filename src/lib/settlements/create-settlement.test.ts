@@ -11,7 +11,7 @@ function createTransaction() {
   return {
     activityEvent: { create: jest.fn().mockResolvedValue({}) },
     group: { findUnique: jest.fn().mockResolvedValue({
-      defaultCurrency: "INR", expenses: [], members: [{ userId: actorId }, { userId: payeeId }],
+      defaultCurrency: "INR", members: [{ userId: actorId }, { userId: payeeId }],
     }) },
     settlement: { create: jest.fn().mockResolvedValue({ id: "settlement-1" }) },
   };
@@ -49,7 +49,7 @@ describe("createSettlement", () => {
 
   it("requires the actor, payer, and recipient to be active group members", async () => {
     const transaction = createTransaction();
-    transaction.group.findUnique.mockResolvedValue({ defaultCurrency: "INR", expenses: [], members: [{ userId: payeeId }] });
+    transaction.group.findUnique.mockResolvedValue({ defaultCurrency: "INR", members: [{ userId: payeeId }] });
     const { database } = createDatabase(transaction);
 
     await expect(createSettlement(database as never, "group-1", actorId, validSettlement())).rejects.toEqual(
@@ -66,17 +66,11 @@ describe("createSettlement", () => {
     }));
   });
 
-  it("permits ledger currencies and rejects unrelated currencies", async () => {
+  it("rejects a settlement that does not use the group currency", async () => {
     const input = { ...validSettlement(), currency: "USD" };
     const rejected = createDatabase();
     await expect(createSettlement(rejected.database as never, "group-1", actorId, input)).rejects.toMatchObject({ code: "INVALID_INPUT" });
-
-    const transaction = createTransaction();
-    transaction.group.findUnique.mockResolvedValue({
-      defaultCurrency: "INR", expenses: [{ id: "expense-1" }], members: [{ userId: actorId }, { userId: payeeId }],
-    });
-    const accepted = createDatabase(transaction);
-    await expect(createSettlement(accepted.database as never, "group-1", actorId, input)).resolves.toMatchObject({ settlementId: "settlement-1" });
+    expect(rejected.transaction.settlement.create).not.toHaveBeenCalled();
   });
 
   it("propagates a failed activity write so Prisma can roll back the settlement", async () => {

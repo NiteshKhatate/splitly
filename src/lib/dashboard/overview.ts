@@ -43,6 +43,13 @@ export async function getDashboardOverview(
     });
 
     const debts = groups.flatMap((group) => {
+      if (
+        group.expenses.some((expense) => expense.currency !== group.defaultCurrency)
+        || group.settlements.some((settlement) => settlement.currency !== group.defaultCurrency)
+      ) {
+        throw new Error("Group financial data has inconsistent currencies.");
+      }
+
       const names = new Map(group.members.map(({ user }) => [user.id, user.name]));
       const balances = calculateMemberBalances({
         currencies: [group.defaultCurrency],

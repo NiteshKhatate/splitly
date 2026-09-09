@@ -10,7 +10,12 @@ const config = {
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testEnvironment: "jsdom",
-  testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/.next/", "<rootDir>/tests/e2e/"],
+  testPathIgnorePatterns: [
+    "<rootDir>/node_modules/",
+    "<rootDir>/.next/",
+    "<rootDir>/tests/e2e/",
+    "<rootDir>/tests/integration/",
+  ],
 };
 
 export default createJestConfig(config);

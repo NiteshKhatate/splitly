@@ -25,7 +25,6 @@ export async function createSettlement(
       where: { id: groupId },
       select: {
         defaultCurrency: true,
-        expenses: { where: { currency: data.currency, deletedAt: null }, select: { id: true }, take: 1 },
         members: { where: { userId: { in: [actorId, data.payeeId] } }, select: { userId: true } },
       },
     });
@@ -38,8 +37,8 @@ export async function createSettlement(
     if (data.payeeId === actorId) {
       throw new SettlementError("Choose another group member as the recipient.", "INVALID_INPUT");
     }
-    if (data.currency !== group.defaultCurrency && group.expenses.length === 0) {
-      throw new SettlementError("Currency must match this group's financial activity.", "INVALID_INPUT");
+    if (data.currency !== group.defaultCurrency) {
+      throw new SettlementError("Currency must match the group currency.", "INVALID_INPUT");
     }
 
     const settlement = await transaction.settlement.create({

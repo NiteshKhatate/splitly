@@ -75,7 +75,11 @@ export async function getDashboardGroups(
       .select("group_id")
       .in("group_id", groupIds)
       .returns<GroupMemberRow[]>(),
-    getCurrentUserGroupBalances(database, userId, groupIds),
+    getCurrentUserGroupBalances(
+      database,
+      userId,
+      new Map(groupRows.map((group) => [group.id, group.currency ?? "INR"])),
+    ),
   ]);
 
   if (memberRows.error) {
@@ -95,6 +99,7 @@ export async function getDashboardGroups(
   const groups = groupRows.map((group) => {
     const balance = groupBalances.balances.get(group.id) ?? {
       amountInMinorUnits: 0,
+      currency: group.currency ?? "INR",
       label: "Settled up",
       tone: "neutral" as const,
     };

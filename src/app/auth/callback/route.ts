@@ -6,7 +6,8 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
-  const next = getSafeRedirectPath(requestUrl.searchParams.get("next"));
+  const canonicalOrigin = process.env.APP_URL ?? requestUrl.origin;
+  const next = getSafeRedirectPath(requestUrl.searchParams.get("next"), canonicalOrigin);
 
   if (code) {
     const supabase = await createSupabaseServerClient();
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      return NextResponse.redirect(new URL(next, request.url));
+      return NextResponse.redirect(new URL(next, canonicalOrigin));
     }
   }
 

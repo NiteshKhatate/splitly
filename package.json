@@ -18,6 +18,7 @@
     "postinstall": "prisma generate",
     "lint": "eslint",
     "test": "jest",
+    "test:integration": "jest --config jest.integration.config.mjs --runInBand",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium",
     "typecheck": "prisma generate && next typegen && tsc --noEmit",

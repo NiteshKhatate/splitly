@@ -56,6 +56,7 @@ describe("getDashboardGroups", () => {
     ]);
     const balance = {
       amountInMinorUnits: 2500,
+      currency: "INR",
       label: "You are owed ₹25",
       tone: "success" as const,
     };
@@ -86,6 +87,7 @@ describe("getDashboardGroups", () => {
         members: 1,
         balance: {
           amountInMinorUnits: 0,
+          currency: "INR",
           label: "Settled up",
           tone: "neutral",
         },
@@ -95,7 +97,7 @@ describe("getDashboardGroups", () => {
     expect(getCurrentUserGroupBalances).toHaveBeenCalledWith(
       database,
       "user-1",
-      ["group-1", "group-2"],
+      new Map([["group-1", "INR"], ["group-2", "INR"]]),
     );
   });
 

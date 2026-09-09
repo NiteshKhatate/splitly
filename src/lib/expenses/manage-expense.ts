@@ -29,11 +29,19 @@ export async function updateExpense(
       where: { deletedAt: null, id: expenseId },
       select: {
         createdBy: true,
-        group: { select: { members: { where: { userId: actorId }, select: { role: true } } } },
+        group: {
+          select: {
+            defaultCurrency: true,
+            members: { where: { userId: actorId }, select: { role: true } },
+          },
+        },
         groupId: true,
       },
     });
     requireManager(expense, actorId);
+    if (prepared.data.currency !== expense!.group.defaultCurrency) {
+      throw new ExpenseCreationError("Currency must match the group currency.", "INVALID_INPUT");
+    }
 
     const referencedIds = [...new Set([
       ...prepared.payerAmounts.map(({ payerId }) => payerId),
