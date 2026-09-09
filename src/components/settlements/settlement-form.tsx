@@ -21,12 +21,14 @@ export function SettlementForm({
   currencies,
   defaults,
   groupId,
+  onSuccess,
   payee,
   payer,
 }: {
   currencies: string[];
   defaults?: Partial<Omit<SettlementFormValues, "payeeId">>;
   groupId: string;
+  onSuccess?: () => void;
   payee: { id: string; name: string };
   payer: { id: string; name: string };
 }) {
@@ -55,7 +57,7 @@ export function SettlementForm({
       if (!response.ok) setMessage(body.message ?? "We couldn't record that settlement.");
       else {
         form.reset({ ...values, amount: "", note: "" });
-        router.replace(`/groups/${groupId}/balances`);
+        onSuccess?.();
         router.refresh();
       }
     } catch {
