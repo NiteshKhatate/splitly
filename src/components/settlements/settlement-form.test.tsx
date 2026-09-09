@@ -2,10 +2,9 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { SettlementForm } from "./settlement-form";
 
-const replace = jest.fn();
 const refresh = jest.fn();
 
-jest.mock("next/navigation", () => ({ useRouter: () => ({ refresh, replace }) }));
+jest.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 
 const members = [
   { id: "00000000-0000-4000-8000-000000000001", name: "Alex" },
@@ -34,15 +33,16 @@ describe("SettlementForm", () => {
     expect(container.querySelector('input[name="payeeId"]')).toHaveValue(members[1].id);
   });
 
-  it("submits once and refreshes balances after success", async () => {
+  it("submits once, reports success, and refreshes balances", async () => {
+    const onSuccess = jest.fn();
     jest.mocked(global.fetch).mockResolvedValue({ json: async () => ({ settlementId: "settlement-1" }), ok: true } as Response);
     render(<SettlementForm currencies={["INR"]} defaults={{
       amount: "8",
-    }} groupId="group-1" payee={members[1]} payer={members[0]} />);
+    }} groupId="group-1" onSuccess={onSuccess} payee={members[1]} payer={members[0]} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Record settlement" }));
     await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
-    expect(replace).toHaveBeenCalledWith("/groups/group-1/balances");
+    expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(refresh).toHaveBeenCalled();
     expect(JSON.parse(jest.mocked(global.fetch).mock.calls[0][1]?.body as string)).toMatchObject({
       payeeId: members[1].id,

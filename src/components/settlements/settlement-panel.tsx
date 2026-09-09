@@ -11,12 +11,14 @@ export function SettlementPanel({
   currencies,
   defaults,
   groupId,
+  onSuccess,
   payee,
   payer,
 }: {
   currencies: string[];
   defaults?: Partial<Omit<SettlementFormValues, "payeeId">>;
   groupId: string;
+  onSuccess?: () => void;
   payee?: SettlementMember;
   payer: SettlementMember;
 }) {
@@ -33,6 +35,7 @@ export function SettlementPanel({
           currencies={currencies}
           defaults={defaults}
           groupId={groupId}
+          onSuccess={onSuccess}
           payee={payee}
           payer={payer}
         />

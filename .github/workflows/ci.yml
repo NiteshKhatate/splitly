@@ -54,7 +54,15 @@ jobs:
         run: pnpm test --runInBand
 
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        run: |
+          for attempt in 1 2 3; do
+            pnpm exec playwright install --with-deps chromium && exit 0
+            if [ "$attempt" -lt 3 ]; then
+              echo "Playwright installation failed on attempt $attempt; retrying..."
+              sleep $((attempt * 10))
+            fi
+          done
+          exit 1
 
       - name: Browser tests
         run: pnpm test:e2e
