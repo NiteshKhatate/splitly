@@ -26,6 +26,7 @@ Current topology: one production deployment backed by the configured Supabase pr
 - Production Supabase Free plan provides no managed database backups or PITR (operator confirmed 2026-09-08); no restore guarantee currently exists.
 - [x] Receipt-object recovery policy confirmed (best-effort Free-plan storage with no guaranteed recovery; operator accepted 2026-09-08)
 - [ ] Disposable-project database and receipt restoration completed
+- A healthy disposable `splitly-acceptance` Supabase project was created and all eight Prisma migrations were applied successfully (operator confirmed 2026-09-08). This initializes a clean acceptance database but does not constitute backup restoration.
 
 ## Vercel and monitoring
 
