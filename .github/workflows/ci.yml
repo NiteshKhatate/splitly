@@ -15,8 +15,12 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'ci-publishable-key' }}
+      E2E_MEMBER_EMAIL: ${{ secrets.TEST_OUTSIDER_EMAIL }}
+      E2E_MEMBER_PASSWORD: ${{ secrets.TEST_OUTSIDER_PASSWORD }}
+      E2E_USER_EMAIL: ${{ secrets.TEST_OWNER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.TEST_OWNER_PASSWORD }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.TEST_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.TEST_SUPABASE_PUBLISHABLE_KEY }}
 
     steps:
       - name: Checkout
@@ -37,6 +41,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Require non-production browser-test configuration
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          test -n "$E2E_USER_EMAIL"
+          test -n "$E2E_USER_PASSWORD"
+          test -n "$E2E_MEMBER_EMAIL"
+          test -n "$E2E_MEMBER_PASSWORD"
 
       - name: Lint
         run: pnpm lint

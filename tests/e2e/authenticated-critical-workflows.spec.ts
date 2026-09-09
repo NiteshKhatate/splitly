@@ -7,6 +7,12 @@ const memberEmail = process.env.E2E_MEMBER_EMAIL;
 const memberPassword = process.env.E2E_MEMBER_PASSWORD;
 const hasTestAccounts = Boolean(ownerEmail && ownerPassword && memberEmail && memberPassword);
 
+if (process.env.CI && !hasTestAccounts) {
+  throw new Error(
+    "Authenticated E2E credentials are required in CI; critical workflows cannot be skipped.",
+  );
+}
+
 async function logIn(page: import("@playwright/test").Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
@@ -21,8 +27,7 @@ async function logOut(page: import("@playwright/test").Page) {
   await page.goto("/login");
 }
 
-test("tablet keyboard journey covers group, member, expense, balance, settlement, and activity", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "tablet-chromium", "The authenticated responsive audit runs at tablet size.");
+test("authenticated journey covers group, member, expense, balance, settlement, and activity", async ({ page }) => {
   test.skip(!hasTestAccounts, "Dedicated non-production E2E accounts are required.");
   test.setTimeout(90_000);
 

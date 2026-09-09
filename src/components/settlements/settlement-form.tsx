@@ -38,6 +38,7 @@ export function SettlementForm({
       amount: defaults?.amount ?? "",
       currency: defaults?.currency ?? currencies[0] ?? "INR",
       date: defaults?.date ?? today(),
+      idempotencyKey: crypto.randomUUID(),
       note: defaults?.note ?? "",
       payeeId: payee.id,
     },
@@ -54,7 +55,12 @@ export function SettlementForm({
       const body = await response.json() as { message?: string };
       if (!response.ok) setMessage(body.message ?? "We couldn't record that settlement.");
       else {
-        form.reset({ ...values, amount: "", note: "" });
+        form.reset({
+          ...values,
+          amount: "",
+          idempotencyKey: crypto.randomUUID(),
+          note: "",
+        });
         router.replace(`/groups/${groupId}/balances`);
         router.refresh();
       }
@@ -70,6 +76,7 @@ export function SettlementForm({
       {message ? <FormMessage tone="error">{message}</FormMessage> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <input type="hidden" {...form.register("payeeId")} />
+        <input type="hidden" {...form.register("idempotencyKey")} />
         <dl>
           <dt className="text-label">Payer</dt>
           <dd className="mt-2 min-h-11 wrap-break-word rounded-control border border-border bg-surface-muted px-3 py-2.5 text-secondary">

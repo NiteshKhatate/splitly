@@ -7,6 +7,7 @@ function validSettlement() {
     amount: "10.25",
     currency: "INR",
     date: "2026-09-04",
+    idempotencyKey: "00000000-0000-4000-8000-000000000010",
     note: "Paid by bank transfer",
     payeeId,
   };
@@ -36,5 +37,11 @@ describe("settlementFormSchema", () => {
 
   it("limits optional notes", () => {
     expect(settlementFormSchema.safeParse({ ...validSettlement(), note: "x".repeat(SETTLEMENT_NOTE_MAX_LENGTH + 1) }).success).toBe(false);
+  });
+
+  it("rejects unsupported currency exponents and invalid request IDs", () => {
+    expect(settlementFormSchema.safeParse({ ...validSettlement(), currency: "JPY" }).success).toBe(false);
+    expect(settlementFormSchema.safeParse({ ...validSettlement(), currency: "KWD" }).success).toBe(false);
+    expect(settlementFormSchema.safeParse({ ...validSettlement(), idempotencyKey: "retry" }).success).toBe(false);
   });
 });

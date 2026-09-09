@@ -1317,7 +1317,7 @@ Authentication boundaries are security-critical.
 
 Rules:
 
-* Use Auth.js for application authentication and session handling.
+* Use Supabase Authentication for application authentication and session handling.
 * Every protected server action and route must independently establish authorization.
 * Never trust client-side authentication state as authorization.
 * Redirect targets must be constrained to safe same-origin destinations.

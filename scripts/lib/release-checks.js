@@ -58,6 +58,22 @@ function inspectProductionEnvironment(environment) {
     }
   }
 
+  const runtimeConnection = environment.DATABASE_URL?.trim();
+  const migrationConnection = environment.DIRECT_URL?.trim();
+  if (runtimeConnection && migrationConnection && runtimeConnection === migrationConnection) {
+    errors.push("DATABASE_URL and DIRECT_URL must use distinct runtime and migration connections.");
+  }
+  if (migrationConnection) {
+    try {
+      const directUrl = new URL(migrationConnection);
+      if (directUrl.hostname.endsWith(".pooler.supabase.com")) {
+        errors.push("DIRECT_URL must use the Supabase direct database host, not a pooler host.");
+      }
+    } catch {
+      // The structural URL error is reported above.
+    }
+  }
+
   if (environment.CRON_SECRET && environment.CRON_SECRET.trim().length < 32) {
     errors.push("CRON_SECRET must contain at least 32 characters.");
   }

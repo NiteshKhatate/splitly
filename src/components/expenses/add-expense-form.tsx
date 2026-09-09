@@ -51,12 +51,14 @@ function buildPreviewInput(values: ExpenseFormValues): SplitCalculationInput {
 export function AddExpenseForm({
   currency,
   expenseId,
+  expectedUpdatedAt,
   groupId,
   initialValues,
   members,
 }: {
   currency: string;
   expenseId?: string;
+  expectedUpdatedAt?: string;
   groupId: string;
   initialValues?: ExpenseFormValues;
   members: ExpenseMember[];
@@ -99,7 +101,7 @@ export function AddExpenseForm({
       const response = await fetch(
         expenseId ? `/expenses/${expenseId}/update` : `/groups/${groupId}/expenses/create`,
         {
-        body: JSON.stringify(valuesToSubmit),
+        body: JSON.stringify({ ...valuesToSubmit, expectedUpdatedAt }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
         },

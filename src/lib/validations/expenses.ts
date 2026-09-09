@@ -8,6 +8,11 @@ export const EXPENSE_CATEGORIES = [
   "ENTERTAINMENT", "TRAVEL", "HEALTH", "SHOPPING", "OTHER",
 ] as const;
 export const EXPENSE_SPLIT_METHODS = ["EQUAL", "EXACT", "PERCENTAGE", "SHARES"] as const;
+export const SUPPORTED_CURRENCIES = ["INR", "USD", "EUR", "GBP"] as const;
+export const supportedCurrencySchema = z.string().trim().refine(
+  (currency) => SUPPORTED_CURRENCIES.some((supported) => supported === currency),
+  "Choose a supported currency.",
+);
 
 const decimalAmountSchema = z.string().trim().regex(
   /^\d+(?:\.\d{1,2})?$/,
@@ -46,7 +51,7 @@ const participantSchema = z.object({
 export const expenseFormSchema = z.object({
   amount: decimalAmountSchema,
   category: z.enum(EXPENSE_CATEGORIES),
-  currency: z.string().trim().regex(/^[A-Z]{3}$/, "Choose a valid currency."),
+  currency: supportedCurrencySchema,
   date: z.iso.date("Choose a valid date."),
   description: z.string().trim().min(1, "Enter a description.").max(
     EXPENSE_DESCRIPTION_MAX_LENGTH,
@@ -119,6 +124,8 @@ export const expenseFiltersSchema = z.object({
   ({ from, to }) => !from || !to || from <= to,
   { message: "The start date must be before the end date.", path: ["to"] },
 );
+
+export const expensePageCursorSchema = z.string().uuid("The expense page cursor is invalid.");
 
 export type ExpenseFilters = z.infer<typeof expenseFiltersSchema>;
 

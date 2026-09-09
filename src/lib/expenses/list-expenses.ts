@@ -3,6 +3,7 @@ import type { ExpenseCategory, Prisma, PrismaClient } from "@prisma/client";
 import type { ExpenseFilters } from "@/lib/validations/expenses";
 
 export type ExpenseListDatabase = Pick<PrismaClient, "expense" | "group">;
+export const EXPENSE_PAGE_SIZE = 20;
 
 export type ExpenseListItem = {
   amount: string;
@@ -70,9 +71,15 @@ export async function getGroupExpenses(
   groupId: string,
   userId: string,
   filters: ExpenseFilters,
+  cursor?: string,
 ): Promise<
-  | { error: null; expenses: ExpenseListItem[]; group: ExpenseListGroup }
-  | { error: { message: string }; expenses: []; group: null }
+  | {
+      error: null;
+      expenses: ExpenseListItem[];
+      group: ExpenseListGroup;
+      nextCursor: string | null;
+    }
+  | { error: { message: string }; expenses: []; group: null; nextCursor: null }
 > {
   try {
     const group = await database.group.findFirst({
@@ -89,10 +96,11 @@ export async function getGroupExpenses(
     });
 
     if (!group) {
-      return { error: { message: "Group not found." }, expenses: [], group: null };
+      return { error: { message: "Group not found." }, expenses: [], group: null, nextCursor: null };
     }
 
     const expenses = await database.expense.findMany({
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       select: {
         category: true,
@@ -104,13 +112,22 @@ export async function getGroupExpenses(
         shares: { select: { participant: { select: { name: true } } } },
         totalMinor: true,
       },
-      take: 100,
+      take: EXPENSE_PAGE_SIZE + 1,
       where: buildWhere(groupId, filters),
     });
+    const page = expenses.slice(0, EXPENSE_PAGE_SIZE);
+    if (page.some((expense) => expense.currency !== group.defaultCurrency)) {
+      return {
+        error: { message: "Group financial data has inconsistent currencies." },
+        expenses: [],
+        group: null,
+        nextCursor: null,
+      };
+    }
 
     return {
       error: null,
-      expenses: expenses.map((expense) => ({
+      expenses: page.map((expense) => ({
         amount: formatMinor(expense.totalMinor, expense.currency),
         category: expense.category.charAt(0) + expense.category.slice(1).toLowerCase(),
         currency: expense.currency,
@@ -126,8 +143,16 @@ export async function getGroupExpenses(
         members: group.members.map(({ user }) => user),
         name: group.name,
       },
+      nextCursor: expenses.length > EXPENSE_PAGE_SIZE
+        ? page.at(-1)?.id ?? null
+        : null,
     };
   } catch {
-    return { error: { message: "Expenses could not be loaded." }, expenses: [], group: null };
+    return {
+      error: { message: "Expenses could not be loaded." },
+      expenses: [],
+      group: null,
+      nextCursor: null,
+    };
   }
 }

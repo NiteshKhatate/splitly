@@ -4,6 +4,23 @@ import { ExpenseCreationError, prepareExpenseData } from "./create-expense";
 
 export type ExpenseMutationDatabase = Pick<PrismaClient, "$transaction">;
 
+function parseExpectedVersion(value: string): Date {
+  const version = new Date(value);
+  if (!value || Number.isNaN(version.getTime()) || version.toISOString() !== value) {
+    throw new ExpenseCreationError("Refresh the expense and try again.", "INVALID_INPUT");
+  }
+  return version;
+}
+
+function sameMinorAmounts(
+  left: { amountMinor: number; memberId: string }[],
+  right: { amountMinor: number; memberId: string }[],
+): boolean {
+  if (left.length !== right.length) return false;
+  const expected = new Map(left.map((item) => [item.memberId, item.amountMinor]));
+  return right.every((item) => expected.get(item.memberId) === item.amountMinor);
+}
+
 function requireManager(
   expense: { createdBy: string; group: { members: { role: string }[] } } | null,
   actorId: string,
@@ -21,8 +38,10 @@ export async function updateExpense(
   expenseId: string,
   actorId: string,
   input: unknown,
+  expectedUpdatedAt: string,
 ) {
   const prepared = prepareExpenseData(input);
+  const expectedVersion = parseExpectedVersion(expectedUpdatedAt);
 
   return database.$transaction(async (transaction) => {
     const expense = await transaction.expense.findFirst({
@@ -36,9 +55,19 @@ export async function updateExpense(
           },
         },
         groupId: true,
+        payments: { select: { amountMinor: true, payerId: true } },
+        shares: { select: { owedMinor: true, participantId: true, splitMethod: true } },
+        totalMinor: true,
+        updatedAt: true,
       },
     });
     requireManager(expense, actorId);
+    if (expense!.updatedAt.getTime() !== expectedVersion.getTime()) {
+      throw new ExpenseCreationError(
+        "This expense changed after you opened it. Refresh and try again.",
+        "CONFLICT",
+      );
+    }
     if (prepared.data.currency !== expense!.group.defaultCurrency) {
       throw new ExpenseCreationError("Currency must match the group currency.", "INVALID_INPUT");
     }
@@ -55,8 +84,8 @@ export async function updateExpense(
       throw new ExpenseCreationError("Every payer and participant must be a group member.", "INVALID_INPUT");
     }
 
-    await transaction.expense.update({
-      where: { id: expenseId },
+    const update = await transaction.expense.updateMany({
+      where: { deletedAt: null, id: expenseId, updatedAt: expectedVersion },
       data: {
         category: prepared.data.category as ExpenseCategory,
         currency: prepared.data.currency,
@@ -66,6 +95,32 @@ export async function updateExpense(
         totalMinor: prepared.totalMinor,
       },
     });
+    if (update.count !== 1) {
+      throw new ExpenseCreationError(
+        "This expense changed after you opened it. Refresh and try again.",
+        "CONFLICT",
+      );
+    }
+
+    const originalMethods = new Set(expense!.shares.map(({ splitMethod }) => splitMethod));
+    const financialShapeUnchanged = expense!.totalMinor === prepared.totalMinor
+      && sameMinorAmounts(
+        expense!.payments.map(({ amountMinor, payerId }) => ({ amountMinor, memberId: payerId })),
+        prepared.payerAmounts.map(({ amountMinor, payerId }) => ({ amountMinor, memberId: payerId })),
+      )
+      && sameMinorAmounts(
+        expense!.shares.map(({ owedMinor, participantId }) => ({ amountMinor: owedMinor, memberId: participantId })),
+        prepared.shares.map(({ owedMinor, participantId }) => ({ amountMinor: owedMinor, memberId: participantId })),
+      );
+    const preservedMethod = originalMethods.size === 1
+      ? originalMethods.values().next().value
+      : undefined;
+    const splitMethod = prepared.data.splitMethod === "EXACT"
+      && financialShapeUnchanged
+      && preservedMethod
+      ? preservedMethod
+      : prepared.data.splitMethod;
+
     await transaction.expensePayment.deleteMany({ where: { expenseId } });
     await transaction.expenseShare.deleteMany({ where: { expenseId } });
     await transaction.expensePayment.createMany({
@@ -76,7 +131,7 @@ export async function updateExpense(
         expenseId,
         owedMinor,
         participantId,
-        splitMethod: prepared.data.splitMethod as SplitMethod,
+        splitMethod: splitMethod as SplitMethod,
       })),
     });
     await transaction.activityEvent.create({
@@ -98,7 +153,9 @@ export async function deleteExpense(
   database: ExpenseMutationDatabase,
   expenseId: string,
   actorId: string,
+  expectedUpdatedAt: string,
 ) {
+  const expectedVersion = parseExpectedVersion(expectedUpdatedAt);
   return database.$transaction(async (transaction) => {
     const expense = await transaction.expense.findFirst({
       where: { deletedAt: null, id: expenseId },
@@ -107,14 +164,27 @@ export async function deleteExpense(
         description: true,
         group: { select: { members: { where: { userId: actorId }, select: { role: true } } } },
         groupId: true,
+        updatedAt: true,
       },
     });
     requireManager(expense, actorId);
+    if (expense!.updatedAt.getTime() !== expectedVersion.getTime()) {
+      throw new ExpenseCreationError(
+        "This expense changed after you opened it. Refresh and try again.",
+        "CONFLICT",
+      );
+    }
 
-    await transaction.expense.update({
-      where: { id: expenseId },
+    const deletion = await transaction.expense.updateMany({
+      where: { deletedAt: null, id: expenseId, updatedAt: expectedVersion },
       data: { deletedAt: new Date() },
     });
+    if (deletion.count !== 1) {
+      throw new ExpenseCreationError(
+        "This expense changed after you opened it. Refresh and try again.",
+        "CONFLICT",
+      );
+    }
     await transaction.activityEvent.create({
       data: {
         actorId,

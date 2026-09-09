@@ -66,6 +66,11 @@ describe("expense validation", () => {
     expect(expenseFormSchema.safeParse(expense).success).toBe(false);
   });
 
+  it("rejects currencies whose minor-unit exponent is not supported in Phase 1", () => {
+    expect(expenseFormSchema.safeParse({ ...validExpense(), currency: "JPY" }).success).toBe(false);
+    expect(expenseFormSchema.safeParse({ ...validExpense(), currency: "KWD" }).success).toBe(false);
+  });
+
   it("rejects amounts that exceed the PostgreSQL integer range", () => {
     const expense = validExpense();
     expense.amount = "21474836.48";

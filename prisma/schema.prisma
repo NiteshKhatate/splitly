@@ -212,6 +212,7 @@ model ExpenseShare {
 
 model Settlement {
   id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  idempotencyKey String?       @unique(map: "settlements_idempotency_key_key") @map("idempotency_key") @db.Uuid
   groupId     String           @map("group_id") @db.Uuid
   payerId     String           @map("paid_by") @db.Uuid
   payeeId     String           @map("paid_to") @db.Uuid

@@ -6,7 +6,15 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 
-export function DeleteExpenseButton({ expenseId, groupId }: { expenseId: string; groupId: string }) {
+export function DeleteExpenseButton({
+  expenseId,
+  expectedUpdatedAt,
+  groupId,
+}: {
+  expenseId: string;
+  expectedUpdatedAt: string;
+  groupId: string;
+}) {
   const router = useRouter();
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -16,7 +24,11 @@ export function DeleteExpenseButton({ expenseId, groupId }: { expenseId: string;
     setIsDeleting(true);
     setMessage(undefined);
     try {
-      const response = await fetch(`/expenses/${expenseId}/delete`, { method: "POST" });
+      const response = await fetch(`/expenses/${expenseId}/delete`, {
+        body: JSON.stringify({ expectedUpdatedAt }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
       const body = await response.json() as { message?: string };
       if (!response.ok) {
         setMessage(body.message ?? "We couldn't delete that expense.");

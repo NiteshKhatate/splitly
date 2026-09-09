@@ -13,7 +13,7 @@ export type ExpenseDatabase = Pick<PrismaClient, "$transaction">;
 export class ExpenseCreationError extends Error {
   constructor(
     message: string,
-    readonly code: "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND",
+    readonly code: "CONFLICT" | "FORBIDDEN" | "INVALID_INPUT" | "NOT_FOUND",
   ) {
     super(message);
     this.name = "ExpenseCreationError";

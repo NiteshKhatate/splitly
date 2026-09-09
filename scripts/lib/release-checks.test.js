@@ -42,6 +42,18 @@ describe("release checks", () => {
     ]));
   });
 
+  it("requires a distinct non-pooler migration connection", () => {
+    expect(inspectProductionEnvironment({
+      ...validEnvironment,
+      DIRECT_URL: validEnvironment.DATABASE_URL,
+    })).toContain("DATABASE_URL and DIRECT_URL must use distinct runtime and migration connections.");
+
+    expect(inspectProductionEnvironment({
+      ...validEnvironment,
+      DIRECT_URL: "postgresql://migrate:password@aws-0-region.pooler.supabase.com:5432/postgres",
+    })).toContain("DIRECT_URL must use the Supabase direct database host, not a pooler host.");
+  });
+
   it("allows deferred reminders but rejects partial reminder configuration", () => {
     const deferredEnvironment = { ...validEnvironment };
     delete deferredEnvironment.CRON_SECRET;

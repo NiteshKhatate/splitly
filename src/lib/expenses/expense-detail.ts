@@ -103,6 +103,7 @@ export async function getExpenseDetail(
         splitMethod: splitMethod.charAt(0) + splitMethod.slice(1).toLowerCase(),
         total: formatMoney(expense.totalMinor, expense.currency),
         updatedAt: new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(expense.updatedAt),
+        version: expense.updatedAt.toISOString(),
       },
       error: null,
     };

@@ -57,7 +57,7 @@ Continue using:
 - Tailwind CSS
 - Supabase PostgreSQL
 - Prisma
-- Auth.js
+- Supabase Authentication
 - React Hook Form
 - Zod
 - Jest

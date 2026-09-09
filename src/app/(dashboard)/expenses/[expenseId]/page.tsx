@@ -52,7 +52,7 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           <ReceiptUploadForm expenseId={expenseId} />
         </Card>
         <Card className="mt-6"><h2 className="text-card-heading">Activity</h2>{detail.activity.length ? <ul className="mt-4 space-y-3">{detail.activity.map((event, index) => <li key={`${event.date}-${index}`} className="text-secondary"><span className="text-label">{event.actor}</span> {event.label}<span className="block text-caption text-foreground-muted">{event.date}</span></li>)}</ul> : <p className="mt-2 text-secondary text-foreground-muted">No activity recorded.</p>}</Card>
-        {detail.canManage ? <div className="mt-6 flex flex-col gap-3 sm:flex-row"><Button href={`/expenses/${expenseId}/edit`}>Edit expense</Button><DeleteExpenseButton expenseId={expenseId} groupId={detail.groupId} /></div> : null}
+        {detail.canManage ? <div className="mt-6 flex flex-col gap-3 sm:flex-row"><Button href={`/expenses/${expenseId}/edit`}>Edit expense</Button><DeleteExpenseButton expenseId={expenseId} expectedUpdatedAt={detail.version} groupId={detail.groupId} /></div> : null}
       </main>
     </div>
   );
