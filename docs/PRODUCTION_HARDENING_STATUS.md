@@ -10,6 +10,12 @@ All Critical and High application-code defects identified by the audit have a re
 
 The application continues to use Supabase Authentication. The later hardening request's Auth.js line conflicted with the established architecture and installed implementation; changing providers during stabilization would have been a major, unauthorized migration. The conflicting documentation was reconciled to Supabase Authentication.
 
+## Current settlement incident
+
+The reported `settlement_creation_failed` response is caused by database schema drift. The configured Supabase database has six unapplied migrations, including `20260909110000_settlement_idempotency`; the deployed settlement service queries the migration's `settlements.idempotency_key` column. The application must not bypass that column because doing so would remove retry protection from a financial write.
+
+The first pending migration failed safely in its preflight because one INR group contains one USD expense and one confirmed USD settlement, alongside INR ledger records. The failed migration installed no functions or triggers. An operator must determine whether the USD labels are mistakes or the records represent actual USD amounts; Splitly must not silently relabel or convert financial history. After reconciliation, mark the failed attempt rolled back and deploy the complete migration chain. The configured Supabase session-pooler endpoint on port 5432 is supported for Prisma migrations; transaction pooling on port 6543 is not.
+
 ## Audit finding disposition
 
 | Finding | Repository status | Verification still required |
@@ -27,7 +33,7 @@ The application continues to use Supabase Authentication. The later hardening re
 | H9 expense history truncation | Fixed with server-side cursor pagination | Authenticated browser verification with more than one page |
 | H10 split method overwritten on edits | Fixed: unchanged allocations preserve their original method | Existing unit regression coverage passes; deployed smoke test recommended |
 | H11 stale financial writes | Fixed with `updatedAt` optimistic concurrency on expense update/delete | Real concurrent transaction test recommended |
-| H12 unsafe `DIRECT_URL` certification | Fixed preflight rejects an identical runtime URL and Supabase pooler host | Configure/test the actual direct production endpoint |
+| H12 unsafe `DIRECT_URL` certification | Fixed preflight rejects an identical runtime URL and transaction-pooler endpoints; Supabase session pooling on port 5432 is valid for Prisma migrations | Verify migration connectivity in the target environment |
 | H13 migration/deployment order | Manual protected GitHub workflow added: config check → migrate → verify → Vercel hook → health | Disable automatic production deploys; configure protected environment and hook; exercise against staging/disposable DB |
 | M1 settlement idempotency | Fixed with UUID request key and unique constraint | Apply migration; concurrent integration exercise recommended |
 | M2 receipt consistency/content validation | Fixed with file signatures, membership checks, deletion tombstones, and retry cleanup | Apply migration; verify scheduled cleanup and storage failure behavior against disposable Supabase |
@@ -81,7 +87,7 @@ The application continues to use Supabase Authentication. The later hardening re
 1. Provision or reuse a **disposable** Supabase project, apply all 14 Prisma migrations, configure the `TEST_*` variables listed in `.env.example`, and run `pnpm test:integration`.
 2. Configure CI-only owner/outsider accounts and the `TEST_*` GitHub secrets; obtain a green CI run including authenticated Playwright on desktop, tablet, and mobile.
 3. Establish recoverability: enable provider backups/PITR or an automated encrypted independent database backup, separately back up receipt objects, and complete a dated restore/reconciliation drill.
-4. Configure a true direct PostgreSQL `DIRECT_URL` (not the Supabase pooler) and rerun `pnpm check:production` and Prisma migration status.
+4. Verify `DIRECT_URL` uses either the Supabase direct endpoint or session pooler on port 5432, then rerun `pnpm check:production` and Prisma migration status.
 5. In GitHub, protect the `production` environment with reviewers and add the production secrets/variables used by `.github/workflows/release.yml`.
 6. In Vercel, disable automatic production deployment, create a Deploy Hook, save it as `VERCEL_DEPLOY_HOOK_URL`, add the newly required `CRON_SECRET`, and release only through the protected workflow.
 7. Run a two-user production-like acceptance journey and confirm `/api/cron/maintenance`, `/api/health`, monitoring delivery, and receipt cleanup.

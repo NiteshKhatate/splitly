@@ -20,7 +20,7 @@ Current topology: one production deployment backed by the configured Supabase pr
 - [x] `pnpm check:auth-security` passes with a temporary Management API bearer token (passed under the documented Free-plan policy with expected non-blocking warnings; operator confirmed and token revoked 2026-09-08)
 - Auth audit on 2026-09-08 identified four controls unavailable or deferred on the configured Supabase Free plan: CAPTCHA, leaked-password protection, provider-level eight-character enforcement, and password-change reauthentication. The release owner accepted these as non-blocking MVP warnings. Splitly retains application-level eight-character validation and current-password verification; CAPTCHA must not be enabled until the application submits CAPTCHA tokens.
 - [x] Security Advisor findings reviewed (operator accepted the reported function-related warnings for the MVP on 2026-09-08; no dashboard auto-fixes or database changes applied)
-- [ ] Apply and verify the current 14-migration Prisma chain using a true direct `DIRECT_URL`
+- [ ] Apply and verify the current 14-migration Prisma chain using a direct endpoint or Supabase session-pooler `DIRECT_URL` on port 5432
 - The earlier eight-migration verification predates six production-hardening migrations and is no longer sufficient release evidence.
 - [ ] Backup plan and retention recorded privately
 - [ ] PITR decision recorded privately

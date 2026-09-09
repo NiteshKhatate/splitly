@@ -42,7 +42,7 @@ describe("release checks", () => {
     ]));
   });
 
-  it("requires a distinct non-pooler migration connection", () => {
+  it("requires a distinct migration connection and rejects transaction pooling", () => {
     expect(inspectProductionEnvironment({
       ...validEnvironment,
       DIRECT_URL: validEnvironment.DATABASE_URL,
@@ -51,7 +51,12 @@ describe("release checks", () => {
     expect(inspectProductionEnvironment({
       ...validEnvironment,
       DIRECT_URL: "postgresql://migrate:password@aws-0-region.pooler.supabase.com:5432/postgres",
-    })).toContain("DIRECT_URL must use the Supabase direct database host, not a pooler host.");
+    })).toEqual([]);
+
+    expect(inspectProductionEnvironment({
+      ...validEnvironment,
+      DIRECT_URL: "postgresql://migrate:password@aws-0-region.pooler.supabase.com:6543/postgres",
+    })).toContain("DIRECT_URL must use a direct endpoint or the Supabase session pooler on port 5432.");
   });
 
   it("allows deferred reminders but rejects partial reminder configuration", () => {

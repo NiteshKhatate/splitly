@@ -28,7 +28,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ gro
     if (error instanceof SettlementError) {
       return NextResponse.json({ message: error.message }, { status: error.code === "FORBIDDEN" ? 403 : error.code === "NOT_FOUND" ? 404 : 400 });
     }
-    await captureServerError("settlement_creation_failed", { groupId, userId: user.id });
+    const errorCode = error && typeof error === "object" && "code" in error
+      && typeof error.code === "string" ? error.code : undefined;
+    await captureServerError("settlement_creation_failed", { errorCode, groupId, userId: user.id });
     return NextResponse.json({ message: "We couldn't record that settlement." }, { status: 500 });
   }
 }

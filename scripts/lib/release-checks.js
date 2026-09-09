@@ -67,8 +67,11 @@ function inspectProductionEnvironment(environment) {
   if (migrationConnection) {
     try {
       const directUrl = new URL(migrationConnection);
-      if (directUrl.hostname.endsWith(".pooler.supabase.com")) {
-        errors.push("DIRECT_URL must use the Supabase direct database host, not a pooler host.");
+      if (
+        directUrl.hostname.endsWith(".pooler.supabase.com")
+        && directUrl.port !== "5432"
+      ) {
+        errors.push("DIRECT_URL must use a direct endpoint or the Supabase session pooler on port 5432.");
       }
     } catch {
       // The structural URL error is reported above.
