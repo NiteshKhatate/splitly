@@ -75,6 +75,7 @@ export async function getCurrentUserGroupBalances(
       database.expense.findMany({
         where: {
           deletedAt: null,
+          group: { members: { some: { userId } } },
           groupId: { in: groupIds },
         },
         select: {
@@ -91,7 +92,11 @@ export async function getCurrentUserGroupBalances(
         },
       }),
       database.settlement.findMany({
-        where: { groupId: { in: groupIds }, status: "CONFIRMED" },
+        where: {
+          group: { members: { some: { userId } } },
+          groupId: { in: groupIds },
+          status: "CONFIRMED",
+        },
         select: {
           amountMinor: true,
           currency: true,

@@ -7,6 +7,17 @@ import { GET } from "./route";
 jest.mock("@/server/db", () => ({ getDb: jest.fn() }));
 
 describe("health route", () => {
+  const originalRelease = process.env.VERCEL_GIT_COMMIT_SHA;
+
+  beforeEach(() => {
+    process.env.VERCEL_GIT_COMMIT_SHA = "release-sha";
+  });
+
+  afterAll(() => {
+    if (originalRelease === undefined) delete process.env.VERCEL_GIT_COMMIT_SHA;
+    else process.env.VERCEL_GIT_COMMIT_SHA = originalRelease;
+  });
+
   it("reports application and database availability without connection details", async () => {
     jest.mocked(getDb).mockReturnValue({ $queryRaw: jest.fn().mockResolvedValue([{ value: 1 }]) } as never);
     const response = await GET();
@@ -14,7 +25,12 @@ describe("health route", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
-    expect(body).toEqual({ database: "available", responseTimeMs: expect.any(Number), status: "ok" });
+    expect(body).toEqual({
+      database: "available",
+      release: "release-sha",
+      responseTimeMs: expect.any(Number),
+      status: "ok",
+    });
     expect(JSON.stringify(body)).not.toMatch(/postgres|credential|connection/i);
   });
 
@@ -25,6 +41,7 @@ describe("health route", () => {
     expect(response.status).toBe(503);
     await expect(response.json()).resolves.toEqual({
       database: "unavailable",
+      release: "release-sha",
       responseTimeMs: expect.any(Number),
       status: "degraded",
     });

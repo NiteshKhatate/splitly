@@ -2,9 +2,13 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+import { captureServerError } from "@/lib/monitoring/server-monitor";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { receiptFileSchema } from "@/lib/validations/receipts";
+import {
+  hasExpectedReceiptSignature,
+  receiptFileSchema,
+} from "@/lib/validations/receipts";
 import { getDb } from "@/server/db";
 
 const extensionByType = { "application/pdf": "pdf", "image/jpeg": "jpg", "image/png": "png" } as const;
@@ -27,6 +31,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ exp
   if (!(file instanceof File)) return NextResponse.json({ message: "Choose a receipt file." }, { status: 400 });
   const validation = receiptFileSchema.safeParse(file);
   if (!validation.success) return NextResponse.json({ message: validation.error.issues[0]?.message ?? "Choose a valid receipt." }, { status: 400 });
+  const bytes = await file.arrayBuffer();
+  if (!hasExpectedReceiptSignature(bytes, validation.data.type)) {
+    return NextResponse.json(
+      { message: "Receipt content does not match its file type." },
+      { status: 400 },
+    );
+  }
 
   const database = getDb();
   const expense = await database.expense.findFirst({
@@ -37,8 +48,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ exp
 
   const key = `${expense.groupId}/${expense.id}/${crypto.randomUUID()}.${extensionByType[validation.data.type]}`;
   const admin = createSupabaseAdminClient();
-  const upload = await admin.storage.from("receipts").upload(key, await file.arrayBuffer(), { contentType: validation.data.type, upsert: false });
-  if (upload.error) return NextResponse.json({ message: "We couldn't upload that receipt." }, { status: 500 });
+  const upload = await admin.storage.from("receipts").upload(key, bytes, { contentType: validation.data.type, upsert: false });
+  if (upload.error) {
+    await captureServerError("receipt_storage_upload_failed", { expenseId, userId: user.id });
+    return NextResponse.json({ message: "We couldn't upload that receipt." }, { status: 500 });
+  }
   try {
     const attachment = await database.attachment.create({
       data: { byteSize: file.size, expenseId, fileName: file.name, mimeType: validation.data.type, storageKey: key, uploadedBy: user.id },
@@ -48,6 +62,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ exp
     return NextResponse.json(attachment, { status: 201 });
   } catch {
     await admin.storage.from("receipts").remove([key]);
+    await captureServerError("receipt_metadata_creation_failed", { expenseId, userId: user.id });
     return NextResponse.json({ message: "We couldn't save that receipt." }, { status: 500 });
   }
 }

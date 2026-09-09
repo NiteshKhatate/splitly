@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
+import { captureServerError } from "@/lib/monitoring/server-monitor";
 import { sendReminderEmail } from "@/lib/reminders/email-provider";
 import { processBalanceReminders } from "@/lib/reminders/process-reminders";
 import { getDb } from "@/server/db";
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
   try {
     return NextResponse.json(await processBalanceReminders(getDb(), sendReminderEmail));
   } catch {
+    await captureServerError("reminder_processing_failed");
     return NextResponse.json({ message: "Reminder processing failed." }, { status: 500 });
   }
 }

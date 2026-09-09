@@ -89,6 +89,23 @@ describe("expense validation", () => {
       expect.objectContaining({ message: "Each participant can appear only once." }),
     ]));
   });
+
+  it("limits payer and participant collections", () => {
+    const expense = validExpense();
+    expense.payers = Array.from({ length: 11 }, (_, index) => ({
+      amount: index === 0 ? "10" : "",
+      memberId: `00000000-0000-4000-8000-${String(index + 10).padStart(12, "0")}`,
+    }));
+    expense.participants = Array.from({ length: 11 }, (_, index) => ({
+      exactAmount: "",
+      included: true,
+      memberId: `00000000-0000-4000-8000-${String(index + 30).padStart(12, "0")}`,
+      percentage: "",
+      shares: "1",
+    }));
+
+    expect(expenseFormSchema.safeParse(expense).success).toBe(false);
+  });
 });
 
 describe("expense filter validation", () => {

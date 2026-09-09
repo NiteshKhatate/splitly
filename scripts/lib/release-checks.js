@@ -12,13 +12,14 @@ function parseHttpsUrl(value) {
 function inspectProductionEnvironment(environment) {
   const required = [
     "APP_URL",
+    "CRON_SECRET",
     "DATABASE_URL",
     "DIRECT_URL",
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
     "NEXT_PUBLIC_SUPABASE_URL",
     "SUPABASE_SECRET_KEY",
   ];
-  const reminderVariables = ["CRON_SECRET", "REMINDER_FROM_EMAIL", "RESEND_API_KEY"];
+  const reminderVariables = ["REMINDER_FROM_EMAIL", "RESEND_API_KEY"];
   const errors = [];
 
   for (const name of required) {
@@ -94,7 +95,7 @@ function inspectProductionEnvironment(environment) {
 }
 
 function inspectProductionEnvironmentWarnings(environment) {
-  const reminderVariables = ["CRON_SECRET", "REMINDER_FROM_EMAIL", "RESEND_API_KEY"];
+  const reminderVariables = ["REMINDER_FROM_EMAIL", "RESEND_API_KEY"];
   return reminderVariables.every((name) => !environment[name]?.trim())
     ? ["Scheduled email reminders are deferred until the customer configures an owned sending domain."]
     : [];
@@ -149,7 +150,7 @@ function inspectAuthConfigWarnings(config) {
   return warnings;
 }
 
-function inspectHealthResponse(status, body) {
+function inspectHealthResponse(status, body, expectedRelease) {
   const errors = [];
   if (status !== 200) errors.push(`Health endpoint returned HTTP ${status}.`);
   if (!body || body.status !== "ok" || body.database !== "available") {
@@ -157,6 +158,9 @@ function inspectHealthResponse(status, body) {
   }
   if (!Number.isFinite(body?.responseTimeMs) || body.responseTimeMs < 0) {
     errors.push("Health response did not contain a valid response time.");
+  }
+  if (expectedRelease && body?.release !== expectedRelease) {
+    errors.push("Health response does not identify the expected application release.");
   }
   return errors;
 }

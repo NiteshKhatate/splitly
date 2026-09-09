@@ -7,6 +7,8 @@ import {
   getSupabaseErrorDetails,
 } from "@/lib/groups/member-actions";
 import { ensureUserProfile } from "@/lib/auth/profiles";
+import { captureServerError } from "@/lib/monitoring/server-monitor";
+import { readJsonBody, RequestBodyError } from "@/lib/security/request-body";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
@@ -22,7 +24,15 @@ type InvitationRouteContext = {
 
 export async function POST(request: NextRequest, context: InvitationRouteContext) {
   const { groupId } = await context.params;
-  const body = await request.json().catch(() => null) as { email?: unknown } | null;
+  let body: { email?: unknown } | null;
+  try {
+    body = await readJsonBody(request) as { email?: unknown } | null;
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof RequestBodyError ? error.message : "Request body is invalid." },
+      { status: error instanceof RequestBodyError && error.code === "TOO_LARGE" ? 413 : 400 },
+    );
+  }
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const fieldError = validateGroupMemberEmail(email);
 
@@ -52,6 +62,7 @@ export async function POST(request: NextRequest, context: InvitationRouteContext
       ...getSupabaseErrorDetails(profile.error),
       userId: user.id,
     });
+    await captureServerError("group_invitation_profile_failed", { groupId, userId: user.id });
 
     return NextResponse.json(
       { message: "We couldn't prepare your profile for invitations. Please try again." },
@@ -81,6 +92,7 @@ export async function POST(request: NextRequest, context: InvitationRouteContext
       ...getSupabaseErrorDetails(invitation.error),
       userId: user.id,
     });
+    await captureServerError("group_invitation_creation_failed", { groupId, userId: user.id });
 
     return NextResponse.json(
       { message: getFriendlyInvitationRpcErrorMessage(invitation.error) },
@@ -140,6 +152,7 @@ export async function POST(request: NextRequest, context: InvitationRouteContext
       message: error instanceof Error ? error.message : String(error),
       userId: user.id,
     });
+    await captureServerError("group_invitation_delivery_failed", { groupId, userId: user.id });
 
     return NextResponse.json(
       { message: "We couldn't send that invitation email. Please try again." },
@@ -157,6 +170,10 @@ export async function POST(request: NextRequest, context: InvitationRouteContext
 
     const isRateLimited = inviteError.status === 429
       || inviteError.code === "over_email_send_rate_limit";
+
+    if (!isRateLimited) {
+      await captureServerError("group_invitation_email_failed", { groupId, userId: user.id });
+    }
 
     return NextResponse.json(
       {

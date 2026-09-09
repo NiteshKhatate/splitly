@@ -1,5 +1,7 @@
 # Splitly Production-Readiness Audit
 
+> Historical baseline: remediation has since been performed. See `docs/PRODUCTION_HARDENING_STATUS.md` for the current disposition, verification results, and remaining external release gates.
+
 Audit date: 2026-09-09  
 Scope: Current repository implementation after completion of `docs/BUILD_PLAN.md`
 

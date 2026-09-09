@@ -1,0 +1,88 @@
+name: Production release
+
+on:
+  workflow_dispatch:
+    inputs:
+      backup_reference:
+        description: Private evidence reference for a current recoverable backup
+        required: true
+        type: string
+      confirmation:
+        description: Type MIGRATE_AND_DEPLOY_PRODUCTION
+        required: true
+        type: string
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Migrate, deploy, and verify
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      APP_URL: ${{ vars.APP_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+
+    steps:
+      - name: Confirm controlled release
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          BACKUP_REFERENCE: ${{ inputs.backup_reference }}
+        run: |
+          test "$CONFIRMATION" = "MIGRATE_AND_DEPLOY_PRODUCTION"
+          test -n "$BACKUP_REFERENCE"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.4
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate production configuration
+        run: pnpm check:production
+
+      - name: Apply migrations before application deployment
+        run: pnpm db:deploy
+
+      - name: Verify migration state
+        run: pnpm exec prisma migrate status
+
+      - name: Trigger the Vercel production deployment
+        env:
+          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: curl --fail --silent --show-error --request POST "$VERCEL_DEPLOY_HOOK_URL"
+
+      - name: Wait for healthy production
+        env:
+          EXPECTED_RELEASE_SHA: ${{ github.sha }}
+        run: |
+          for attempt in {1..20}; do
+            if PRODUCTION_HEALTHCHECK_URL="$APP_URL/api/health" pnpm check:uptime; then
+              exit 0
+            fi
+            sleep 15
+          done
+          exit 1

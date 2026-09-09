@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { ExpenseExportError, exportExpensesCsv } from "@/lib/exports/expense-csv";
+import { captureServerError } from "@/lib/monitoring/server-monitor";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { expenseExportSchema } from "@/lib/validations/exports";
 import { getDb } from "@/server/db";
@@ -30,6 +31,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const status = error instanceof ExpenseExportError && error.code === "NOT_FOUND" ? 404 : 500;
+    if (status === 500) await captureServerError("expense_export_failed", { userId: user.id });
     return NextResponse.json({ message: status === 404 ? "Group not found." : "Expenses could not be exported." }, { status });
   }
 }

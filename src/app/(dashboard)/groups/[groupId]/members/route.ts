@@ -8,6 +8,8 @@ import {
 } from "@/lib/groups/member-actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { consumeRateLimit } from "@/lib/security/rate-limit";
+import { captureServerError } from "@/lib/monitoring/server-monitor";
+import { readJsonBody, RequestBodyError } from "@/lib/security/request-body";
 import { validateGroupMemberEmail } from "@/lib/validations/groups";
 import { getDb } from "@/server/db";
 
@@ -19,7 +21,15 @@ type AddMemberRouteContext = {
 
 export async function POST(request: NextRequest, context: AddMemberRouteContext) {
   const { groupId } = await context.params;
-  const body = await request.json().catch(() => null) as { email?: unknown } | null;
+  let body: { email?: unknown } | null;
+  try {
+    body = await readJsonBody(request) as { email?: unknown } | null;
+  } catch (error) {
+    return NextResponse.json(
+      { message: error instanceof RequestBodyError ? error.message : "Request body is invalid." },
+      { status: error instanceof RequestBodyError && error.code === "TOO_LARGE" ? 413 : 400 },
+    );
+  }
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const fieldError = validateGroupMemberEmail(email);
 
@@ -51,6 +61,7 @@ export async function POST(request: NextRequest, context: AddMemberRouteContext)
       ...errorDetails,
       userId: user.id,
     });
+    await captureServerError("group_member_add_failed", { groupId, userId: user.id });
 
     return NextResponse.json(
       { message: "We couldn't add that person. Please try again." },

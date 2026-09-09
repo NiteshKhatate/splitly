@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { confirmSettlement } from "@/lib/settlements/confirm-settlement";
+import { captureServerError } from "@/lib/monitoring/server-monitor";
 import { SettlementError } from "@/lib/settlements/create-settlement";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
@@ -24,6 +25,11 @@ export async function POST(_request: Request, { params }: {
     if (error instanceof SettlementError) {
       return NextResponse.json({ message: error.message }, { status: error.code === "FORBIDDEN" ? 403 : error.code === "NOT_FOUND" ? 404 : 400 });
     }
+    await captureServerError("settlement_confirmation_failed", {
+      groupId,
+      settlementId,
+      userId: user.id,
+    });
     return NextResponse.json({ message: "We couldn't confirm that settlement." }, { status: 500 });
   }
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const EXPENSE_DESCRIPTION_MAX_LENGTH = 120;
 export const EXPENSE_NOTES_MAX_LENGTH = 500;
+export const MAX_EXPENSE_PARTICIPANTS = 10;
 export const MAX_EXPENSE_MINOR = 2_147_483_647;
 export const EXPENSE_CATEGORIES = [
   "GENERAL", "GROCERIES", "DINING", "TRANSPORT", "HOUSING", "UTILITIES",
@@ -61,8 +62,14 @@ export const expenseFormSchema = z.object({
     EXPENSE_NOTES_MAX_LENGTH,
     `Notes must be ${EXPENSE_NOTES_MAX_LENGTH} characters or less.`,
   ),
-  participants: z.array(participantSchema).min(1),
-  payers: z.array(memberAllocationSchema).min(1),
+  participants: z.array(participantSchema).min(1).max(
+    MAX_EXPENSE_PARTICIPANTS,
+    `An expense can include at most ${MAX_EXPENSE_PARTICIPANTS} participants.`,
+  ),
+  payers: z.array(memberAllocationSchema).min(1).max(
+    MAX_EXPENSE_PARTICIPANTS,
+    `An expense can include at most ${MAX_EXPENSE_PARTICIPANTS} payers.`,
+  ),
   splitMethod: z.enum(EXPENSE_SPLIT_METHODS),
 }).superRefine((data, context) => {
   if (new Set(data.payers.map(({ memberId }) => memberId)).size !== data.payers.length) {

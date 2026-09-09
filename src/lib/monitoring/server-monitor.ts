@@ -14,5 +14,6 @@ export async function captureServerError(event: string, context: Record<string, 
       ...(process.env.ERROR_MONITORING_TOKEN ? { Authorization: `Bearer ${process.env.ERROR_MONITORING_TOKEN}` } : {}),
     },
     method: "POST",
+    signal: AbortSignal.timeout(3_000),
   }).catch(() => undefined);
 }

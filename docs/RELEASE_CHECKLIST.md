@@ -9,9 +9,9 @@ Current topology: one production deployment backed by the configured Supabase pr
 - [x] `pnpm lint`
 - [x] `pnpm typecheck`
 - [x] `pnpm check:schema`
-- [x] `pnpm test --runInBand` (54 suites, 223 tests; rerun 2026-09-08)
-- [x] Public accessibility and access-control Playwright matrix (30 passed, 3 credential-gated checks skipped)
-- [x] `pnpm exec next build --webpack` (rerun 2026-09-08)
+- [x] `pnpm test --runInBand` (58 suites, 263 tests; rerun 2026-09-09)
+- [x] Public accessibility and access-control Playwright matrix (42 passed, 3 credential-gated checks skipped; rerun 2026-09-09)
+- [x] `pnpm exec next build --webpack` (rerun 2026-09-09)
 - [x] Default production build completed in Vercel (operator confirmed production deployment on 2026-09-07)
 - [x] `pnpm audit:production` reviewed (no known vulnerabilities)
 
@@ -20,7 +20,8 @@ Current topology: one production deployment backed by the configured Supabase pr
 - [x] `pnpm check:auth-security` passes with a temporary Management API bearer token (passed under the documented Free-plan policy with expected non-blocking warnings; operator confirmed and token revoked 2026-09-08)
 - Auth audit on 2026-09-08 identified four controls unavailable or deferred on the configured Supabase Free plan: CAPTCHA, leaked-password protection, provider-level eight-character enforcement, and password-change reauthentication. The release owner accepted these as non-blocking MVP warnings. Splitly retains application-level eight-character validation and current-password verification; CAPTCHA must not be enabled until the application submits CAPTCHA tokens.
 - [x] Security Advisor findings reviewed (operator accepted the reported function-related warnings for the MVP on 2026-09-08; no dashboard auto-fixes or database changes applied)
-- [x] Production migration status is current using `DIRECT_URL` (8 migrations; verified 2026-09-07)
+- [ ] Apply and verify the current 14-migration Prisma chain using a true direct `DIRECT_URL`
+- The earlier eight-migration verification predates six production-hardening migrations and is no longer sufficient release evidence.
 - [ ] Backup plan and retention recorded privately
 - [ ] PITR decision recorded privately
 - Production Supabase Free plan provides no managed database backups or PITR (operator confirmed 2026-09-08); no restore guarantee currently exists.
@@ -30,12 +31,13 @@ Current topology: one production deployment backed by the configured Supabase pr
 
 ## Vercel and monitoring
 
-- [x] GitHub repository connected to Vercel (`NiteshKhatate/splitly`, production branch `main`, automatic production deployments enabled; operator confirmed 2026-09-08)
+- [ ] Disable automatic production deployments and configure the protected `Production release` workflow and Vercel Deploy Hook
+- The repository now contains migration-before-deployment automation, but the required GitHub/Vercel settings and secrets need account access.
 - [x] GitHub production-branch protection configured for `main` with pull requests, CI status checks, up-to-date branches, conversation resolution, deletion protection, and force-push protection (operator confirmed 2026-09-08)
 - [x] Preview/staging deployment intentionally deferred for the current single-environment release
-- [x] Production variables pass `pnpm check:production` (passed 2026-09-08 with the expected customer-handoff reminder warning)
+- [ ] Production variables pass the current `pnpm check:production`
 - Production check on 2026-09-07 failed because `APP_URL`, `CRON_SECRET`, `REMINDER_FROM_EMAIL`, and `RESEND_API_KEY` were missing.
-- `APP_URL=https://splitly-zeta.vercel.app` was configured for Vercel Production (operator confirmed 2026-09-08). Scheduled email reminder delivery is implemented, but `CRON_SECRET`, `REMINDER_FROM_EMAIL`, and `RESEND_API_KEY` are an optional all-or-none customer-handoff configuration pending an owned sending domain.
+- `APP_URL=https://splitly-zeta.vercel.app` was configured for Vercel Production (operator confirmed 2026-09-08). `CRON_SECRET` is now required for maintenance. `REMINDER_FROM_EMAIL` and `RESEND_API_KEY` remain an optional all-or-none customer-handoff configuration pending an owned sending domain.
 - Supabase Auth Site URL and production callback, password-reset, and invitation redirects were configured for `https://splitly-zeta.vercel.app` (operator confirmed 2026-09-08).
 - [x] Production deployment confirmed by the operator
 - [x] Production URL independently verified (`https://splitly-zeta.vercel.app`; database-aware health probe passed on 2026-09-08 with a 1,251 ms database response)
@@ -52,6 +54,8 @@ Current topology: one production deployment backed by the configured Supabase pr
 - [x] Mobile, tablet, and desktop public/access-control journeys pass
 - [x] Performance audit reviewed on the production build (mobile and desktop: Performance 100, Accessibility 95, Best Practices 100, SEO 100; operator confirmed 2026-09-08)
 - [ ] Two fresh non-production users complete signup, invitation acceptance, expense, balance, settlement, and activity flow
+- [ ] Disposable PostgreSQL/Supabase integration suite passes after applying all 14 migrations
+- [ ] Confirm receipt tombstone cleanup and rate-limit retention cron in the deployed environment
 
 Release owner: `TBD`
 

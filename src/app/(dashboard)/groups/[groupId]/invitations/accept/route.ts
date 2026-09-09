@@ -6,6 +6,7 @@ import {
   getSupabaseErrorDetails,
 } from "@/lib/groups/member-actions";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { captureServerError } from "@/lib/monitoring/server-monitor";
 
 type AcceptInvitationRouteContext = {
   params: Promise<{
@@ -31,6 +32,7 @@ export async function POST(_request: NextRequest, context: AcceptInvitationRoute
       ...getSupabaseErrorDetails(result.error),
       userId: user.id,
     });
+    await captureServerError("group_invitation_accept_failed", { groupId, userId: user.id });
 
     return NextResponse.json(
       { message: "We couldn't accept this invitation. Please try again." },

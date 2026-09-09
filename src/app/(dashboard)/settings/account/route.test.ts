@@ -1,3 +1,5 @@
+/** @jest-environment node */
+
 import { revalidatePath } from "next/cache";
 
 import { AccountUpdateError, updateAccount } from "@/lib/settings/update-account";
@@ -28,10 +30,11 @@ jest.mock("@/lib/supabase/server", () => ({ createSupabaseServerClient: jest.fn(
 jest.mock("@/server/db", () => ({ getDb: jest.fn(() => ({ user: {} })) }));
 
 function request(body: unknown) {
-  return {
-    json: async () => body,
-    url: "https://splitly.test/settings/account",
-  } as Request;
+  return new Request("https://splitly.test/settings/account", {
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json" },
+    method: "PATCH",
+  });
 }
 
 describe("settings account route", () => {

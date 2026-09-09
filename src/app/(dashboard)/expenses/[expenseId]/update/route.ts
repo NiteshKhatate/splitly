@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 
 import { ExpenseCreationError } from "@/lib/expenses/create-expense";
 import { updateExpense } from "@/lib/expenses/manage-expense";
+import { captureServerError } from "@/lib/monitoring/server-monitor";
+import { readJsonBody, RequestBodyError } from "@/lib/security/request-body";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
 
@@ -13,7 +15,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ exp
   if (!user) return NextResponse.json({ message: "Sign in to update this expense." }, { status: 401 });
 
   try {
-    const body: unknown = await request.json();
+    const body = await readJsonBody(request);
     const expectedUpdatedAt = body && typeof body === "object" && "expectedUpdatedAt" in body
       ? body.expectedUpdatedAt
       : undefined;
@@ -30,6 +32,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ exp
     revalidatePath(`/groups/${result.groupId}/expenses`);
     return NextResponse.json(result);
   } catch (error) {
+    if (error instanceof RequestBodyError) {
+      return NextResponse.json(
+        { message: error.message },
+        { status: error.code === "TOO_LARGE" ? 413 : 400 },
+      );
+    }
     if (error instanceof ExpenseCreationError) {
       const status = error.code === "CONFLICT"
         ? 409
@@ -40,6 +48,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ exp
             : 400;
       return NextResponse.json({ message: error.message }, { status });
     }
+    await captureServerError("expense_update_failed", { expenseId, userId: user.id });
     return NextResponse.json({ message: "We couldn't update that expense." }, { status: 500 });
   }
 }

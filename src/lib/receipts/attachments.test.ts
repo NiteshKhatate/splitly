@@ -18,6 +18,7 @@ describe("receipt attachment authorization", () => {
     const db = database();
     await requireAttachmentAccess(db as never, "attachment-1", "expense-1", "user-1");
     expect(db.attachment.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({
+      deletedAt: null,
       expense: { deletedAt: null, group: { members: { some: { userId: "user-1" } } } },
       expenseId: "expense-1", id: "attachment-1",
     }) }));
@@ -28,6 +29,8 @@ describe("receipt attachment authorization", () => {
     await requireAttachmentManager(db as never, "attachment-1", "expense-1", "user-1");
     expect(db.attachment.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({
       OR: [{ uploadedBy: "user-1" }, { expense: { group: { members: { some: { role: "OWNER", userId: "user-1" } } } } }],
+      deletedAt: null,
+      expense: { deletedAt: null, group: { members: { some: { userId: "user-1" } } } },
     }) }));
   });
 });

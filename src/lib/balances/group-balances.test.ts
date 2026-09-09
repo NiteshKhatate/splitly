@@ -114,6 +114,7 @@ describe("group balance calculations", () => {
       expect.objectContaining({
         where: {
           deletedAt: null,
+          group: { members: { some: { userId: "user-1" } } },
           groupId: { in: ["group-1"] },
         },
         select: expect.objectContaining({
@@ -123,7 +124,11 @@ describe("group balance calculations", () => {
       }),
     );
     expect(database.settlement.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: { groupId: { in: ["group-1"] }, status: "CONFIRMED" },
+      where: {
+        group: { members: { some: { userId: "user-1" } } },
+        groupId: { in: ["group-1"] },
+        status: "CONFIRMED",
+      },
     }));
   });
 

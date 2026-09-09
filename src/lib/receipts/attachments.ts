@@ -12,7 +12,7 @@ export async function listExpenseAttachments(database: AttachmentDatabase, expen
     const attachments = await database.attachment.findMany({
       orderBy: { createdAt: "desc" },
       select: { byteSize: true, createdAt: true, fileName: true, id: true, mimeType: true },
-      where: { expenseId },
+      where: { deletedAt: null, expenseId },
     });
     return { attachments: attachments.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() })), error: null };
   } catch {
@@ -23,7 +23,7 @@ export async function listExpenseAttachments(database: AttachmentDatabase, expen
 export async function requireAttachmentAccess(database: AttachmentDatabase, attachmentId: string, expenseId: string, userId: string) {
   return database.attachment.findFirst({
     select: { fileName: true, id: true, storageKey: true },
-    where: { id: attachmentId, expenseId, expense: { deletedAt: null, group: { members: { some: { userId } } } } },
+    where: { deletedAt: null, id: attachmentId, expenseId, expense: { deletedAt: null, group: { members: { some: { userId } } } } },
   });
 }
 
@@ -32,11 +32,15 @@ export async function requireAttachmentManager(database: AttachmentDatabase, att
     select: { id: true, storageKey: true },
     where: {
       id: attachmentId,
+      deletedAt: null,
       expenseId,
-      OR: [
-        { uploadedBy: userId },
-        { expense: { group: { members: { some: { role: "OWNER", userId } } } } },
-      ],
+      expense: {
+        deletedAt: null,
+        group: { members: { some: { userId } } },
+      },
+      OR: [{ uploadedBy: userId }, {
+        expense: { group: { members: { some: { role: "OWNER", userId } } } },
+      }],
     },
   });
 }

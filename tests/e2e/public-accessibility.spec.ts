@@ -49,4 +49,7 @@ test("application responses include baseline security headers", async ({ request
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
   expect(response.headers()["x-frame-options"]).toBe("DENY");
   expect(response.headers()["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  expect(response.headers()["strict-transport-security"]).toBe(
+    "max-age=63072000; includeSubDomains; preload",
+  );
 });

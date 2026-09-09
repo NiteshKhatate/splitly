@@ -2,6 +2,8 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { createExpense, ExpenseCreationError } from "@/lib/expenses/create-expense";
+import { captureServerError } from "@/lib/monitoring/server-monitor";
+import { readJsonBody, RequestBodyError } from "@/lib/security/request-body";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDb } from "@/server/db";
 
@@ -19,8 +21,11 @@ export async function POST(
 
   let body: unknown;
   try {
-    body = await request.json();
-  } catch {
+    body = await readJsonBody(request);
+  } catch (error) {
+    if (error instanceof RequestBodyError && error.code === "TOO_LARGE") {
+      return NextResponse.json({ message: error.message }, { status: 413 });
+    }
     return NextResponse.json({ message: "The expense details are invalid." }, { status: 400 });
   }
 
@@ -36,7 +41,7 @@ export async function POST(
       return NextResponse.json({ message: error.message }, { status });
     }
 
-    console.warn("Expense creation failed", { groupId, userId: user.id });
+    await captureServerError("expense_creation_failed", { groupId, userId: user.id });
     return NextResponse.json(
       { message: "We couldn't save that expense. Please try again." },
       { status: 500 },

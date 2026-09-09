@@ -176,4 +176,66 @@ describe("real PostgreSQL transactions and Supabase RLS", () => {
       },
     })).rejects.toThrow();
   });
+
+  it("enforces financial participant membership and protects referenced memberships", async () => {
+    const groupId = randomUUID();
+    createdGroupIds.push(groupId);
+    await createGroup(database, {
+      createdBy: ownerId,
+      defaultCurrency: "INR",
+      description: null,
+      id: groupId,
+      name: `Membership ${groupId}`,
+    });
+
+    const expense = await database.expense.create({
+      data: {
+        category: "GENERAL",
+        createdBy: ownerId,
+        currency: "INR",
+        date: new Date("2026-09-09T00:00:00.000Z"),
+        description: "Membership invariant",
+        groupId,
+        totalMinor: 100,
+      },
+    });
+
+    await expect(database.expensePayment.create({
+      data: { amountMinor: 100, expenseId: expense.id, payerId: outsiderId },
+    })).rejects.toThrow();
+    await expect(database.expenseShare.create({
+      data: {
+        expenseId: expense.id,
+        owedMinor: 100,
+        participantId: outsiderId,
+        splitMethod: "EXACT",
+      },
+    })).rejects.toThrow();
+    await expect(database.settlement.create({
+      data: {
+        amountMinor: 100,
+        createdBy: ownerId,
+        currency: "INR",
+        date: new Date("2026-09-09T00:00:00.000Z"),
+        groupId,
+        payeeId: outsiderId,
+        payerId: ownerId,
+      },
+    })).rejects.toThrow();
+
+    await database.groupMember.create({
+      data: { groupId, role: "MEMBER", userId: outsiderId },
+    });
+    await database.expenseShare.create({
+      data: {
+        expenseId: expense.id,
+        owedMinor: 100,
+        participantId: outsiderId,
+        splitMethod: "EXACT",
+      },
+    });
+    await expect(database.groupMember.delete({
+      where: { groupId_userId: { groupId, userId: outsiderId } },
+    })).rejects.toThrow();
+  });
 });

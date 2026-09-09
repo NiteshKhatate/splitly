@@ -11,8 +11,12 @@ Before release:
 1. Store production variables in Vercel environment management, scoped to Production.
 2. Run `pnpm check:production` in a secure environment with production variables injected.
 3. Run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, and `pnpm build`.
-4. Run `pnpm exec prisma migrate status` using the production `DIRECT_URL`.
-5. Confirm `/api/health` returns HTTP 200 without credentials or connection details.
+4. Confirm a current recoverable backup and record its private evidence reference.
+5. Run the protected `Production release` GitHub workflow. It validates configuration, applies Prisma migrations, verifies migration state, triggers Vercel, and waits for `/api/health` to identify the exact Git commit being released.
+
+Prisma is the sole migration owner. `supabase/config.toml` disables the Supabase CLI migration and seed paths; `supabase/migrations/README.md` documents the handoff. Do not deploy SQL independently from `supabase/migrations`.
+
+The release workflow only guarantees migration-before-code ordering when Vercel automatic production deployments are disabled. Configure a Vercel Deploy Hook as the `VERCEL_DEPLOY_HOOK_URL` production-environment secret, protect the GitHub `production` environment with required reviewers, and deploy production only through this workflow. Preview deployments may remain automatic.
 
 `pnpm check:production` rejects missing, malformed, short-secret, and example values. It does not print secret values.
 
@@ -47,7 +51,7 @@ The command reads `GET /v1/projects/{ref}/config/auth`, whose read-only OAuth sc
 
 ## Customer domain and reminder handoff
 
-The zero-cost handoff deployment uses `https://splitly-zeta.vercel.app`. Scheduled email reminder delivery is implemented but remains inactive until the customer owns a sending domain. `CRON_SECRET`, `REMINDER_FROM_EMAIL`, and `RESEND_API_KEY` are optional only when all three are absent; partial configuration fails `pnpm check:production`.
+The zero-cost handoff deployment uses `https://splitly-zeta.vercel.app`. `CRON_SECRET` is required for receipt-tombstone and rate-limit maintenance. Scheduled email delivery remains inactive until the customer owns a sending domain; `REMINDER_FROM_EMAIL` and `RESEND_API_KEY` are optional only when both are absent, and partial configuration fails `pnpm check:production`.
 
 When the customer provides a domain:
 
@@ -55,7 +59,7 @@ When the customer provides a domain:
 2. Update the Supabase Auth Site URL and callback, password-reset, and invitation redirects.
 3. Update the GitHub `PRODUCTION_HEALTHCHECK_URL` repository variable.
 4. Verify an owned sending domain in Resend.
-5. Configure all three reminder variables in Vercel Production and redeploy.
+5. Configure both email reminder variables in Vercel Production and redeploy. Keep the existing `CRON_SECRET`.
 6. Configure the optional external error-monitoring webhook if the customer adopts a monitoring provider.
 7. Reconfigure Vercel deployment-failure and error-anomaly notifications for the customer's account because notification preferences are per-user.
 8. Run `pnpm check:production`, the uptime workflow, and the authenticated email-link smoke tests.
@@ -120,6 +124,7 @@ For a destructive or data-corrupting fault, use the incident-recovery procedure 
 - Supabase backup/PITR configuration and restoration test
 - Supabase Auth abuse/rate-limit configuration
 - Vercel GitHub connection, preview and production deployments, domain, environment scopes, and alerts
+- GitHub production-environment reviewers, Vercel automatic-production-deploy disablement, and deploy-hook secret
 - External uptime monitor status
 - Fresh-account, two-user production-like acceptance run
 

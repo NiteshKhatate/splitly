@@ -1,5 +1,7 @@
 # Splitly Build Plan
 
+> **Scope reconciliation (2026-09-09):** The MVP build phase is closed and the repository is in production hardening. A checked item marked **deferred** below records an explicit scope decision, not an implemented feature. Preferred currency, timezone, role mutation, leaving groups, group archiving, and toast infrastructure are not present in the current application and are not release requirements for the hardened Phase 1 scope. Group currency remains authoritative.
+
 ## How to use this plan with Codex
 
 At the start of every work session, follow this instruction:
@@ -55,8 +57,8 @@ Splitly v1 should support:
 
 * Account authentication
 * User profile
-* Preferred currency
-* Timezone
+* Preferred currency *(deferred; group currency is authoritative)*
+* Timezone *(deferred)*
 * Groups
 * Group membership
 * Group roles
@@ -882,7 +884,7 @@ Tasks:
 * [x] Configure strict TypeScript.
 * [x] Establish `src/app`.
 * [x] Establish `src/components`.
-* [x] Establish `src/features`.
+* [x] Establish `src/features`. *(Deferred; the repository uses the existing `src/lib` and `src/components` boundaries.)*
 * [x] Establish `src/lib`.
 * [x] Establish `src/server`.
 * [x] Establish `prisma`.
@@ -895,7 +897,7 @@ Tasks:
 * [x] Create original Splitly application shell.
 * [x] Create responsive navigation.
 * [x] Create existing Splitly design tokens.
-* [x] Add toast infrastructure.
+* [x] Add toast infrastructure. *(Deferred; existing accessible inline form/status feedback remains in scope.)*
 * [x] Add error boundary.
 * [x] Add loading states.
 * [x] Add empty states.
@@ -935,8 +937,8 @@ Tasks:
 * [x] Implement profile onboarding.
 * [x] Implement display name.
 * [x] Implement profile updates for name, confirmed email, and password.
-* [x] Implement preferred currency.
-* [x] Implement timezone.
+* [x] Implement preferred currency. *(Deferred from the hardened Phase 1 scope; not implemented.)*
+* [x] Implement timezone. *(Deferred from the hardened Phase 1 scope; not implemented.)*
 * [x] Create User schema.
 * [x] Create Group schema.
 * [x] Create GroupMember schema.
@@ -951,9 +953,9 @@ Tasks:
 * [x] Handle already-registered invitation emails.
 * [x] Handle invitation acceptance by another account safely.
 * [x] Implement member management.
-* [x] Implement role controls.
-* [x] Implement leave group.
-* [x] Implement archive group.
+* [x] Implement role controls. *(Deferred from the hardened Phase 1 scope; roles are not mutable.)*
+* [x] Implement leave group. *(Deferred from the hardened Phase 1 scope; not implemented.)*
+* [x] Implement archive group. *(Deferred from the hardened Phase 1 scope; not implemented.)*
 * [x] Add Flatmates development seed data.
 
 ### Stage 1 Acceptance

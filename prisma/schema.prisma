@@ -232,6 +232,7 @@ model Settlement {
   creator User  @relation("SettlementCreator", fields: [createdBy], references: [id], onDelete: Restrict)
 
   @@index([groupId], map: "idx_settlements_group_id")
+  @@index([groupId, date, createdAt], map: "idx_settlements_group_date_created_at")
   @@index([payerId], map: "idx_settlements_paid_by")
   @@index([payeeId], map: "idx_settlements_paid_to")
   @@index([payeeId, status], map: "idx_settlements_payee_status")
@@ -287,6 +288,7 @@ model Attachment {
   mimeType   String   @map("mime_type")
   byteSize   Int      @map("byte_size")
   uploadedBy String   @map("uploaded_by") @db.Uuid
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(6)
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)

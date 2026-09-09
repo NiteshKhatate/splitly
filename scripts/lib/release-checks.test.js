@@ -56,7 +56,6 @@ describe("release checks", () => {
 
   it("allows deferred reminders but rejects partial reminder configuration", () => {
     const deferredEnvironment = { ...validEnvironment };
-    delete deferredEnvironment.CRON_SECRET;
     delete deferredEnvironment.REMINDER_FROM_EMAIL;
     delete deferredEnvironment.RESEND_API_KEY;
 
@@ -64,9 +63,8 @@ describe("release checks", () => {
     expect(inspectProductionEnvironmentWarnings(deferredEnvironment)).toEqual([
       "Scheduled email reminders are deferred until the customer configures an owned sending domain.",
     ]);
-    expect(inspectProductionEnvironment({ ...deferredEnvironment, CRON_SECRET: validEnvironment.CRON_SECRET }))
+    expect(inspectProductionEnvironment({ ...deferredEnvironment, REMINDER_FROM_EMAIL: validEnvironment.REMINDER_FROM_EMAIL }))
       .toEqual(expect.arrayContaining([
-        "REMINDER_FROM_EMAIL is required when scheduled email reminders are configured.",
         "RESEND_API_KEY is required when scheduled email reminders are configured.",
       ]));
   });
@@ -103,7 +101,16 @@ describe("release checks", () => {
   });
 
   it("validates both health status and database availability", () => {
-    expect(inspectHealthResponse(200, { database: "available", responseTimeMs: 12, status: "ok" })).toEqual([]);
+    expect(inspectHealthResponse(
+      200,
+      { database: "available", release: "expected", responseTimeMs: 12, status: "ok" },
+      "expected",
+    )).toEqual([]);
+    expect(inspectHealthResponse(
+      200,
+      { database: "available", release: "old", responseTimeMs: 12, status: "ok" },
+      "expected",
+    )).toContain("Health response does not identify the expected application release.");
     expect(inspectHealthResponse(503, { database: "unavailable", responseTimeMs: 4, status: "degraded" })).toHaveLength(2);
   });
 });

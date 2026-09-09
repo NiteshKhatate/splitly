@@ -25,7 +25,11 @@ try {
     signal: AbortSignal.timeout(15_000),
   });
   const body = await response.json().catch(() => null);
-  const errors = releaseChecks.inspectHealthResponse(response.status, body);
+  const errors = releaseChecks.inspectHealthResponse(
+    response.status,
+    body,
+    process.env.EXPECTED_RELEASE_SHA?.trim(),
+  );
   if (errors.length) {
     for (const error of errors) console.error(`- ${error}`);
     process.exitCode = 1;
