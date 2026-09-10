@@ -45,7 +45,7 @@ describe("SettlementFlow", () => {
     expect(screen.getByLabelText("Amount")).toHaveFocus();
   });
 
-  it("shows success, hides the form, and removes the completed repayment action", () => {
+  it("hides the completed form and removes its repayment action", () => {
     render(
       <SettlementFlow currencies={["INR"]} groupId="group-1" payer={payer}>
         <SettleUpButton amount="8.00" currency="INR" payee={payee} />
@@ -56,11 +56,6 @@ describe("SettlementFlow", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Settle up" })[0]);
     fireEvent.click(screen.getByRole("button", { name: "Complete settlement" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Your settlement to Sam was recorded and is awaiting confirmation.",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Dismiss notification" }));
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByText("Settlement form for Sam: 8.00 INR")).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Settle up" })).toHaveLength(1);
   });

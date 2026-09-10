@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   type ForgotPasswordFormData,
@@ -25,6 +26,7 @@ export function ForgotPasswordForm({ applicationOrigin }: { applicationOrigin?: 
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
+    reset,
   } = useForm<ForgotPasswordFormData>({
     defaultValues: {
       email: "",
@@ -51,12 +53,18 @@ export function ForgotPasswordForm({ applicationOrigin }: { applicationOrigin?: 
           tone: "error",
           text: "We couldn't send a reset link. Please try again.",
         });
+        showToast({ message: "We couldn't send a reset link. Please try again.", tone: "error" });
         return;
       }
 
+      reset();
       setMessage({
         tone: "success",
         text: "If an account exists for that email, a password reset link has been sent.",
+      });
+      showToast({
+        message: "If an account exists for that email, a password reset link has been sent.",
+        tone: "success",
       });
     } catch (error) {
       console.warn("Password reset request failed", {
@@ -66,6 +74,7 @@ export function ForgotPasswordForm({ applicationOrigin }: { applicationOrigin?: 
         tone: "error",
         text: "Something went wrong. Please try again.",
       });
+      showToast({ message: "Something went wrong. Please try again.", tone: "error" });
     }
   }
 

@@ -76,6 +76,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
           <>
             <GroupHeader
               canAddMembers={groupDetail.group.canAddMembers}
+              canManage={groupDetail.group.canManage}
               description={groupDetail.group.description}
               groupId={groupDetail.group.id}
               memberCount={groupDetail.group.memberCount}

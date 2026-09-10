@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
+import { showToast } from "@/components/ui/toast";
 import { receiptUploadFormSchema, type ReceiptUploadFormValues } from "@/lib/validations/receipts";
 import { zodResolver } from "@/lib/validations/zod-resolver";
 
@@ -22,13 +23,18 @@ export function ReceiptUploadForm({ expenseId }: { expenseId: string }) {
       const response = await fetch(`/expenses/${expenseId}/receipts`, { body, method: "POST" });
       const result = await response.json() as { message?: string };
       if (!response.ok) {
-        setMessage(result.message ?? "We couldn't upload that receipt.");
+        const errorMessage = result.message ?? "We couldn't upload that receipt.";
+        setMessage(errorMessage);
+        showToast({ message: errorMessage, tone: "error" });
         return;
       }
       form.reset();
+      showToast({ message: "Receipt uploaded.", tone: "success" });
       router.refresh();
     } catch {
-      setMessage("We couldn't upload that receipt.");
+      const errorMessage = "We couldn't upload that receipt.";
+      setMessage(errorMessage);
+      showToast({ message: errorMessage, tone: "error" });
     }
   }
 

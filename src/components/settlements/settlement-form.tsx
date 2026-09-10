@@ -9,6 +9,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SelectField } from "@/components/ui/select-field";
 import { TextField } from "@/components/ui/text-field";
 import { Textarea } from "@/components/ui/textarea";
+import { showToast } from "@/components/ui/toast";
 import { settlementFormSchema, SETTLEMENT_NOTE_MAX_LENGTH, type SettlementFormValues } from "@/lib/validations/settlements";
 import { zodResolver } from "@/lib/validations/zod-resolver";
 
@@ -54,14 +55,24 @@ export function SettlementForm({
         body: JSON.stringify(values), headers: { "Content-Type": "application/json" }, method: "POST",
       });
       const body = await response.json() as { message?: string };
-      if (!response.ok) setMessage(body.message ?? "We couldn't record that settlement.");
+      if (!response.ok) {
+        const errorMessage = body.message ?? "We couldn't record that settlement.";
+        setMessage(errorMessage);
+        showToast({ message: errorMessage, tone: "error" });
+      }
       else {
         form.reset({ ...values, amount: "", note: "" });
+        showToast({
+          message: `Your settlement to ${payee.name} was recorded and is awaiting confirmation.`,
+          tone: "success",
+        });
         onSuccess?.();
         router.refresh();
       }
     } catch {
-      setMessage("We couldn't record that settlement.");
+      const errorMessage = "We couldn't record that settlement.";
+      setMessage(errorMessage);
+      showToast({ message: errorMessage, tone: "error" });
     } finally {
       setSaving(false);
     }

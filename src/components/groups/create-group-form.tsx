@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, useActionState, useRef } from "react";
+import { type FormEvent, useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { createGroupAction } from "@/app/(dashboard)/groups/new/actions";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { Textarea } from "@/components/ui/textarea";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import { initialCreateGroupFormState } from "@/lib/groups/create-group-form-state";
 import {
   createGroupFormSchema,
@@ -29,6 +31,7 @@ function SubmitButton() {
 }
 
 export function CreateGroupForm() {
+  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const isValidatedSubmit = useRef(false);
   const [state, formAction] = useActionState(
@@ -40,10 +43,22 @@ export function CreateGroupForm() {
     formState: { errors },
     handleSubmit: handleValidatedSubmit,
     register,
+    reset,
   } = useForm<CreateGroupFormFields>({
     defaultValues: formState.fields,
     resolver: zodResolver(createGroupFormSchema),
   });
+
+  useEffect(() => {
+    if (!formState.status || !formState.message) return;
+
+    showToast({ message: formState.message, tone: formState.status });
+    if (formState.status === "success" && formState.redirectTo) {
+      reset({ description: "", name: "" });
+      router.push(formState.redirectTo);
+      router.refresh();
+    }
+  }, [formState, reset, router]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (isValidatedSubmit.current) {
@@ -60,7 +75,7 @@ export function CreateGroupForm() {
 
   return (
     <form ref={formRef} action={formAction} className="space-y-6" onSubmit={handleSubmit} noValidate>
-      {formState.message ? <FormMessage tone="error">{formState.message}</FormMessage> : null}
+      {formState.status === "error" && formState.message ? <FormMessage tone="error">{formState.message}</FormMessage> : null}
 
       <TextField
         id="group-name"

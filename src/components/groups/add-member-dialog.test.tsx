@@ -121,7 +121,7 @@ describe("AddMemberDialog", () => {
     fireEvent.click(screen.getByRole("button", { name: /find person/i }));
     fireEvent.click(await screen.findByRole("button", { name: /add person/i }));
 
-    expect(await screen.findByText("Ada Lovelace was added to the group.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 });

@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
@@ -101,10 +102,12 @@ export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }
           message: error.message,
           status: error.status,
         });
+        const text = getFriendlySignupError(error);
         setFormMessage({
           tone: "error",
-          text: getFriendlySignupError(error),
+          text,
         });
+        showToast({ message: text, tone: "error" });
         return;
       }
 
@@ -113,6 +116,10 @@ export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }
         setFormMessage({
           tone: "success",
           text: "Account created. Check your email to confirm your account, then log in to Splitly.",
+        });
+        showToast({
+          message: "Account created. Check your email to confirm your account, then log in to Splitly.",
+          tone: "success",
         });
         return;
       }
@@ -128,6 +135,8 @@ export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }
         }
       }
 
+      reset(initialFormState);
+      showToast({ message: "Account created.", tone: "success" });
       router.push("/dashboard");
       router.refresh();
     } catch (signupError) {
@@ -138,6 +147,7 @@ export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }
         tone: "error",
         text: "Something went wrong. Please try again.",
       });
+      showToast({ message: "Something went wrong. Please try again.", tone: "error" });
     }
   }
 

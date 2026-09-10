@@ -54,7 +54,6 @@ export async function getExpenseDetail(
       select: { actor: { select: { name: true } }, createdAt: true, type: true },
       take: 10,
     });
-    const membership = expense.group.members.find(({ userId: memberId }) => memberId === userId);
     const splitMethod = expense.shares[0]?.splitMethod ?? "EXACT";
     const initialValues: ExpenseFormValues = {
       amount: minorInput(expense.totalMinor),
@@ -82,7 +81,7 @@ export async function getExpenseDetail(
 
     return {
       detail: {
-        canManage: expense.createdBy === userId || membership?.role === "OWNER",
+        canManage: expense.createdBy === userId,
         activity: activity.map((event) => ({
           actor: event.actor.name,
           date: new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(event.createdAt),

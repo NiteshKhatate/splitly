@@ -10,7 +10,6 @@ import {
 
 import { SettlementPanel } from "@/components/settlements/settlement-panel";
 import { Button } from "@/components/ui/button";
-import { Toast } from "@/components/ui/toast";
 
 type SettlementMember = {
   id: string;
@@ -45,7 +44,6 @@ export function SettlementFlow({
   payer: SettlementMember;
 }) {
   const [selected, setSelected] = useState<SettlementSelection>();
-  const [successful, setSuccessful] = useState<SettlementSelection>();
   const [completedRepayments, setCompletedRepayments] = useState<string[]>([]);
 
   useEffect(() => {
@@ -54,7 +52,6 @@ export function SettlementFlow({
 
   function select(selection: SettlementSelection) {
     setSelected(selection);
-    setSuccessful(undefined);
   }
 
   function complete(selection: SettlementSelection) {
@@ -62,7 +59,6 @@ export function SettlementFlow({
       ...repayments,
       repaymentKey(selection),
     ]);
-    setSuccessful(selection);
     setSelected(undefined);
   }
 
@@ -77,11 +73,6 @@ export function SettlementFlow({
         payee={selected?.payee}
         payer={payer}
       />
-      {successful ? (
-        <Toast onDismiss={() => setSuccessful(undefined)} tone="success">
-          {`Your settlement to ${successful.payee.name} was recorded and is awaiting confirmation.`}
-        </Toast>
-      ) : null}
     </SettlementSelectionContext.Provider>
   );
 }

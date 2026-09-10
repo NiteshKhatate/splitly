@@ -1,19 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { showToast } from "@/components/ui/toast";
 
-export function DeleteExpenseButton({
-  expenseId,
+export function DeleteGroupButton({
   groupId,
   onDialogClose,
   variant = "button",
 }: {
-  expenseId: string;
   groupId: string;
   onDialogClose?: () => void;
   variant?: "button" | "menu";
@@ -23,31 +21,29 @@ export function DeleteExpenseButton({
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<string>();
 
-  async function deleteExpense() {
+  async function remove() {
     if (isDeleting) return;
     setIsDeleting(true);
     setMessage(undefined);
-    try {
-      const response = await fetch(`/expenses/${expenseId}/delete`, { method: "POST" });
-      const body = await response.json() as { message?: string };
-      if (!response.ok) {
-        const errorMessage = body.message ?? "We couldn't delete that expense.";
-        setMessage(errorMessage);
-        showToast({ message: errorMessage, tone: "error" });
-        return;
-      }
-      showToast({ message: "Expense deleted.", tone: "success" });
-      setIsDialogOpen(false);
-      onDialogClose?.();
-      router.push(`/groups/${groupId}/expenses`);
-      router.refresh();
-    } catch {
-      const errorMessage = "We couldn't delete that expense.";
+
+    const response = await fetch(`/groups/${groupId}/delete`, { method: "POST" }).catch(() => null);
+    const result = response
+      ? await response.json().catch(() => null) as { message?: string } | null
+      : null;
+
+    if (!response?.ok) {
+      const errorMessage = result?.message ?? "We couldn't delete that group.";
       setMessage(errorMessage);
       showToast({ message: errorMessage, tone: "error" });
-    } finally {
       setIsDeleting(false);
+      return;
     }
+
+    showToast({ message: "Group deleted.", tone: "success" });
+    setIsDialogOpen(false);
+    onDialogClose?.();
+    router.push("/groups");
+    router.refresh();
   }
 
   function closeDialog() {
@@ -66,21 +62,21 @@ export function DeleteExpenseButton({
             role="menuitem"
             type="button"
           >
-            Delete expense
+            Delete group
           </button>
         ) : (
-          <Button className="w-full sm:w-auto" type="button" variant="secondary" onClick={() => setIsDialogOpen(true)}>Delete expense</Button>
+          <Button className="w-full sm:w-auto" onClick={() => setIsDialogOpen(true)} type="button" variant="secondary">Delete group</Button>
       )}
       <ConfirmationDialog
-        confirmLabel="Delete expense"
-        description="This deletes its receipt records and removes the expense from active balances. Payment and split details remain in the audit history. This action cannot be undone."
+        confirmLabel="Delete group"
+        description="This permanently deletes the group and its expenses, settlements, members, invitations, activity history, reminders, and receipt records. This action cannot be undone."
         errorMessage={message}
         isPending={isDeleting}
         onCancel={closeDialog}
-        onConfirm={deleteExpense}
+        onConfirm={remove}
         open={isDialogOpen}
         pendingLabel="Deleting..."
-        title="Delete expense?"
+        title="Delete group?"
       />
     </div>
   );

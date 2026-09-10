@@ -22,11 +22,14 @@ export const createGroupFormSchema = z.object({
     .max(GROUP_DESCRIPTION_MAX_LENGTH, `Description must be ${GROUP_DESCRIPTION_MAX_LENGTH} characters or less.`),
 });
 
+export const updateGroupFormSchema = createGroupFormSchema;
+
 export const groupMemberEmailFormSchema = z.object({
   email: groupMemberEmailSchema,
 });
 
 export type CreateGroupFormFields = z.infer<typeof createGroupFormSchema>;
+export type UpdateGroupFormFields = z.infer<typeof updateGroupFormSchema>;
 export type CreateGroupFormErrors = Partial<Record<keyof CreateGroupFormFields, string>>;
 export type GroupMemberEmailFormData = z.infer<typeof groupMemberEmailFormSchema>;
 

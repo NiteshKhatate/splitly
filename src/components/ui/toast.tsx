@@ -1,12 +1,25 @@
 "use client";
 
 import { XIcon } from "@phosphor-icons/react";
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+
+type ToastTone = "error" | "success";
+
+type ToastNotice = {
+  message: string;
+  tone: ToastTone;
+};
+
+const TOAST_EVENT = "splitly:toast";
+
+export function showToast(notice: ToastNotice) {
+  window.dispatchEvent(new CustomEvent<ToastNotice>(TOAST_EVENT, { detail: notice }));
+}
 
 type ToastProps = {
   children: ReactNode;
   onDismiss: () => void;
-  tone: "error" | "success";
+  tone: ToastTone;
 };
 
 export function Toast({ children, onDismiss, tone }: ToastProps) {
@@ -37,4 +50,29 @@ export function Toast({ children, onDismiss, tone }: ToastProps) {
       </button>
     </div>
   );
+}
+
+export function ToastViewport() {
+  const [notice, setNotice] = useState<ToastNotice>();
+  const dismiss = useCallback(() => setNotice(undefined), []);
+
+  useEffect(() => {
+    function handleToast(event: Event) {
+      const nextNotice = (event as CustomEvent<ToastNotice>).detail;
+      setNotice((current) => (
+        current?.message === nextNotice.message && current.tone === nextNotice.tone
+          ? current
+          : nextNotice
+      ));
+    }
+
+    window.addEventListener(TOAST_EVENT, handleToast);
+    return () => window.removeEventListener(TOAST_EVENT, handleToast);
+  }, []);
+
+  return notice ? (
+    <Toast onDismiss={dismiss} tone={notice.tone}>
+      {notice.message}
+    </Toast>
+  ) : null;
 }

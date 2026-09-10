@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
+import { showToast } from "@/components/ui/toast";
 import {
   reminderPreferencesSchema,
   type ReminderPreferencesValues,
@@ -28,12 +29,18 @@ export function ReminderPreferencesForm({ remindersEnabled }: { remindersEnabled
       });
       const body = await response.json() as { message?: string };
       if (!response.ok) {
-        setMessage({ text: body.message ?? "We couldn't save your reminder preference.", tone: "error" });
+        const text = body.message ?? "We couldn't save your reminder preference.";
+        setMessage({ text, tone: "error" });
+        showToast({ message: text, tone: "error" });
         return;
       }
+      form.reset(values);
       setMessage({ text: "Reminder preference saved.", tone: "success" });
+      showToast({ message: "Reminder preference saved.", tone: "success" });
     } catch {
-      setMessage({ text: "We couldn't save your reminder preference.", tone: "error" });
+      const text = "We couldn't save your reminder preference.";
+      setMessage({ text, tone: "error" });
+      showToast({ message: text, tone: "error" });
     }
   }
 

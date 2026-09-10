@@ -7,6 +7,8 @@ export type CreateGroupFormState = {
   fields: CreateGroupFormFields;
   errors: CreateGroupFormErrors;
   message?: string;
+  redirectTo?: string;
+  status?: "error" | "success";
 };
 
 export const initialCreateGroupFormState: CreateGroupFormState = {
