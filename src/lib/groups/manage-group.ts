@@ -80,6 +80,19 @@ export async function deleteGroup(
     });
     requireAdmin(group);
 
+    // Delete dependents explicitly instead of relying on the group cascades.
+    // Removing a membership records a MEMBER_REMOVED activity event, so
+    // memberships must be deleted before the final activity cleanup.
+    const expenseFilter = { expense: { groupId } };
+    await transaction.attachment.deleteMany({ where: expenseFilter });
+    await transaction.expensePayment.deleteMany({ where: expenseFilter });
+    await transaction.expenseShare.deleteMany({ where: expenseFilter });
+    await transaction.expense.deleteMany({ where: { groupId } });
+    await transaction.settlement.deleteMany({ where: { groupId } });
+    await transaction.reminderDelivery.deleteMany({ where: { groupId } });
+    await transaction.invite.deleteMany({ where: { groupId } });
+    await transaction.groupMember.deleteMany({ where: { groupId } });
+    await transaction.activityEvent.deleteMany({ where: { groupId } });
     await transaction.group.delete({ where: { id: groupId } });
     return { groupId };
   });

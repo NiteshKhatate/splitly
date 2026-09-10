@@ -69,7 +69,7 @@ export function DeleteGroupButton({
       )}
       <ConfirmationDialog
         confirmLabel="Delete group"
-        description="This permanently deletes the group and all of its data. This action cannot be undone."
+        description="This permanently deletes the group and its expenses, settlements, members, invitations, activity history, reminders, and receipt records. This action cannot be undone."
         errorMessage={message}
         isPending={isDeleting}
         onCancel={closeDialog}
