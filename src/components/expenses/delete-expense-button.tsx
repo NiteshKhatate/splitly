@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
+import { showToast } from "@/components/ui/toast";
 
 export function DeleteExpenseButton({ expenseId, groupId }: { expenseId: string; groupId: string }) {
   const router = useRouter();
@@ -19,13 +20,18 @@ export function DeleteExpenseButton({ expenseId, groupId }: { expenseId: string;
       const response = await fetch(`/expenses/${expenseId}/delete`, { method: "POST" });
       const body = await response.json() as { message?: string };
       if (!response.ok) {
-        setMessage(body.message ?? "We couldn't delete that expense.");
+        const errorMessage = body.message ?? "We couldn't delete that expense.";
+        setMessage(errorMessage);
+        showToast({ message: errorMessage, tone: "error" });
         return;
       }
+      showToast({ message: "Expense deleted.", tone: "success" });
       router.push(`/groups/${groupId}/expenses`);
       router.refresh();
     } catch {
-      setMessage("We couldn't delete that expense.");
+      const errorMessage = "We couldn't delete that expense.";
+      setMessage(errorMessage);
+      showToast({ message: errorMessage, tone: "error" });
     } finally {
       setIsDeleting(false);
     }

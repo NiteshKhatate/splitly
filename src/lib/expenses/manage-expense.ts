@@ -4,14 +4,14 @@ import { ExpenseCreationError, prepareExpenseData } from "./create-expense";
 
 export type ExpenseMutationDatabase = Pick<PrismaClient, "$transaction">;
 
-function requireManager(
-  expense: { createdBy: string; group: { members: { role: string }[] } } | null,
+function requireCreator(
+  expense: { createdBy: string; group: { members: { userId: string }[] } } | null,
   actorId: string,
 ) {
   if (!expense) throw new ExpenseCreationError("Expense not found.", "NOT_FOUND");
   const membership = expense.group.members[0];
   if (!membership) throw new ExpenseCreationError("Expense not found.", "NOT_FOUND");
-  if (expense.createdBy !== actorId && membership.role !== "OWNER") {
+  if (expense.createdBy !== actorId) {
     throw new ExpenseCreationError("You do not have permission to manage this expense.", "FORBIDDEN");
   }
 }
@@ -22,18 +22,17 @@ export async function updateExpense(
   actorId: string,
   input: unknown,
 ) {
-  const prepared = prepareExpenseData(input);
-
   return database.$transaction(async (transaction) => {
     const expense = await transaction.expense.findFirst({
       where: { deletedAt: null, id: expenseId },
       select: {
         createdBy: true,
-        group: { select: { members: { where: { userId: actorId }, select: { role: true } } } },
+        group: { select: { members: { where: { userId: actorId }, select: { userId: true } } } },
         groupId: true,
       },
     });
-    requireManager(expense, actorId);
+    requireCreator(expense, actorId);
+    const prepared = prepareExpenseData(input);
 
     const referencedIds = [...new Set([
       ...prepared.payerAmounts.map(({ payerId }) => payerId),
@@ -97,11 +96,11 @@ export async function deleteExpense(
       select: {
         createdBy: true,
         description: true,
-        group: { select: { members: { where: { userId: actorId }, select: { role: true } } } },
+        group: { select: { members: { where: { userId: actorId }, select: { userId: true } } } },
         groupId: true,
       },
     });
-    requireManager(expense, actorId);
+    requireCreator(expense, actorId);
 
     await transaction.expense.update({
       where: { id: expenseId },

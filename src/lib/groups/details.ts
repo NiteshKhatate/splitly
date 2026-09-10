@@ -67,6 +67,7 @@ export type GroupDetail = {
   memberCount: number;
   currentUserRole: string;
   canAddMembers: boolean;
+  canManage: boolean;
   balances: {
     youOwe: { amount: string; tone: BalanceTone };
     youAreOwed: { amount: string; tone: BalanceTone };
@@ -215,6 +216,7 @@ export async function getGroupDetail(
       memberCount: members.length,
       currentUserRole: currentUserMembership?.role ?? "member",
       canAddMembers: currentUserMembership?.role === "admin",
+      canManage: currentUserMembership?.role === "admin",
       balances: createBalanceCards(balance?.amountInMinorUnits ?? 0),
       members,
       recentExpenses: (expenses as ExpenseRow[]).map((expense) => ({

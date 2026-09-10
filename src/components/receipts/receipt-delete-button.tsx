@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
+import { showToast } from "@/components/ui/toast";
 
 export function ReceiptDeleteButton({ attachmentId, expenseId }: { attachmentId: string; expenseId: string }) {
   const router = useRouter();
@@ -14,10 +15,15 @@ export function ReceiptDeleteButton({ attachmentId, expenseId }: { attachmentId:
     setDeleting(true);
     setMessage(undefined);
     const response = await fetch(`/expenses/${expenseId}/receipts/${attachmentId}`, { method: "DELETE" }).catch(() => null);
-    if (response?.ok) router.refresh();
+    if (response?.ok) {
+      showToast({ message: "Receipt deleted.", tone: "success" });
+      router.refresh();
+    }
     else {
       const result = response ? await response.json().catch(() => null) as { message?: string } | null : null;
-      setMessage(result?.message ?? "We couldn't delete that receipt. Please try again.");
+      const errorMessage = result?.message ?? "We couldn't delete that receipt. Please try again.";
+      setMessage(errorMessage);
+      showToast({ message: errorMessage, tone: "error" });
     }
     setDeleting(false);
   }

@@ -31,6 +31,7 @@ export async function createGroupAction(
       fields,
       errors: validation.errors,
       message: "Please fix the highlighted fields.",
+      status: "error",
     };
   }
 
@@ -60,6 +61,7 @@ export async function createGroupAction(
       fields,
       errors: {},
       message: "We couldn't prepare your profile for group creation. Please try again.",
+      status: "error",
     };
   }
 
@@ -87,6 +89,7 @@ export async function createGroupAction(
       fields,
       errors: {},
       message: "We couldn't create that group. Please try again.",
+      status: "error",
     };
   }
 
@@ -111,10 +114,18 @@ export async function createGroupAction(
       fields,
       errors: {},
       message: "The group was created, but your membership couldn't be saved. Please try again.",
+      status: "error",
     };
   }
 
   revalidatePath("/dashboard");
   revalidatePath("/groups");
-  redirect(`/groups/${groupId}`);
+  revalidatePath(`/groups/${groupId}`);
+  return {
+    fields: { description: "", name: "" },
+    errors: {},
+    message: "Group created.",
+    redirectTo: `/groups/${groupId}`,
+    status: "success",
+  };
 }

@@ -117,6 +117,7 @@ describe("getGroupDetail", () => {
       currency: "INR",
       memberCount: 2,
       currentUserRole: "admin",
+      canManage: true,
       canAddMembers: true,
       balances: {
         youOwe: { amount: "₹0", tone: "neutral" },

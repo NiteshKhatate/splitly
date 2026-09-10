@@ -1162,6 +1162,143 @@ User experience
 
 Build the simplest solution that correctly satisfies the current Phase 1 requirements.
 
+## Current Development Phase
+
+The MVP build plan is complete. The current development phase is **Production Hardening / Stabilization and completion of the remaining implementation tasks documented in `docs/BUILD_PLAN.md`**.
+
+During this phase:
+
+* Follow `docs/BUILD_PLAN.md` for the current implementation scope.
+* Do not add unrelated product features unless explicitly requested.
+* Complete pending implementation work before beginning the final testing/review phase.
+* Testing and review are a separate phase and should not be treated as complete merely because implementation is complete.
+* Preserve the existing architecture and established technology stack.
+* Prefer small, targeted changes over unnecessary rewrites.
+* Do not modify unrelated functionality while completing a scoped task.
+
+---
+
+## Authorization Rules
+
+Authorization must always be enforced server-side. UI visibility is not a security boundary.
+
+### Group permissions
+
+* Only a group admin may update a group.
+* Only a group admin may delete a group.
+* Server actions/API handlers must independently verify authentication, group existence, and admin membership.
+* Hiding or disabling UI controls does not replace server-side authorization.
+
+### Expense permissions
+
+* Only the user who created an expense may update that expense.
+* Only the user who created an expense may delete that expense.
+* Server actions/API handlers must independently verify authentication, expense existence, group access, and creator ownership.
+* Other group members must not be granted expense edit/delete permissions merely because they belong to the group.
+* Existing soft-delete and financial-balance behavior must be preserved.
+
+---
+
+## Mutation Feedback
+
+Use the application's existing toast/notification system for user-facing mutation feedback.
+
+For relevant create, update, delete, save, confirm, cancel, and upload operations:
+
+* Show success feedback only after the server confirms success.
+* Show error feedback when the server operation fails.
+* Never display a success message optimistically before the server response.
+* Do not expose raw database errors, stack traces, internal IDs, or sensitive implementation details.
+* Avoid duplicate notifications.
+* Reuse the existing toast implementation rather than introducing another notification system unless explicitly approved.
+
+---
+
+## Form Submission Lifecycle
+
+All forms must follow a confirmed-response submission lifecycle.
+
+Required behavior:
+
+1. User submits the form.
+2. Validation runs.
+3. The request/server action executes.
+4. The application waits for the server response.
+5. On successful response:
+
+   * show success feedback,
+   * reset the form,
+   * clear relevant submission/validation state,
+   * close the modal if the form is inside a modal.
+6. On failed response:
+
+   * show error feedback,
+   * do not unnecessarily reset the form,
+   * preserve entered values where practical,
+   * keep the form available for correction/retry.
+
+Rules:
+
+* Never reset a form before successful server confirmation.
+* Never assume a mutation succeeded before receiving its response.
+* Prevent duplicate submissions while a request is pending.
+* Preserve existing validation behavior.
+* Apply this consistently to forms throughout the application.
+
+---
+
+## Modal Form Lifecycle
+
+Forms contained inside modals/dialogs must follow the same confirmed-response lifecycle.
+
+* Keep the modal open while submission is pending.
+* Do not close the modal optimistically.
+* Wait for the server response.
+* On success:
+
+  * show success feedback,
+  * reset the form,
+  * clear relevant state,
+  * close the modal.
+* On failure:
+
+  * show error feedback,
+  * keep the modal open,
+  * preserve entered values where practical,
+  * allow the user to correct and retry.
+* Reopening a successfully submitted form should not expose stale form values or stale validation state.
+
+When changing a form, inspect similar forms and modal forms elsewhere in the application so the same behavior is not implemented inconsistently.
+
+---
+
+## Application-Wide Consistency
+
+When a task concerns forms, mutations, authorization, or user feedback:
+
+* Search the repository for existing implementations of the same pattern.
+* Do not fix only the first occurrence discovered.
+* Reuse established application patterns.
+* Avoid introducing multiple competing approaches for the same behavior.
+* If an existing implementation intentionally differs, preserve it unless the current task explicitly requires changing it.
+
+---
+
+## Phase Boundary: Testing and Review
+
+The final testing and review phase occurs **after the pending implementation tasks in `docs/BUILD_PLAN.md` are completed**.
+
+Until then:
+
+* Focus on completing the requested implementation work.
+* Do not treat implementation completion as testing completion.
+* Do not claim production readiness without the later testing/review pass.
+* Do not add a separate testing workflow to `AGENTS.md` unless explicitly requested.
+* Preserve and respect the project's existing testing configuration.
+
+The final testing/review phase will independently verify the completed implementation.
+
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

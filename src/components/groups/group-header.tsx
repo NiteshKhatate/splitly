@@ -1,17 +1,17 @@
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
-
-import { AddMemberDialog } from "./add-member-dialog";
+import { GroupActionsMenu } from "./group-actions-menu";
 
 export function GroupHeader({
   canAddMembers,
+  canManage,
   description,
   groupId,
   memberCount,
   name,
 }: {
   canAddMembers: boolean;
+  canManage: boolean;
   description: string | null;
   groupId: string;
   memberCount: number;
@@ -35,18 +35,7 @@ export function GroupHeader({
             <p className="mt-2 max-w-3xl text-secondary text-foreground-muted">{description}</p>
           ) : null}
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button href={`/groups/${groupId}/balances`} variant="secondary" className="w-full sm:w-auto">
-            Balances
-          </Button>
-          <Button href={`/groups/${groupId}/expenses`} variant="secondary" className="w-full sm:w-auto">
-            View expenses
-          </Button>
-          <Button href={`/groups/${groupId}/expenses/new`} className="w-full sm:w-auto">
-            + Add expense
-          </Button>
-          {canAddMembers ? <AddMemberDialog groupId={groupId} /> : null}
-        </div>
+        <GroupActionsMenu canAddMembers={canAddMembers} canManage={canManage} groupId={groupId} />
       </div>
     </div>
   );

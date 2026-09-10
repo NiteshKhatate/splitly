@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import type { AddMemberCandidate } from "@/lib/groups/add-member-form-state";
 import {
   type GroupMemberEmailFormData,
@@ -22,10 +23,12 @@ type FormMessageState = {
 
 export function AddMemberDialog({
   groupId,
+  onDialogClose,
   variant = "button",
 }: {
   groupId: string;
-  variant?: "button" | "link";
+  onDialogClose?: () => void;
+  variant?: "button" | "link" | "menu";
 }) {
   const router = useRouter();
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -37,6 +40,8 @@ export function AddMemberDialog({
   const [isSearching, setIsSearching] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [isInviting, setIsInviting] = useState(false);
+  const isPending = isSearching || isAdding || isInviting;
+  const isPendingRef = useRef(isPending);
   const {
     clearErrors,
     formState: { errors },
@@ -52,6 +57,10 @@ export function AddMemberDialog({
   });
 
   useEffect(() => {
+    isPendingRef.current = isPending;
+  }, [isPending]);
+
+  useEffect(() => {
     if (!isOpen) return;
     const dialog = dialogRef.current;
     const previousOverflow = document.body.style.overflow;
@@ -61,7 +70,10 @@ export function AddMemberDialog({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        setIsOpen(false);
+        if (!isPendingRef.current) {
+          setIsOpen(false);
+          onDialogClose?.();
+        }
         return;
       }
       if (event.key !== "Tab" || !dialog) return;
@@ -86,11 +98,22 @@ export function AddMemberDialog({
       document.body.style.overflow = previousOverflow;
       returnFocusRef.current?.focus();
     };
-  }, [isOpen]);
+  }, [isOpen, onDialogClose]);
 
   function openDialog() {
     returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setIsOpen(true);
+  }
+
+  function closeDialog() {
+    if (isPending) return;
+    reset({ email: "" });
+    clearErrors();
+    setMessage(undefined);
+    setCandidate(undefined);
+    setInvitableEmail(undefined);
+    setIsOpen(false);
+    onDialogClose?.();
   }
 
   function clearSearchResult() {
@@ -166,18 +189,22 @@ export function AddMemberDialog({
         if (data.fieldError) {
           setError("email", { message: data.fieldError });
         }
-        setMessage(data.message ? { text: data.message, tone: "error" } : undefined);
+        const errorMessage = data.message ?? "We couldn't send that invitation. Please try again.";
+        setMessage({ text: errorMessage, tone: "error" });
+        showToast({ message: errorMessage, tone: "error" });
         return;
       }
 
       reset({ email: "" });
       setInvitableEmail(undefined);
-      setMessage({
-        text: data.message ?? `Invitation sent to ${invitableEmail}.`,
-        tone: "success",
-      });
+      const successMessage = data.message ?? `Invitation sent to ${invitableEmail}.`;
+      showToast({ message: successMessage, tone: "success" });
+      setIsOpen(false);
+      onDialogClose?.();
     } catch {
-      setMessage({ text: "We couldn't send that invitation. Please try again.", tone: "error" });
+      const errorMessage = "We couldn't send that invitation. Please try again.";
+      setMessage({ text: errorMessage, tone: "error" });
+      showToast({ message: errorMessage, tone: "error" });
     } finally {
       setIsInviting(false);
     }
@@ -208,19 +235,23 @@ export function AddMemberDialog({
         if (data.fieldError) {
           setError("email", { message: data.fieldError });
         }
-        setMessage(data.message ? { text: data.message, tone: "error" } : undefined);
+        const errorMessage = data.message ?? "We couldn't add that person. Please try again.";
+        setMessage({ text: errorMessage, tone: "error" });
+        showToast({ message: errorMessage, tone: "error" });
         return;
       }
 
       reset({ email: "" });
       setCandidate(undefined);
-      setMessage({
-        text: data.message ?? `${candidate.name} was added to the group.`,
-        tone: "success",
-      });
+      const successMessage = data.message ?? `${candidate.name} was added to the group.`;
+      showToast({ message: successMessage, tone: "success" });
+      setIsOpen(false);
+      onDialogClose?.();
       router.refresh();
     } catch {
-      setMessage({ text: "We couldn't add that person. Please try again.", tone: "error" });
+      const errorMessage = "We couldn't add that person. Please try again.";
+      setMessage({ text: errorMessage, tone: "error" });
+      showToast({ message: errorMessage, tone: "error" });
     } finally {
       setIsAdding(false);
     }
@@ -235,6 +266,15 @@ export function AddMemberDialog({
           onClick={openDialog}
         >
           + Add people
+        </button>
+      ) : variant === "menu" ? (
+        <button
+          className="flex min-h-11 w-full items-center rounded-control px-3 py-2 text-left text-label text-foreground hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary"
+          onClick={openDialog}
+          role="menuitem"
+          type="button"
+        >
+          Add people
         </button>
       ) : (
         <Button type="button" className="w-full sm:w-auto" onClick={openDialog}>
@@ -262,7 +302,8 @@ export function AddMemberDialog({
               <button
                 type="button"
                 className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control text-label text-foreground-muted hover:bg-surface-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                onClick={() => setIsOpen(false)}
+                disabled={isPending}
+                onClick={closeDialog}
                 aria-label="Close add people dialog"
               >
                 <XIcon size={18} weight="bold" aria-hidden="true" />
@@ -286,7 +327,7 @@ export function AddMemberDialog({
                   {...register("email", { onChange: clearSearchResult })}
                 />
                 <div className="flex justify-end">
-                  <Button type="submit" variant="secondary" disabled={isSearching}>
+                  <Button type="submit" variant="secondary" disabled={isPending}>
                     {isSearching ? "Searching..." : "Find person"}
                   </Button>
                 </div>
@@ -298,7 +339,7 @@ export function AddMemberDialog({
                   <p className="mt-2 wrap-break-word text-label text-foreground">{candidate.name}</p>
                   <p className="mt-1 wrap-break-word text-secondary text-foreground-muted">{candidate.email}</p>
                   <form onSubmit={handleAddPerson} className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
+                    <Button type="button" variant="secondary" disabled={isPending} onClick={closeDialog}>
                       Cancel
                     </Button>
                     <Button type="submit" disabled={isAdding}>
@@ -313,7 +354,7 @@ export function AddMemberDialog({
                     Send an invitation to {invitableEmail} to create an account and join this group.
                   </p>
                   <form onSubmit={handleInvite} className="mt-4 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                    <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
+                    <Button type="button" variant="secondary" disabled={isPending} onClick={closeDialog}>
                       Cancel
                     </Button>
                     <Button type="submit" disabled={isInviting}>
@@ -323,7 +364,7 @@ export function AddMemberDialog({
                 </div>
               ) : (
                 <div className="flex justify-end">
-                  <Button type="button" variant="secondary" onClick={() => setIsOpen(false)}>
+                  <Button type="button" variant="secondary" disabled={isPending} onClick={closeDialog}>
                     Cancel
                   </Button>
                 </div>

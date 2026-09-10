@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
@@ -33,6 +34,7 @@ export function LoginForm({
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
+    reset,
   } = useForm<LoginFormData>({
     defaultValues: {
       email: "",
@@ -49,7 +51,9 @@ export function LoginForm({
       const { data, error: signInError } = await supabase.auth.signInWithPassword(values);
 
       if (signInError || !data.user) {
-        setError(signInError?.message.toLowerCase().includes("confirm") ? "Please confirm your email before logging in." : "We could not log you in with those details.");
+        const message = signInError?.message.toLowerCase().includes("confirm") ? "Please confirm your email before logging in." : "We could not log you in with those details.";
+        setError(message);
+        showToast({ message, tone: "error" });
         return;
       }
 
@@ -61,13 +65,17 @@ export function LoginForm({
           message: profileError.message,
         });
       }
+      reset();
+      showToast({ message: "Logged in.", tone: "success" });
       router.replace(redirectTo);
       router.refresh();
     } catch (loginError) {
       console.warn("Login failed", {
         message: loginError instanceof Error ? loginError.message : String(loginError),
       });
-      setError("Something went wrong. Please try again.");
+      const message = "Something went wrong. Please try again.";
+      setError(message);
+      showToast({ message, tone: "error" });
     }
   }
 

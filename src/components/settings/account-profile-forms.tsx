@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import {
   PROFILE_NAME_MAX_LENGTH,
   profileEmailFormSchema,
@@ -50,7 +51,11 @@ function NameForm({ currentName }: { currentName: string }) {
     setMessage(undefined);
     const result = await submitAccountUpdate({ kind: "name", ...values });
     setMessage({ text: result.message, tone: result.ok ? "success" : "error" });
-    if (result.ok) router.refresh();
+    showToast({ message: result.message, tone: result.ok ? "success" : "error" });
+    if (result.ok) {
+      form.reset(values);
+      router.refresh();
+    }
   }
 
   return (
@@ -83,6 +88,8 @@ function EmailForm({ currentEmail }: { currentEmail: string }) {
     setMessage(undefined);
     const result = await submitAccountUpdate({ kind: "email", ...values });
     setMessage({ text: result.message, tone: result.ok ? "success" : "error" });
+    showToast({ message: result.message, tone: result.ok ? "success" : "error" });
+    if (result.ok) form.reset(values);
   }
 
   return (
@@ -117,6 +124,7 @@ function PasswordForm() {
     setMessage(undefined);
     const result = await submitAccountUpdate({ kind: "password", ...values });
     setMessage({ text: result.message, tone: result.ok ? "success" : "error" });
+    showToast({ message: result.message, tone: result.ok ? "success" : "error" });
     if (result.ok) form.reset();
   }
 

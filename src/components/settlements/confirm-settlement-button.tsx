@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
+import { showToast } from "@/components/ui/toast";
 
 export function ConfirmSettlementButton({ groupId, settlementId }: {
   groupId: string;
@@ -23,12 +24,17 @@ export function ConfirmSettlementButton({ groupId, settlementId }: {
       });
       const body = await response.json() as { message?: string };
       if (!response.ok) {
-        setMessage(body.message ?? "We couldn't confirm that settlement.");
+        const errorMessage = body.message ?? "We couldn't confirm that settlement.";
+        setMessage(errorMessage);
+        showToast({ message: errorMessage, tone: "error" });
         return;
       }
+      showToast({ message: "Settlement confirmed.", tone: "success" });
       router.refresh();
     } catch {
-      setMessage("We couldn't confirm that settlement.");
+      const errorMessage = "We couldn't confirm that settlement.";
+      setMessage(errorMessage);
+      showToast({ message: errorMessage, tone: "error" });
     } finally {
       setConfirming(false);
     }

@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   type ResetPasswordFormData,
@@ -51,6 +52,7 @@ export function ResetPasswordForm() {
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
+    reset,
   } = useForm<ResetPasswordFormData>({
     defaultValues: {
       password: "",
@@ -176,9 +178,12 @@ export function ResetPasswordForm() {
           status: error.status,
         });
         setMessage("We couldn't update your password. Please try again.");
+        showToast({ message: "We couldn't update your password. Please try again.", tone: "error" });
         return;
       }
 
+      reset();
+      showToast({ message: "Your password has been updated.", tone: "success" });
       router.replace("/login?message=Your password has been updated. Log in with your new password.&messageTone=success");
       router.refresh();
     } catch (error) {
@@ -186,6 +191,7 @@ export function ResetPasswordForm() {
         message: error instanceof Error ? error.message : String(error),
       });
       setMessage("Something went wrong. Please try again.");
+      showToast({ message: "Something went wrong. Please try again.", tone: "error" });
     }
   }
 

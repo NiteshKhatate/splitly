@@ -9,6 +9,7 @@ import { FormMessage } from "@/components/ui/form-message";
 import { SelectField } from "@/components/ui/select-field";
 import { Textarea } from "@/components/ui/textarea";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import { calculateSplit, type SplitCalculationInput } from "@/lib/expenses/split-calculator";
 import {
   EXPENSE_CATEGORIES,
@@ -106,13 +107,22 @@ export function AddExpenseForm({
       );
       const result = await response.json() as { message?: string };
       if (!response.ok) {
-        setServerMessage(result.message ?? "We couldn't save that expense. Please try again.");
+        const message = result.message ?? "We couldn't save that expense. Please try again.";
+        setServerMessage(message);
+        showToast({ message, tone: "error" });
         return;
       }
+      form.reset();
+      showToast({
+        message: expenseId ? "Expense updated." : "Expense added.",
+        tone: "success",
+      });
       router.push(expenseId ? `/expenses/${expenseId}` : `/groups/${groupId}`);
       router.refresh();
     } catch {
-      setServerMessage("We couldn't save that expense. Please try again.");
+      const message = "We couldn't save that expense. Please try again.";
+      setServerMessage(message);
+      showToast({ message, tone: "error" });
     } finally {
       setIsSubmitting(false);
     }

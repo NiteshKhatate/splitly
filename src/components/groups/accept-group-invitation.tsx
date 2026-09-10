@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FormMessage } from "@/components/ui/form-message";
 import { TextField } from "@/components/ui/text-field";
+import { showToast } from "@/components/ui/toast";
 import { ensureUserProfile } from "@/lib/auth/profiles";
 import { acceptGroupInvitation } from "@/lib/groups/member-actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -197,6 +198,7 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
 
       if (updateResult.error || !updateResult.data.user) {
         setMessage("We couldn't finish setting up your account. Please try again.");
+        showToast({ message: "We couldn't finish setting up your account. Please try again.", tone: "error" });
         return;
       }
 
@@ -208,6 +210,7 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
 
       if (profileResult.error) {
         setMessage("We couldn't prepare your profile. Please try again.");
+        showToast({ message: "We couldn't prepare your profile. Please try again.", tone: "error" });
         return;
       }
 
@@ -215,6 +218,7 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
 
       if (invitationResult.error) {
         setMessage("We couldn't accept this invitation. Please try again.");
+        showToast({ message: "We couldn't accept this invitation. Please try again.", tone: "error" });
         return;
       }
 
@@ -222,14 +226,19 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
         invitationResult.data !== "accepted"
         && invitationResult.data !== "already_member"
       ) {
-        setMessage(getInvitationAcceptanceMessage(invitationResult.data));
+        const errorMessage = getInvitationAcceptanceMessage(invitationResult.data);
+        setMessage(errorMessage);
+        showToast({ message: errorMessage, tone: "error" });
         return;
       }
 
+      reset();
+      showToast({ message: "Invitation accepted.", tone: "success" });
       router.replace(`/groups/${groupId}`);
       router.refresh();
     } catch {
       setMessage("We couldn't accept this invitation. Please try again.");
+      showToast({ message: "We couldn't accept this invitation. Please try again.", tone: "error" });
     }
   }
 

@@ -733,10 +733,10 @@ Create expense
 → active member
 
 Edit expense
-→ expense creator or owner
+→ expense creator
 
 Delete expense
-→ expense creator or owner
+→ expense creator
 
 Create settlement
 → authorized group member
@@ -1112,7 +1112,7 @@ Display:
 
 ## Edit/Delete
 
-* [x] Allow editing/deletion for the expense creator or group owner.
+* [x] Allow editing/deletion only for the expense creator.
 
 * [x] Use Prisma transactions.
 
@@ -1861,3 +1861,273 @@ Authentication rate-limit configuration
 Redirect and callback endpoint review
 Production evidence in the operations runbook
 ```
+
+# Implementation Completion Phase
+
+The MVP implementation is substantially complete. The following product-level tasks were completed before the project moves into the final testing and review phase.
+
+These tasks are implementation work and are complete. The final testing/review pass remains separate and pending.
+
+## Task 1 — Group Update and Delete Authorization
+
+Status:
+
+```text
+[x] Complete
+```
+
+### Goal
+
+Allow only group administrators to update or delete a group.
+
+### Requirements
+
+* Only a group admin can update group information.
+* Only a group admin can delete a group.
+* Authorization must be enforced server-side.
+* UI controls should only be shown to users who are authorized to perform the operation.
+* Direct requests/server actions must still reject unauthorized users even if the UI is bypassed.
+* Existing group membership and financial integrity rules must remain intact.
+* Deleting a group must follow the application's existing data-integrity and deletion rules.
+
+### Acceptance Criteria
+
+* Admin can update a group successfully.
+* Non-admin cannot update a group.
+* Admin can delete a group successfully.
+* Non-admin cannot delete a group.
+* Unauthorized direct/server requests are rejected.
+* UI correctly reflects the user's permissions.
+
+---
+
+## Task 2 — Expense Update and Delete Authorization
+
+Status:
+
+```text
+[x] Complete
+```
+
+### Goal
+
+Allow the creator of an expense to update or delete that expense.
+
+### Requirements
+
+* The user who created an expense can update it.
+* The user who created an expense can delete it.
+* Other group members cannot update or delete another user's expense.
+* Authorization must be enforced server-side.
+* UI controls should reflect expense ownership.
+* Existing soft-delete behavior must be preserved.
+* Deleted expenses must remain excluded from active balances and financial calculations.
+* Existing transaction and financial-correctness rules must remain intact.
+
+### Acceptance Criteria
+
+* Expense creator can update their expense.
+* Expense creator can delete their expense.
+* Non-creator cannot update the expense.
+* Non-creator cannot delete the expense.
+* Direct/server-side unauthorized attempts are rejected.
+* Deleted expenses remain excluded from active financial calculations.
+* UI correctly reflects ownership permissions.
+
+---
+
+## Task 3 — Toast Success and Error Feedback
+
+Status:
+
+```text
+[x] Complete
+```
+
+### Goal
+
+Use the application's existing toast/notification system consistently for user-facing mutation feedback.
+
+### Requirements
+
+Apply toast feedback to relevant operations throughout the application, including:
+
+* Create
+* Update
+* Delete
+* Save
+* Confirm
+* Cancel
+* Upload
+* Other form-based mutations
+
+### Success Behavior
+
+* Show a success toast only after the server confirms that the operation succeeded.
+* Do not show success feedback optimistically.
+
+### Error Behavior
+
+* Show an error toast when the server operation fails.
+* Error messages must be safe and user-friendly.
+* Do not expose raw database errors, stack traces, internal IDs, or sensitive implementation details.
+
+### Acceptance Criteria
+
+* Successful mutations provide success feedback.
+* Failed mutations provide error feedback.
+* Toasts are not displayed before the server response.
+* Duplicate notifications are avoided.
+* Existing toast infrastructure is reused.
+
+---
+
+## Task 4 — Form Submission State and Reset Behavior
+
+Status:
+
+```text
+[x] Complete
+```
+
+### Goal
+
+Make form submission behavior consistent across the application.
+
+### Required Submission Lifecycle
+
+1. User submits the form.
+2. Client-side validation runs.
+3. The request/server action is submitted.
+4. The application waits for the server response.
+5. If the operation succeeds:
+
+   * show the success toast,
+   * reset the form,
+   * clear submission/validation state,
+   * close the modal if the form is inside a modal.
+6. If the operation fails:
+
+   * show the error toast,
+   * do not reset the form,
+   * preserve entered values where practical,
+   * keep the form available for correction/retry.
+
+### Requirements
+
+* Never reset a form before receiving a successful server response.
+* Never treat submission as successful before receiving the server response.
+* Prevent duplicate submissions while a request is pending.
+* Apply this behavior consistently to forms throughout the application.
+* Existing validation behavior must continue to work.
+
+### Acceptance Criteria
+
+* Successful submission resets the form.
+* Failed submission does not unnecessarily reset the form.
+* Failed submission preserves user input where practical.
+* Pending submission state is handled correctly.
+* Duplicate submissions are prevented.
+* The behavior is consistent across application forms.
+
+---
+
+## Task 5 — Modal Form Closing Behavior
+
+Status:
+
+```text
+[x] Complete
+```
+
+### Goal
+
+Ensure forms inside modals follow the same confirmed-success lifecycle.
+
+### Requirements
+
+For every form contained inside a modal/dialog:
+
+* Keep the modal open while the request is pending.
+* Wait for the server response.
+* On successful response:
+
+  * show success toast,
+  * reset the form,
+  * clear relevant state,
+  * close the modal.
+* On failed response:
+
+  * show error toast,
+  * keep the modal open,
+  * preserve entered values where practical,
+  * allow the user to correct and retry.
+
+### Acceptance Criteria
+
+* Modal remains open during submission.
+* Modal closes only after successful server confirmation.
+* Successful submission resets the form.
+* Failed submission does not close the modal.
+* Failed submission does not unnecessarily clear entered values.
+* Reopening a successfully submitted form does not contain stale form state.
+
+---
+
+# Final Testing and Review Phase
+
+The testing and review phase begins **only after all pending implementation tasks above have been completed**.
+
+Implementation status: all five pending implementation tasks are complete. The final testing and review phase remains pending and is not marked complete by this implementation pass.
+
+Testing and review are intentionally separate from the implementation tasks.
+
+## Testing
+
+Perform a complete verification pass covering:
+
+* Group authorization
+* Expense ownership authorization
+* Toast success/error behavior
+* Form submission lifecycle
+* Modal form behavior
+* Existing financial correctness
+* Existing authentication and authorization
+* Existing critical application workflows
+* Regression testing for previously completed functionality
+
+Use the project's established testing strategy and tooling.
+
+Do not modify production behavior solely to make a test pass. Investigate the underlying cause of failures.
+
+## Review
+
+After testing:
+
+* Review all changed files.
+* Review authorization boundaries.
+* Review server actions and data-access logic.
+* Review form state management.
+* Review modal lifecycle behavior.
+* Review toast handling.
+* Check for inconsistent implementations across similar workflows.
+* Check for regressions.
+* Check that documentation accurately reflects the implementation.
+* Review remaining production-hardening findings.
+
+## Final Verification
+
+The implementation phase is complete when all five pending tasks satisfy their acceptance criteria.
+
+The testing/review phase is complete when:
+
+* The relevant automated tests pass.
+* Critical workflows have been manually or E2E verified where appropriate.
+* No known regression remains.
+* Authorization is enforced server-side.
+* Form and modal behavior is consistent.
+* Success/error feedback is consistent.
+* Remaining production-hardening risks are documented.
+* The release checklist can be evaluated against the actual implementation.
+
+Testing and review completion must not be assumed from successful implementation alone.
