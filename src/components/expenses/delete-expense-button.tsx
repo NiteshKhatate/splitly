@@ -4,16 +4,27 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { FormMessage } from "@/components/ui/form-message";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { showToast } from "@/components/ui/toast";
 
-export function DeleteExpenseButton({ expenseId, groupId }: { expenseId: string; groupId: string }) {
+export function DeleteExpenseButton({
+  expenseId,
+  groupId,
+  onDialogClose,
+  variant = "button",
+}: {
+  expenseId: string;
+  groupId: string;
+  onDialogClose?: () => void;
+  variant?: "button" | "menu";
+}) {
   const router = useRouter();
-  const [isConfirming, setIsConfirming] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [message, setMessage] = useState<string>();
 
   async function deleteExpense() {
+    if (isDeleting) return;
     setIsDeleting(true);
     setMessage(undefined);
     try {
@@ -26,6 +37,8 @@ export function DeleteExpenseButton({ expenseId, groupId }: { expenseId: string;
         return;
       }
       showToast({ message: "Expense deleted.", tone: "success" });
+      setIsDialogOpen(false);
+      onDialogClose?.();
       router.push(`/groups/${groupId}/expenses`);
       router.refresh();
     } catch {
@@ -37,18 +50,38 @@ export function DeleteExpenseButton({ expenseId, groupId }: { expenseId: string;
     }
   }
 
+  function closeDialog() {
+    if (isDeleting) return;
+    setMessage(undefined);
+    setIsDialogOpen(false);
+    onDialogClose?.();
+  }
+
   return (
-    <div className="w-full sm:w-auto">
-      {message ? <div className="mb-3"><FormMessage tone="error">{message}</FormMessage></div> : null}
-      {isConfirming ? (
-        <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
-          <p className="text-secondary text-danger">Delete this expense from balances?</p>
-          <Button className="w-full sm:w-auto" type="button" variant="secondary" onClick={() => setIsConfirming(false)} disabled={isDeleting}>Cancel</Button>
-          <Button className="w-full sm:w-auto" type="button" onClick={deleteExpense} disabled={isDeleting}>{isDeleting ? "Deleting..." : "Confirm delete"}</Button>
-        </div>
-      ) : (
-        <Button className="w-full sm:w-auto" type="button" variant="secondary" onClick={() => setIsConfirming(true)}>Delete expense</Button>
+    <div className={variant === "menu" ? "w-full" : "w-full sm:w-auto"} role={variant === "menu" ? "none" : undefined}>
+      {variant === "menu" ? (
+          <button
+            className="flex min-h-11 w-full items-center rounded-control px-3 py-2 text-left text-label text-danger hover:bg-danger-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary"
+            onClick={() => setIsDialogOpen(true)}
+            role="menuitem"
+            type="button"
+          >
+            Delete expense
+          </button>
+        ) : (
+          <Button className="w-full sm:w-auto" type="button" variant="secondary" onClick={() => setIsDialogOpen(true)}>Delete expense</Button>
       )}
+      <ConfirmationDialog
+        confirmLabel="Delete expense"
+        description="This removes the expense from active balances while preserving its audit history."
+        errorMessage={message}
+        isPending={isDeleting}
+        onCancel={closeDialog}
+        onConfirm={deleteExpense}
+        open={isDialogOpen}
+        pendingLabel="Deleting..."
+        title="Delete expense?"
+      />
     </div>
   );
 }

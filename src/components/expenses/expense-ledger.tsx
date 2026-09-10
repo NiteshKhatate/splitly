@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/card";
 import type { ExpenseListItem } from "@/lib/expenses/list-expenses";
 import Link from "next/link";
 
+import { ExpenseActionsMenu } from "./expense-actions-menu";
+
 export function ExpenseLedger({ expenses, groupId }: { expenses: ExpenseListItem[]; groupId: string }) {
   if (expenses.length === 0) {
     return (
@@ -21,7 +23,7 @@ export function ExpenseLedger({ expenses, groupId }: { expenses: ExpenseListItem
       {expenses.map((expense) => (
         <li key={expense.id}>
           <Card className="sm:p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <h2 className="wrap-break-word text-card-heading">
@@ -31,7 +33,12 @@ export function ExpenseLedger({ expenses, groupId }: { expenses: ExpenseListItem
                 </div>
                 <p className="mt-1 text-secondary text-foreground-muted">{expense.date}</p>
               </div>
-              <p className="shrink-0 text-large-amount text-foreground">{expense.amount}</p>
+              <p className="col-span-2 row-start-2 text-large-amount text-foreground sm:col-span-1 sm:col-start-2 sm:row-start-1">{expense.amount}</p>
+              {expense.canManage ? (
+                <div className="col-start-2 row-start-1 sm:col-start-3">
+                  <ExpenseActionsMenu description={expense.description} expenseId={expense.id} groupId={groupId} />
+                </div>
+              ) : null}
             </div>
             <dl className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
               <div>

@@ -27,7 +27,7 @@ export function GroupHeader({
       >
         Back to groups
       </Link>
-      <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mt-6 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="wrap-break-word text-page-heading">{name}</h1>
           <p className="mt-2 text-secondary text-foreground-muted">{memberLabel}</p>

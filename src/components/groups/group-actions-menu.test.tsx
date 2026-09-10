@@ -23,7 +23,9 @@ describe("GroupActionsMenu", () => {
     expect(screen.getByRole("menuitem", { name: "Add expense" })).toHaveAttribute("href", "/groups/group-1/expenses/new");
     expect(screen.getByRole("menuitem", { name: "Edit group" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "Add people" })).toBeInTheDocument();
-    expect(screen.getByRole("menuitem", { name: "Delete group" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Delete group" }));
+    expect(screen.getByRole("dialog", { name: "Delete group?" })).toBeInTheDocument();
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 
   it("omits admin actions for ordinary members", () => {

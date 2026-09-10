@@ -35,6 +35,7 @@ describe("getGroupExpenses", () => {
       group,
       expenses: [{
         category: "GROCERIES",
+        createdBy: "member-1",
         currency: "INR",
         date: new Date("2026-09-04T00:00:00.000Z"),
         description: "Weekly groceries",
@@ -50,6 +51,7 @@ describe("getGroupExpenses", () => {
     expect(result.error).toBeNull();
     expect(result.expenses).toEqual([{
       amount: "₹1,250.5",
+      canManage: true,
       category: "Groceries",
       currency: "INR",
       date: "4 Sept 2026",
