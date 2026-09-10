@@ -32,6 +32,7 @@ describe("ExpenseLedger", () => {
     expect(screen.getByRole("menuitem", { name: "Edit expense" })).toHaveAttribute("href", "/expenses/expense-1/edit");
     fireEvent.click(screen.getByRole("menuitem", { name: "Delete expense" }));
     expect(screen.getByRole("dialog", { name: "Delete expense?" })).toBeInTheDocument();
+    expect(screen.getByText(/deletes its receipt records and removes the expense from active balances/i)).toBeInTheDocument();
     expect(global.fetch).not.toHaveBeenCalled();
   });
 

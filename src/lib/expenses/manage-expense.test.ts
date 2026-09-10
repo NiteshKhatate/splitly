@@ -17,6 +17,7 @@ const input = {
 function transaction(expense: unknown) {
   return {
     activityEvent: { create: jest.fn().mockResolvedValue({}) },
+    attachment: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
     expense: {
       findFirst: jest.fn().mockResolvedValue(expense),
       update: jest.fn().mockResolvedValue({}),
@@ -56,11 +57,14 @@ describe("expense management", () => {
     expect(memberTx.expense.update).not.toHaveBeenCalled();
   });
 
-  it("soft deletes without removing historical ledger rows", async () => {
+  it("deletes receipt records before soft deleting while preserving historical ledger rows", async () => {
     const tx = transaction({ createdBy: actorId, description: "Dinner", group: { members: [{ userId: actorId }] }, groupId: "group-1" });
 
     await expect(deleteExpense(database(tx) as never, "expense-1", actorId)).resolves.toEqual({ groupId: "group-1" });
+    expect(tx.attachment.deleteMany).toHaveBeenCalledWith({ where: { expenseId: "expense-1" } });
     expect(tx.expense.update).toHaveBeenCalledWith({ where: { id: "expense-1" }, data: { deletedAt: expect.any(Date) } });
+    expect(tx.attachment.deleteMany.mock.invocationCallOrder[0])
+      .toBeLessThan(tx.expense.update.mock.invocationCallOrder[0] as number);
     expect(tx.expensePayment.deleteMany).not.toHaveBeenCalled();
     expect(tx.expenseShare.deleteMany).not.toHaveBeenCalled();
     expect(tx.activityEvent.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ type: "EXPENSE_DELETED" }) }));
@@ -76,6 +80,7 @@ describe("expense management", () => {
 
     await expect(deleteExpense(database(tx) as never, "expense-1", actorId))
       .rejects.toMatchObject({ code: "FORBIDDEN" });
+    expect(tx.attachment.deleteMany).not.toHaveBeenCalled();
     expect(tx.expense.update).not.toHaveBeenCalled();
   });
 

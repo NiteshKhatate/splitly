@@ -102,6 +102,9 @@ export async function deleteExpense(
     });
     requireCreator(expense, actorId);
 
+    // Receipts are disposable expense dependents. Financial ledger rows remain
+    // intact because expense deletion is an auditable soft delete.
+    await transaction.attachment.deleteMany({ where: { expenseId } });
     await transaction.expense.update({
       where: { id: expenseId },
       data: { deletedAt: new Date() },

@@ -73,7 +73,7 @@ export function DeleteExpenseButton({
       )}
       <ConfirmationDialog
         confirmLabel="Delete expense"
-        description="This removes the expense from active balances while preserving its audit history."
+        description="This deletes its receipt records and removes the expense from active balances. Payment and split details remain in the audit history. This action cannot be undone."
         errorMessage={message}
         isPending={isDeleting}
         onCancel={closeDialog}
