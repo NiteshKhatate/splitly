@@ -32,7 +32,7 @@ export default async function GroupBalancesPage({ params }: {
     return (
       <div className="min-h-screen bg-background">
         <DashboardHeader userName={displayName} avatarUrl={profileResult.data?.avatar_url} activePath="/groups" />
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+        <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
           <Button href={`/groups/${groupId}`} variant="secondary">Back to group</Button>
           <div className="mt-6"><SectionError message={result.error?.message} /></div>
         </main>
@@ -44,7 +44,7 @@ export default async function GroupBalancesPage({ params }: {
   const payer = detail.members.find((member) => member.id === user.id) ?? { id: user.id, name: displayName };
 
   return (
-    <div className="min-h-screen bg-background"><DashboardHeader userName={displayName} avatarUrl={profileResult.data?.avatar_url} activePath="/groups" /><main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+    <div className="min-h-screen bg-background"><DashboardHeader userName={displayName} avatarUrl={profileResult.data?.avatar_url} activePath="/groups" /><main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
       <Button href={`/groups/${groupId}`} variant="secondary">Back to group</Button>
       <h1 className="mt-5 wrap-break-word text-page-heading">{detail.name} balances</h1>
       <p className="mt-2 text-secondary text-foreground-muted">Raw balances and suggested repayments are kept separate from expense history.</p>

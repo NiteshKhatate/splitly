@@ -17,10 +17,10 @@ const currencySymbols: Record<string, string> = {
 export function BalanceCard({ label, amount, tone, description, currency = "INR" }: { label: string; amount: string; tone: BalanceTone; description: string; currency?: string }) {
   return (
     <Card className="min-w-0">
-      <div className={`mb-4 flex size-10 items-center justify-center rounded-full ${toneClasses[tone]}`} aria-hidden="true">{currencySymbols[currency] ?? "¤"}</div>
+      <div className={`mb-3 flex size-9 items-center justify-center rounded-full sm:mb-4 sm:size-10 ${toneClasses[tone]}`} aria-hidden="true">{currencySymbols[currency] ?? "¤"}</div>
       <p className="text-label text-foreground-muted">{label}</p>
       <p className={`mt-1 wrap-break-word text-large-amount ${tone === "neutral" ? "text-foreground" : tone === "success" ? "text-success" : "text-danger"}`}>{amount}</p>
-      <p className="mt-2 text-caption text-foreground-muted">{description}</p>
+      <p className="mt-1.5 text-caption text-foreground-muted sm:mt-2">{description}</p>
     </Card>
   );
 }

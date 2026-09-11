@@ -32,7 +32,7 @@ export function Toast({ children, onDismiss, tone }: ToastProps) {
     <div
       aria-atomic="true"
       className={[
-        "fixed inset-x-4 top-4 z-50 flex items-start gap-3 rounded-control border px-4 py-3 shadow-lg sm:left-auto sm:right-6 sm:top-6 sm:w-full sm:max-w-sm",
+        "fixed inset-x-4 top-20 z-50 flex items-start gap-3 rounded-control border px-4 py-3 shadow-lg sm:left-auto sm:right-6 sm:top-6 sm:w-full sm:max-w-sm",
         tone === "success"
           ? "border-success bg-success-subtle text-success"
           : "border-danger bg-danger-subtle text-danger",

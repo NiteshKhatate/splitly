@@ -30,10 +30,10 @@ export default async function SettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader userName={displayName} avatarUrl={profileResult.data?.avatar_url} activePath="/settings" />
-      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         <h1 className="text-page-heading">Profile and preferences</h1>
         <p className="mt-2 text-secondary text-foreground-muted">Manage your account details and how Splitly contacts you.</p>
-        <section aria-labelledby="account-profile-heading" className="mt-8">
+        <section aria-labelledby="account-profile-heading" className="mt-6 sm:mt-8">
           <Card>
             <h2 id="account-profile-heading" className="text-card-heading">Account details</h2>
             <div className="mt-5">
@@ -41,7 +41,7 @@ export default async function SettingsPage() {
             </div>
           </Card>
         </section>
-        <section aria-labelledby="reminder-preferences-heading" className="mt-8">
+        <section aria-labelledby="reminder-preferences-heading" className="mt-4 sm:mt-8">
           <Card>
             <h2 id="reminder-preferences-heading" className="text-card-heading">Reminders</h2>
             <p className="mt-2 text-secondary text-foreground-muted">
@@ -54,7 +54,7 @@ export default async function SettingsPage() {
             </div>
           </Card>
         </section>
-        <section aria-labelledby="expense-export-heading" className="mt-6">
+        <section aria-labelledby="expense-export-heading" className="mt-4 sm:mt-6">
           <Card>
             <h2 id="expense-export-heading" className="text-card-heading">Export expenses</h2>
             <p className="mt-2 text-secondary text-foreground-muted">

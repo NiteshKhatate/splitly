@@ -6,7 +6,6 @@ export type ExpenseListDatabase = Pick<PrismaClient, "expense" | "group">;
 
 export type ExpenseListItem = {
   amount: string;
-  canManage: boolean;
   category: string;
   currency: string;
   date: string;
@@ -97,7 +96,6 @@ export async function getGroupExpenses(
       orderBy: [{ date: "desc" }, { createdAt: "desc" }],
       select: {
         category: true,
-        createdBy: true,
         currency: true,
         date: true,
         description: true,
@@ -114,7 +112,6 @@ export async function getGroupExpenses(
       error: null,
       expenses: expenses.map((expense) => ({
         amount: formatMinor(expense.totalMinor, expense.currency),
-        canManage: expense.createdBy === userId,
         category: expense.category.charAt(0) + expense.category.slice(1).toLowerCase(),
         currency: expense.currency,
         date: formatDate(expense.date),

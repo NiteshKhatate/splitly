@@ -44,7 +44,7 @@ export default async function GroupsPage() {
         avatarUrl={profile?.avatar_url}
         activePath="/groups"
       />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-page-heading">Groups</h1>
@@ -57,7 +57,7 @@ export default async function GroupsPage() {
           </Button>
         </div>
 
-        <Card className="mt-8">
+        <Card className="mt-6 sm:mt-8">
           {userGroups.error ? (
             <SectionError message="Your groups couldn't be loaded. Please try again later." />
           ) : userGroups.groups.length === 0 ? (

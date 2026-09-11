@@ -80,7 +80,7 @@ export function LoginForm({
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(handleLoginSubmit)} noValidate>
+    <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit(handleLoginSubmit)} noValidate>
       {initialMessage ? <FormMessage tone={initialMessageTone}>{initialMessage}</FormMessage> : null}
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
       <TextField id="login-email" label="Email" type="email" autoComplete="email" inputMode="email" error={errors.email?.message} required {...register("email")} />

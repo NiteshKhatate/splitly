@@ -62,7 +62,7 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader userName={displayName} avatarUrl={profile?.avatar_url} activePath="/activity" />
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         <div>
           <h1 className="text-page-heading">Activity</h1>
           <p className="mt-2 text-secondary text-foreground-muted">
@@ -70,11 +70,11 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
           </p>
         </div>
 
-        <Card className="mt-8">
+        <Card className="mt-6 sm:mt-8">
           <ActivityFilters groupId={groupId} groups={activity.groups} type={type} />
         </Card>
 
-        <Card className="mt-6">
+        <Card className="mt-4 sm:mt-6">
           {activity.error ? (
             <SectionError message="Your activity couldn't be loaded. Please try again later." />
           ) : (

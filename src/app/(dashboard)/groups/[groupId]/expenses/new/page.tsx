@@ -43,10 +43,10 @@ export default async function NewExpensePage({
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader userName={displayName} avatarUrl={profileResult.data?.avatar_url} activePath="/groups" />
-      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         <h1 className="text-page-heading">Add an expense</h1>
         <p className="mt-2 text-secondary text-foreground-muted">Record a shared cost in {group.name}.</p>
-        <Card className="mt-6">
+        <Card className="mt-4 sm:mt-6">
           <AddExpenseForm
             currency={group.defaultCurrency}
             groupId={group.id}

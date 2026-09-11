@@ -1,6 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CaretDownIcon, ListIcon, SignOutIcon } from "@phosphor-icons/react/ssr";
+import {
+  CaretDownIcon,
+  ClockCounterClockwiseIcon,
+  HouseIcon,
+  SignOutIcon,
+  UserCircleIcon,
+  UsersThreeIcon,
+} from "@phosphor-icons/react/ssr";
 
 type DashboardHeaderProps = {
   userName: string;
@@ -51,10 +58,10 @@ function getNavLinkClassName(isActive: boolean) {
 
 function getMobileNavLinkClassName(isActive: boolean) {
   return [
-    "block min-h-11 rounded-control px-3 py-3 text-label",
+    "flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-control px-1 py-1.5 text-caption focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary",
     isActive
-      ? "bg-primary-subtle text-primary"
-      : "text-foreground-muted hover:bg-surface-muted",
+      ? "text-primary"
+      : "text-foreground-muted hover:bg-surface-muted hover:text-foreground",
   ].join(" ");
 }
 
@@ -69,8 +76,9 @@ export function DashboardHeader({
   const isSettingsActive = activePath === "/settings";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-surface">
-      <nav className="mx-auto flex min-h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8" aria-label="Primary navigation">
+    <>
+      <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
+        <nav className="mx-auto flex min-h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:min-h-16 sm:gap-4 sm:px-6 lg:px-8" aria-label="Primary navigation">
         <DashboardBrandLink />
         <div className="hidden items-center gap-2 md:flex">
           <Link href="/dashboard" aria-current={isDashboardActive ? "page" : undefined} className={getNavLinkClassName(isDashboardActive)}>Dashboard</Link>
@@ -87,21 +95,38 @@ export function DashboardHeader({
           <div className="absolute right-0 mt-2 w-44 rounded-card border border-border bg-surface p-2 shadow-sm"><LogoutForm /></div>
         </details>
         <details className="group relative md:hidden">
-          <summary className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center gap-2 rounded-control px-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          <summary className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             <UserAvatar name={userName} src={avatarUrl} />
-            <span className="sr-only">Open navigation menu</span>
-            <ListIcon className="text-foreground" size={24} weight="bold" aria-hidden="true" />
+            <span className="sr-only">Open account menu</span>
           </summary>
-          <div className="absolute right-0 mt-2 w-56 rounded-card border border-border bg-surface p-2 shadow-sm">
+          <div className="absolute right-0 mt-2 w-56 rounded-card border border-border bg-surface p-2 shadow-lg">
             <p className="truncate px-3 py-2 text-label">{userName}</p>
-            <Link href="/dashboard" aria-current={isDashboardActive ? "page" : undefined} className={getMobileNavLinkClassName(isDashboardActive)}>Dashboard</Link>
-            <Link href="/groups" aria-current={isGroupsActive ? "page" : undefined} className={getMobileNavLinkClassName(isGroupsActive)}>Groups</Link>
-            <Link href="/activity" aria-current={isActivityActive ? "page" : undefined} className={getMobileNavLinkClassName(isActivityActive)}>Activity</Link>
-            <Link href="/settings" aria-current={isSettingsActive ? "page" : undefined} className={getMobileNavLinkClassName(isSettingsActive)}>Profile</Link>
-            <div className="mt-1 border-t border-border pt-1"><LogoutForm /></div>
+            <div className="border-t border-border pt-1"><LogoutForm /></div>
           </div>
         </details>
+        </nav>
+      </header>
+      <nav
+        aria-label="Mobile navigation"
+        className="safe-area-bottom fixed inset-x-0 bottom-0 z-30 flex border-t border-border bg-surface/95 px-2 pb-1 shadow-[0_-1px_3px_rgba(15,23,42,0.04)] backdrop-blur supports-[backdrop-filter]:bg-surface/90 md:hidden"
+      >
+        <Link href="/dashboard" aria-current={isDashboardActive ? "page" : undefined} className={getMobileNavLinkClassName(isDashboardActive)}>
+          <HouseIcon aria-hidden="true" size={21} weight={isDashboardActive ? "fill" : "regular"} />
+          <span>Home</span>
+        </Link>
+        <Link href="/groups" aria-current={isGroupsActive ? "page" : undefined} className={getMobileNavLinkClassName(isGroupsActive)}>
+          <UsersThreeIcon aria-hidden="true" size={21} weight={isGroupsActive ? "fill" : "regular"} />
+          <span>Groups</span>
+        </Link>
+        <Link href="/activity" aria-current={isActivityActive ? "page" : undefined} className={getMobileNavLinkClassName(isActivityActive)}>
+          <ClockCounterClockwiseIcon aria-hidden="true" size={21} weight={isActivityActive ? "fill" : "regular"} />
+          <span>Activity</span>
+        </Link>
+        <Link href="/settings" aria-current={isSettingsActive ? "page" : undefined} className={getMobileNavLinkClassName(isSettingsActive)}>
+          <UserCircleIcon aria-hidden="true" size={21} weight={isSettingsActive ? "fill" : "regular"} />
+          <span>Profile</span>
+        </Link>
       </nav>
-    </header>
+    </>
   );
 }

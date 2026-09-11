@@ -48,6 +48,22 @@ body {
   line-height: 1.5rem;
 }
 
+html {
+  scroll-padding-top: 5rem;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width: 47.999rem) {
+  body:has(nav[aria-label="Mobile navigation"]) {
+    padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 :where(a[href], button, summary, input, select, textarea):focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;

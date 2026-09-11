@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { DeleteExpenseButton } from "@/components/expenses/delete-expense-button";
 import { ReceiptList } from "@/components/receipts/receipt-list";
 import { ReceiptUploadForm } from "@/components/receipts/receipt-upload-form";
 import { Badge } from "@/components/ui/badge";
@@ -35,24 +34,23 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader userName={displayName} avatarUrl={profileResult.data?.avatar_url} activePath="/groups" />
-      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         <Button href={`/groups/${detail.groupId}/expenses`} variant="secondary">Back to expenses</Button>
         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h1 className="min-w-0 wrap-break-word text-page-heading">{detail.description}</h1><Badge>{detail.category}</Badge><Badge>{detail.currency}</Badge></div><p className="mt-2 wrap-break-word text-secondary text-foreground-muted">{detail.groupName} · {detail.date}</p></div>
           <p className="wrap-break-word text-large-amount sm:shrink-0 sm:text-right">{detail.total}</p>
         </div>
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-6 md:grid-cols-2">
           <Card><h2 className="text-card-heading">Paid by</h2><ul className="mt-4 space-y-3">{detail.payments.map((item, index) => <li key={`${item.name}-${index}`} className="flex flex-col gap-1 text-secondary min-[360px]:flex-row min-[360px]:justify-between min-[360px]:gap-4"><span className="min-w-0 wrap-break-word">{item.name}</span><span className="wrap-break-word min-[360px]:shrink-0 min-[360px]:text-right">{item.amount}</span></li>)}</ul></Card>
           <Card><h2 className="text-card-heading">Split between</h2><p className="mt-1 text-caption text-foreground-muted">{detail.splitMethod} split</p><ul className="mt-4 space-y-3">{detail.shares.map((item, index) => <li key={`${item.name}-${index}`} className="flex flex-col gap-1 text-secondary min-[360px]:flex-row min-[360px]:justify-between min-[360px]:gap-4"><span className="min-w-0 wrap-break-word">{item.name}</span><span className="wrap-break-word min-[360px]:shrink-0 min-[360px]:text-right">{item.amount}</span></li>)}</ul></Card>
         </div>
-        {detail.notes ? <Card className="mt-6"><h2 className="text-card-heading">Notes</h2><p className="mt-2 whitespace-pre-wrap text-secondary">{detail.notes}</p></Card> : null}
-        <Card className="mt-6">
+        {detail.notes ? <Card className="mt-4 sm:mt-6"><h2 className="text-card-heading">Notes</h2><p className="mt-2 whitespace-pre-wrap text-secondary">{detail.notes}</p></Card> : null}
+        <Card className="mt-4 sm:mt-6">
           <h2 className="text-card-heading">Receipts</h2>
           <ReceiptList attachments={receipts.attachments} expenseId={expenseId} />
           <ReceiptUploadForm expenseId={expenseId} />
         </Card>
-        <Card className="mt-6"><h2 className="text-card-heading">Activity</h2>{detail.activity.length ? <ul className="mt-4 space-y-3">{detail.activity.map((event, index) => <li key={`${event.date}-${index}`} className="text-secondary"><span className="text-label">{event.actor}</span> {event.label}<span className="block text-caption text-foreground-muted">{event.date}</span></li>)}</ul> : <p className="mt-2 text-secondary text-foreground-muted">No activity recorded.</p>}</Card>
-        {detail.canManage ? <div className="mt-6 flex flex-col gap-3 sm:flex-row"><Button href={`/expenses/${expenseId}/edit`}>Edit expense</Button><DeleteExpenseButton expenseId={expenseId} groupId={detail.groupId} /></div> : null}
+        <Card className="mt-4 sm:mt-6"><h2 className="text-card-heading">Activity</h2>{detail.activity.length ? <ul className="mt-4 space-y-3">{detail.activity.map((event, index) => <li key={`${event.date}-${index}`} className="text-secondary"><span className="text-label">{event.actor}</span> {event.label}<span className="block text-caption text-foreground-muted">{event.date}</span></li>)}</ul> : <p className="mt-2 text-secondary text-foreground-muted">No activity recorded.</p>}</Card>
       </main>
     </div>
   );
