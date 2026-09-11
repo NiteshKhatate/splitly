@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { DeleteExpenseButton } from "@/components/expenses/delete-expense-button";
 import { ReceiptList } from "@/components/receipts/receipt-list";
 import { ReceiptUploadForm } from "@/components/receipts/receipt-upload-form";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +51,6 @@ export default async function ExpenseDetailPage({ params }: { params: Promise<{ 
           <ReceiptUploadForm expenseId={expenseId} />
         </Card>
         <Card className="mt-4 sm:mt-6"><h2 className="text-card-heading">Activity</h2>{detail.activity.length ? <ul className="mt-4 space-y-3">{detail.activity.map((event, index) => <li key={`${event.date}-${index}`} className="text-secondary"><span className="text-label">{event.actor}</span> {event.label}<span className="block text-caption text-foreground-muted">{event.date}</span></li>)}</ul> : <p className="mt-2 text-secondary text-foreground-muted">No activity recorded.</p>}</Card>
-        {detail.canManage ? <div className="mt-4 flex flex-col gap-3 sm:mt-6 sm:flex-row"><Button href={`/expenses/${expenseId}/edit`}>Edit expense</Button><DeleteExpenseButton expenseId={expenseId} groupId={detail.groupId} /></div> : null}
       </main>
     </div>
   );

@@ -51,22 +51,18 @@ function buildPreviewInput(values: ExpenseFormValues): SplitCalculationInput {
 
 export function AddExpenseForm({
   currency,
-  expenseId,
   groupId,
-  initialValues,
   members,
 }: {
   currency: string;
-  expenseId?: string;
   groupId: string;
-  initialValues?: ExpenseFormValues;
   members: ExpenseMember[];
 }) {
   const router = useRouter();
   const [serverMessage, setServerMessage] = useState<string>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<ExpenseFormValues>({
-    defaultValues: initialValues ?? {
+    defaultValues: {
       amount: "",
       category: "GENERAL",
       currency,
@@ -98,7 +94,7 @@ export function AddExpenseForm({
     setServerMessage(undefined);
     try {
       const response = await fetch(
-        expenseId ? `/expenses/${expenseId}/update` : `/groups/${groupId}/expenses/create`,
+        `/groups/${groupId}/expenses/create`,
         {
         body: JSON.stringify(valuesToSubmit),
         headers: { "Content-Type": "application/json" },
@@ -113,11 +109,8 @@ export function AddExpenseForm({
         return;
       }
       form.reset();
-      showToast({
-        message: expenseId ? "Expense updated." : "Expense added.",
-        tone: "success",
-      });
-      router.push(expenseId ? `/expenses/${expenseId}` : `/groups/${groupId}`);
+      showToast({ message: "Expense added.", tone: "success" });
+      router.push(`/groups/${groupId}`);
       router.refresh();
     } catch {
       const message = "We couldn't save that expense. Please try again.";
@@ -207,8 +200,8 @@ export function AddExpenseForm({
         <Textarea id="expense-notes" label="Notes" maxLength={EXPENSE_NOTES_MAX_LENGTH} helperText="Optional." error={form.formState.errors.notes?.message} {...form.register("notes")} />
       </div>
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Button href={expenseId ? `/expenses/${expenseId}` : `/groups/${groupId}`} variant="secondary" className="w-full sm:w-auto">Cancel</Button>
-        <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>{isSubmitting ? "Saving..." : expenseId ? "Update expense" : "Save expense"}</Button>
+        <Button href={`/groups/${groupId}`} variant="secondary" className="w-full sm:w-auto">Cancel</Button>
+        <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>{isSubmitting ? "Saving..." : "Save expense"}</Button>
       </div>
     </form>
   );

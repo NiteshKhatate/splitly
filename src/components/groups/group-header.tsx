@@ -5,14 +5,12 @@ import { GroupActionsMenu } from "./group-actions-menu";
 
 export function GroupHeader({
   canAddMembers,
-  canManage,
   description,
   groupId,
   memberCount,
   name,
 }: {
   canAddMembers: boolean;
-  canManage: boolean;
   description: string | null;
   groupId: string;
   memberCount: number;
@@ -36,7 +34,7 @@ export function GroupHeader({
             <p className="mt-2 max-w-3xl text-secondary text-foreground-muted">{description}</p>
           ) : null}
         </div>
-        <GroupActionsMenu canAddMembers={canAddMembers} canManage={canManage} groupId={groupId} />
+        <GroupActionsMenu canAddMembers={canAddMembers} groupId={groupId} />
       </div>
       <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:flex sm:flex-wrap">
         <Button href={`/groups/${groupId}/expenses/new`} className="w-full sm:w-auto">
