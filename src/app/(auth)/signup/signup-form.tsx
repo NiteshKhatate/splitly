@@ -152,7 +152,7 @@ export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(handleSignupSubmit)} noValidate>
+    <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit(handleSignupSubmit)} noValidate>
       {formMessage ? (
         <FormMessage tone={formMessage.tone}>{formMessage.text}</FormMessage>
       ) : null}

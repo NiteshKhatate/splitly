@@ -283,13 +283,13 @@ export function AddMemberDialog({
       )}
 
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 px-4 py-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-black/45 sm:items-center sm:px-4 sm:py-6">
           <div
             ref={dialogRef}
             aria-describedby="add-member-description"
             aria-labelledby="add-member-title"
             aria-modal="true"
-            className="max-h-full w-full max-w-lg overflow-y-auto rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6"
+            className="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto rounded-t-card border border-border bg-surface p-5 shadow-lg sm:max-h-full sm:rounded-card sm:p-6"
             role="dialog"
           >
             <div className="flex items-start justify-between gap-4">

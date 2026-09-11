@@ -1,2133 +1,625 @@
-# Splitly Build Plan
+# Splitly — Mobile-First UX / Responsive Design Build Plan
 
-## How to use this plan with Codex
-
-At the start of every work session, follow this instruction:
-
-> You are implementing Splitly. Read `AGENTS.md` and `docs/BUILD_PLAN.md` completely before making changes. Read `docs/system-design.md` when the task involves architecture, database, authentication, authorization, server logic, or data flow.
->
-> Identify the earliest incomplete stage. State the exact files you expect to change, then implement only that stage or a coherent vertical slice of it.
->
-> Preserve the existing Splitly UI and design system. Do not introduce a new visual style unless explicitly requested.
->
-> Use Prisma for all application database access and migrations. Use `DATABASE_URL` for runtime database access and `DIRECT_URL` for Prisma migrations.
->
-> Do not skip database, authorization, validation, testing, accessibility, or responsive states.
->
-> Run the prescribed verification and report the results.
->
-> Update this document by checking off only work that is actually complete.
->
-> Do not copy Splitwise trademarks, logos, text, source code, illustrations, UI assets, or data.
-
-At the end of every work session, report:
-
-1. Completed checklist items
-2. Files created/modified
-3. Commands executed and results
-4. Database migrations added
-5. Environment variables added or required
-6. Tests added/updated
-7. Known gaps
-8. The single recommended next task
+**Status:** Ready to execute  
+**Phase:** Mobile-First UX / Responsive Hardening  
+**Purpose:** Rework the existing responsive experience so mobile is the intentional baseline while preserving Splitly's product behavior, financial correctness, and established visual direction.
 
 ---
 
-# Product Definition
+## 1. Phase Objective
 
-## Primary user story
+The MVP and core production-hardening implementation already exist. This phase focuses specifically on the application's **mobile-first experience**.
 
-Three roommates create a household group.
+The goal is not to create a separate mobile application.
 
-One pays ₹2,400 for groceries, selects who participated, chooses how the expense is split, and saves it.
+The goal is to make the existing Splitly application:
 
-Everyone immediately sees the updated balances.
+- mobile-first,
+- responsive,
+- touch-friendly,
+- accessible,
+- easy to use on small screens,
+- progressively enhanced for tablet and desktop.
 
-A debtor records an ₹800 settlement to the creditor.
+The desired design progression is:
 
-The group's balances and activity trail update without modifying the original expense history.
+> **Mobile baseline → Tablet enhancement → Desktop enhancement**
 
----
-
-# MVP Capabilities
-
-Splitly v1 should support:
-
-* Account authentication
-* User profile
-* Preferred currency
-* Timezone
-* Groups
-* Group membership
-* Group roles
-* Invitations
-* Expenses
-* Multiple payers
-* Participants
-* Equal splits
-* Exact-amount splits
-* Percentage splits
-* Shares/weights splits
-* Personal dashboard
-* Group dashboard
-* Member balances
-* Simplified debts
-* Settlements
-* Activity history
-* Expense search/filtering
-* Basic reminders
-* CSV export
-
-Receipt uploads are a later supporting workflow and should not block the core expense ledger.
+Do not treat mobile as a compressed desktop layout.
 
 ---
 
-# Explicit Non-Goals for v1
+## 2. Source of Truth
 
-Do not implement:
+Before making changes, read:
 
-* Payment gateway integration
-* Bank/card transfers
-* Automatic payment processing
-* Currency conversion
-* Recurring expenses
-* Offline synchronization
-* Native mobile applications
-* Multi-organization administration
-* Public social profiles
-* AI receipt extraction
-* Complex accounting/invoicing features
+1. `AGENTS.md`
+2. `docs/system-design.md`
+3. the existing `docs/BUILD_PLAN.md` history/specification if available
+4. `docs/RELEASE_CHECKLIST.md`
+5. `docs/OPERATIONS.md`
+6. the current application implementation
 
-"Settle up" records an agreement/payment between users. It does not execute a real financial transfer.
+The implementation is the source of truth for the current state.
+
+Do not assume existing documentation accurately describes the current UI.
 
 ---
 
-# UX and Information Architecture
+## 3. Phase Rules
 
-## Global Navigation
+### 3.1 Preserve the product
 
-Desktop:
+This phase is a UX/responsive improvement, not a product-scope expansion.
 
-```text
-Dashboard · Groups · Activity · Profile
-```
+Do not add unrelated product features.
 
-Mobile:
+Do not change financial semantics.
 
-```text
-Bottom navigation
-+
-Persistent Add Expense action
-```
+Do not change authorization rules.
 
-Preserve the existing Splitly navigation and visual implementation.
+Do not replace the established architecture.
 
-Do not redesign the application while implementing domain functionality.
+### 3.2 Preserve the visual direction
 
----
+Reuse the existing:
 
-# Routes
+- design tokens,
+- colors,
+- typography,
+- buttons,
+- inputs,
+- cards,
+- dialogs,
+- navigation,
+- status patterns,
+- spacing,
+- radius,
+- shadows,
+- icons/components.
 
-| Route                        | Purpose            | Main actions                           |
-| ---------------------------- | ------------------ | -------------------------------------- |
-| `/`                          | Personal dashboard | View balances, activity, groups        |
-| `/groups`                    | Group list         | Create/search/open groups              |
-| `/groups/[groupId]`          | Group dashboard    | Add expense, settle up, manage members |
-| `/groups/[groupId]/expenses` | Expense ledger     | Search/filter/view expenses            |
-| `/groups/[groupId]/balances` | Group balances     | View debts and settlements             |
-| `/expenses/[expenseId]`      | Expense detail     | View/edit/delete expense               |
-| `/activity`                  | Activity history   | View/filter activity                   |
-| `/settings`                  | Account settings   | Profile/preferences                    |
+Do not introduce a new visual identity.
 
----
+The objective is to make the existing product work better on small screens.
 
-# UI Design Direction
+### 3.3 Mobile is the baseline
 
-The existing Splitly UI is the source of truth.
+The smallest supported viewport is the starting point for layout decisions.
 
-Preserve:
-
-* Existing font family
-* Existing typography scale
-* Existing color tokens
-* Existing green accent
-* Existing spacing system
-* Existing border radius
-* Existing shadows
-* Existing buttons
-* Existing inputs
-* Existing forms
-* Existing cards
-* Existing dialogs
-* Existing navigation
-* Existing responsive behavior
-
-The visual direction is:
-
-* Warm neutral background
-* Confident green primary accent
-* Clear numeric hierarchy
-* Friendly original copy
-* Cards only when they improve grouping
-* Green for money owed to the user
-* Amber/red for money the user owes
-* Muted styling for settled states
-
-Color must never be the only indicator of status.
-
-Use icons, labels, or text alongside color.
-
-Do not create one-off styling when an existing UI component can be reused.
+Desktop and tablet should progressively enhance the mobile baseline.
 
 ---
 
-# Technology Stack
+# 4. Mobile-First UX Principles
 
-## Application
+## 4.1 Content priority
 
-* Next.js App Router
-* TypeScript
-* Tailwind CSS
-* Node.js 22.x
+For every screen:
 
-## Database
-
-* Supabase-hosted PostgreSQL
-* Prisma ORM
-
-## Authentication
-
-* Supabase Authentication
-
-## Forms
-
-* React Hook Form
-
-## Validation
-
-* Zod
-
-## Testing
-
-* Jest
-* Playwright
-
-## Deployment
-
-* Vercel
-
-## CI
-
-* GitHub Actions
+1. Identify the user's primary goal.
+2. Put the most important information first.
+3. Make the primary action obvious.
+4. Move secondary information into progressive disclosure where appropriate.
+5. Avoid desktop-level information density on small screens.
 
 ---
 
-# Database Architecture
+## 4.2 Touch-first interaction
 
-Supabase hosts PostgreSQL.
+Controls must be comfortable to use with touch.
 
-Prisma is the application's database access layer and owns:
+Review:
 
-* Prisma schema
-* Database migrations
-* Server-side queries
-* Database transactions
-* Seed data
+- buttons,
+- links,
+- icon buttons,
+- menus,
+- checkboxes,
+- radio controls,
+- dropdowns,
+- participant selectors,
+- date inputs,
+- modal controls.
 
-Use:
+Avoid:
 
-```env
-DATABASE_URL=
-DIRECT_URL=
-```
-
----
-
-# DATABASE_URL
-
-`DATABASE_URL` is the runtime database connection.
-
-Use it for:
-
-* Next.js server-side database access
-* Prisma Client
-* Application queries
-* Application mutations
-
-It must remain server-only.
-
-Never expose it through:
-
-```text
-NEXT_PUBLIC_*
-```
+- tiny controls,
+- tightly packed actions,
+- hover-only interactions,
+- adjacent destructive actions with insufficient separation.
 
 ---
 
-# DIRECT_URL
+## 4.3 No accidental horizontal overflow
 
-`DIRECT_URL` is the direct database connection.
+Primary workflows should not require horizontal scrolling.
 
-Use it for:
+Pay particular attention to:
 
-* Prisma migrations
-* Prisma schema operations
-* Database administration
-* Seed operations where required
+- dashboard cards,
+- group pages,
+- expense lists,
+- balance displays,
+- tables,
+- forms,
+- dialogs,
+- navigation.
 
-It must remain server-only.
-
-Never expose it through:
-
-```text
-NEXT_PUBLIC_*
-```
+If a desktop table becomes unusable on mobile, transform it into a readable list/card representation rather than simply shrinking the table.
 
 ---
 
-# Prisma Rules
+# 5. Phase 1 — Baseline Mobile Audit
 
-Prisma is the only application ORM.
+Before changing the UI, inspect the application at representative mobile widths.
 
-Do not use:
+Recommended baseline widths:
 
-* Raw Supabase database access from application code
-* A second ORM
-* Direct PostgreSQL queries from page components
+- 320px
+- 360px
+- 375px
+- 390px
+- 414px
 
-Raw SQL may be used only when Prisma cannot reasonably express a required operation and the reason is documented.
+Also inspect:
 
-All schema changes must be represented by Prisma migrations.
+- 768px tablet
+- 1024px desktop
+- a larger desktop viewport
 
-Do not make undocumented schema changes through the Supabase dashboard.
+Audit at minimum:
 
----
+- authentication
+- dashboard
+- groups
+- group overview
+- expense history
+- expense detail
+- add expense
+- edit expense
+- split configuration
+- balances
+- settlement
+- activity
+- profile/settings
+- dialogs/modals
+- navigation
+- toasts
+- loading states
+- empty states
+- error states
 
-# Prisma Schema
+### Deliverable
 
-The Prisma schema should live at:
+Before implementation, identify:
 
-```text
-prisma/schema.prisma
-```
+- layout problems,
+- overflow,
+- cramped controls,
+- poor information hierarchy,
+- difficult touch interactions,
+- desktop-only assumptions,
+- modal problems,
+- form problems,
+- navigation problems.
 
-Migrations should live under:
-
-```text
-prisma/migrations/
-```
-
-Seed logic should live in the project's configured Prisma seed location.
-
-Use UUIDs for primary keys.
-
-Use:
-
-```text
-createdAt
-updatedAt
-```
-
-where appropriate.
-
-Use archive/soft-delete fields where historical information matters.
-
----
-
-# Core Domain Model
-
-The initial domain model is:
-
-```text
-User
-Group
-GroupMember
-Invite
-
-Expense
-ExpensePayment
-ExpenseShare
-
-Settlement
-
-ActivityEvent
-
-Attachment
-```
+Do not redesign everything at once.
 
 ---
 
-# User
+# 6. Phase 2 — Mobile Navigation
 
-Suggested fields:
+Implement a mobile-appropriate navigation experience.
 
-```text
-id
-name
-email
-avatarUrl
-defaultCurrency
-timezone
-createdAt
-updatedAt
-```
+The existing product information architecture should remain recognizable.
 
-Authentication identity comes from Supabase Authentication.
+Mobile navigation should provide easy access to:
 
-Do not duplicate password storage in the User table.
+- Dashboard
+- Groups
+- Activity
+- Profile/Settings
+- primary Add Expense action
 
----
+Where appropriate, use a compact bottom navigation and persistent/high-visibility Add Expense action.
 
-# Group
+### Acceptance Criteria
 
-Suggested fields:
-
-```text
-id
-name
-imageUrl
-defaultCurrency
-archivedAt
-createdAt
-updatedAt
-```
-
-Relationships:
-
-```text
-Group
- ├── GroupMember
- ├── Expense
- ├── Settlement
- ├── ActivityEvent
- └── Invite
-```
+- Navigation works comfortably on a phone.
+- Primary destinations are easy to reach.
+- Add Expense is easy to discover.
+- Touch targets are appropriate.
+- No important destination becomes inaccessible.
+- Desktop navigation remains appropriate at larger widths.
 
 ---
 
-# GroupMember
+# 7. Phase 3 — Dashboard
 
-Suggested fields:
+Redesign the dashboard layout starting from mobile.
 
-```text
-id
-groupId
-userId
-role
-joinedAt
-leftAt
-createdAt
-updatedAt
-```
+Prioritize:
 
-Roles:
+1. Current financial position
+2. Important balances
+3. Groups
+4. Recent activity
+5. Primary actions
 
-```text
-OWNER
-MEMBER
-```
+Avoid showing too many desktop dashboard cards side-by-side.
 
-A user must not have duplicate active membership in the same group.
+### Mobile requirements
 
----
+- Single-column or appropriately stacked layout by default.
+- Clear numeric hierarchy.
+- Important balance information visible without excessive scrolling.
+- Cards only where they improve grouping and comprehension.
+- No horizontal overflow.
 
-# Invite
+### Desktop enhancement
 
-Suggested fields:
+Use additional width for:
 
-```text
-id
-groupId
-email
-token
-role
-expiresAt
-acceptedAt
-createdAt
-```
-
-Invitation tokens must:
-
-* Be securely generated
-* Expire
-* Be single-use
-* Not expose unnecessary information
+- multiple columns,
+- richer activity information,
+- additional contextual content.
 
 ---
 
-# Expense
+# 8. Phase 4 — Groups
 
-Suggested fields:
+Make the groups experience mobile-first.
 
-```text
-id
-groupId
-description
-date
-currency
-totalMinor
-notes
-category
-createdBy
-deletedAt
-createdAt
-updatedAt
-```
+### Groups list
 
-Money must always use integer minor units.
+Each group should communicate its essential information clearly:
 
-Example:
+- group name,
+- relevant balance/financial status,
+- recent activity where appropriate,
+- access/navigation affordance.
 
-```text
-₹2,400.00 → 240000 paise
-$24.00    → 2400 cents
-```
+### Group detail
 
-Never use JavaScript floating-point numbers as the financial source of truth.
+Prioritize:
+
+- group identity,
+- user's balance,
+- Add Expense,
+- Settle Up,
+- recent expenses/activity.
+
+Secondary administrative actions should not dominate the mobile screen.
 
 ---
 
-# ExpensePayment
+# 9. Phase 5 — Expense Creation and Editing
 
-Represents who actually paid money for an expense.
+This is a priority mobile workflow.
 
-Suggested fields:
+The mobile expense flow should be clear and vertically structured.
 
-```text
-id
-expenseId
-payerId
-amountMinor
-createdAt
-```
+Recommended information progression:
 
-An expense may have one or multiple payers.
+1. Amount
+2. Description
+3. Paid by
+4. Split method
+5. Participants
+6. Split configuration
+7. Receipt
+8. Review/submit
 
-Invariant:
+The exact implementation may differ.
 
-```text
-sum(ExpensePayment.amountMinor) === Expense.totalMinor
-```
+### Requirements
 
----
-
-# ExpenseShare
-
-Represents who owes what portion of an expense.
-
-Suggested fields:
-
-```text
-id
-expenseId
-participantId
-owedMinor
-splitMethod
-createdAt
-```
-
-`ExpenseShare` is the canonical participant obligation.
-
-Invariant:
-
-```text
-sum(ExpenseShare.owedMinor) === Expense.totalMinor
-```
-
-Do not rewrite historical shares merely to simplify debts.
+- Use a mobile-friendly single-column layout by default.
+- Use appropriate mobile input types/keyboards.
+- Keep amount entry prominent.
+- Make payer selection easy to understand.
+- Make participant selection touch-friendly.
+- Avoid cramped multi-column layouts.
+- Keep validation errors close to the relevant fields.
+- Preserve the existing financial calculation semantics.
 
 ---
 
-# Settlement
+# 10. Phase 6 — Split Configuration
 
-Suggested fields:
+The split system must remain fully functional on mobile.
+
+Supported methods:
+
+- Equal
+- Exact
+- Percentage
+- Weighted
+
+Do not remove split methods.
+
+Use progressive disclosure where appropriate.
+
+For example:
 
 ```text
-id
-groupId
-payerId
-payeeId
-amountMinor
-currency
-date
-note
-createdBy
-createdAt
-updatedAt
+Split method
+[ Equally ▼ ]
 ```
 
-Rules:
+Only show additional configuration when required by the selected method.
 
-* Payer and payee must differ.
-* Both must be active group members.
-* Amount must be positive.
-* Currency must match the relevant group/financial context.
-* Settlement does not modify historical expenses.
+### Acceptance Criteria
+
+- All four methods remain accessible.
+- Users can understand the selected method.
+- Inputs are touch-friendly.
+- Amounts remain readable.
+- The final allocation remains clear.
+- No financial behavior changes as a result of the UI work.
 
 ---
 
-# ActivityEvent
+# 11. Phase 7 — Expense History and Dense Data
 
-Suggested fields:
+Review every table/list containing financial information.
 
-```text
-id
-groupId
-actorId
-type
-entityType
-entityId
-metadata
-createdAt
-```
+On mobile, prefer:
 
-Use structured metadata rather than storing only human-readable strings.
+- stacked list items,
+- cards,
+- responsive rows,
+- progressive disclosure,
 
-Activity events should allow the UI to generate useful descriptions.
+where a desktop table becomes difficult to read.
 
----
+Each expense should still make important information understandable, including as applicable:
 
-# Attachment
+- description,
+- amount,
+- payer,
+- user's share,
+- status,
+- date.
 
-Receipt attachments are optional and belong to the later receipt-storage phase.
-
-Suggested fields:
-
-```text
-id
-expenseId
-storageKey
-mimeType
-byteSize
-uploadedBy
-createdAt
-```
-
-Do not implement public receipt storage during the core expense phase.
+Secondary actions such as edit/delete should not create cramped rows.
 
 ---
 
-# Financial Invariants
+# 12. Phase 8 — Balances and Settlements
 
-Every financial implementation must preserve these rules.
+Balances are one of Splitly's most important mobile workflows.
 
-## Expense payments
+Prioritize:
 
-```text
-sum(payments) === expense.totalMinor
-```
+- who owes whom,
+- how much,
+- the user's own position,
+- Settle Up action.
 
-## Expense shares
+Avoid dense desktop-style balance tables on small screens.
 
-```text
-sum(shares) === expense.totalMinor
-```
+Settlement flows should be short and easy to complete.
 
-## Group membership
-
-Every payer and participant must be an active member of the group.
-
-## Positive amounts
-
-Expense and settlement amounts must be positive where applicable.
-
-## Integer arithmetic
-
-Financial calculations must use integer minor units.
-
-## Balance conservation
-
-For every group and currency:
-
-```text
-sum(memberNetBalances) === 0
-```
+Do not alter balance or settlement calculations.
 
 ---
 
-# Balance Formula
+# 13. Phase 9 — Modals and Dialogs
 
-For each member:
+Audit every modal/dialog.
 
-```text
-net balance = amount paid - amount owed
-```
+For mobile:
 
-Settlements adjust the resulting balance.
+- avoid unnecessarily narrow desktop dialogs,
+- use full-width, full-screen, or sheet-like layouts where appropriate,
+- prevent awkward nested scrolling,
+- maintain accessible focus behavior,
+- keep primary actions visible.
 
-Positive balance:
+For forms inside modals:
 
-```text
-The group owes this person.
-```
+### While pending
 
-Negative balance:
+- keep modal open,
+- prevent duplicate submission,
+- preserve form state.
 
-```text
-This person owes the group.
-```
+### On success
 
-Zero:
+- show success toast,
+- reset form,
+- clear relevant state,
+- close modal.
 
-```text
-Settled.
-```
+### On failure
 
----
-
-# Debt Simplification
-
-Do not modify expenses or expense shares to simplify debts.
-
-First calculate raw member balances.
-
-Then:
-
-1. Separate creditors and debtors.
-2. Sort deterministically.
-3. Match debtor and creditor amounts.
-4. Transfer the minimum outstanding amount.
-5. Continue until all possible balances are resolved.
-
-The output should be deterministic and testable.
-
-Preserve both:
-
-```text
-Raw balances
-```
-
-and:
-
-```text
-Suggested transfers
-```
+- show error toast,
+- keep modal open,
+- preserve entered values where practical,
+- allow retry.
 
 ---
 
-# Authorization
+# 14. Phase 10 — Toasts and Feedback
 
-Every protected operation must verify:
-
-1. Authentication
-2. Group membership
-3. Required role
-4. Resource ownership/permission where applicable
-
-Examples:
-
-```text
-Create group
-→ authenticated user
-
-View group
-→ active member
-
-Add/remove member
-→ owner
-
-Archive group
-→ owner
-
-Create expense
-→ active member
-
-Edit expense
-→ expense creator
-
-Delete expense
-→ expense creator
-
-Create settlement
-→ authorized group member
-```
-
-Exact permissions should follow the product rules and system design.
-
----
-
-# Supabase RLS
-
-Supabase PostgreSQL is the database host.
-
-Prisma server-side queries must enforce application-level authorization.
-
-Do not rely on RLS as the only authorization layer for Prisma.
-
-If a browser-facing Supabase client or Supabase Data API is introduced later:
-
-* Enable RLS on every exposed table.
-* Add explicit policies.
-* Test those policies.
-* Do not disable RLS to resolve application errors.
-
----
-
-# Forms and Validation
-
-Use React Hook Form for interactive forms.
-
-Use Zod for validation.
-
-Preferred pattern:
-
-```text
-React Hook Form
-      ↓
-Zod validation
-      ↓
-Server Action / Route Handler
-      ↓
-Server-side Zod validation
-      ↓
-Authorization
-      ↓
-Service layer
-      ↓
-Prisma transaction
-      ↓
-PostgreSQL
-```
-
-Never rely solely on client-side validation.
-
----
-
-# Application Structure
-
-Use the repository's existing directory conventions.
-
-Expected areas include:
-
-```text
-src/
-├── app/
-├── components/
-├── features/
-├── lib/
-└── server/
-
-prisma/
-tests/
-docs/
-```
-
-Keep page components thin.
-
-Business logic belongs in appropriate service/domain modules.
-
-Database operations should not be scattered across UI components.
-
----
-
-# Testing Strategy
-
-Use Jest for:
-
-* Domain logic
-* Validation
-* Balance calculations
-* Split calculations
-* Authorization/service logic
-* Important integration behavior
-
-Use Playwright for:
-
-* Critical end-to-end journeys
-* Authentication flow
-* Group creation
-* Invitation/acceptance
-* Expense creation
-* Balance viewing
-* Settlement
-* Access-denied scenarios
-* Mobile workflow verification
-
----
-
-# Test Priorities
-
-Highest priority:
-
-```text
-Split calculations
-Balance calculations
-Debt simplification
-Financial invariants
-Authorization
-Validation
-Transactions
-Settlement behavior
-```
-
-Do not write tests merely to increase coverage percentages.
-
----
-
-# Stage 0 — Foundation
-
-Status:
-
-```text
-[x] Complete
-```
-
-Tasks:
-
-* [x] Create Next.js TypeScript application.
-* [x] Configure App Router.
-* [x] Configure Tailwind CSS.
-* [x] Configure ESLint.
-* [x] Configure Prettier.
-* [x] Configure strict TypeScript.
-* [x] Establish `src/app`.
-* [x] Establish `src/components`.
-* [x] Establish `src/features`.
-* [x] Establish `src/lib`.
-* [x] Establish `src/server`.
-* [x] Establish `prisma`.
-* [x] Establish `tests`.
-* [x] Create `.env.example`.
-* [x] Configure Prisma.
-* [x] Configure database connection structure.
-* [x] Add health endpoint.
-* [x] Add CI.
-* [x] Create original Splitly application shell.
-* [x] Create responsive navigation.
-* [x] Create existing Splitly design tokens.
-* [x] Add toast infrastructure.
-* [x] Add error boundary.
-* [x] Add loading states.
-* [x] Add empty states.
-
-### Stage 0 Acceptance
-
-A new developer can:
-
-1. Install dependencies.
-2. Configure environment variables.
-3. Start the application.
-4. Load the responsive Splitly shell.
-5. Run lint.
-6. Run typecheck.
-7. Run tests.
-8. Build the application successfully.
-
----
-
-# Stage 1 — Identity and Groups
-
-Status:
-
-```text
-[x] Complete
-```
-
-Tasks:
-
-* [x] Configure `DATABASE_URL`.
-* [x] Configure `DIRECT_URL`.
-* [x] Configure Prisma migrations using `DIRECT_URL`.
-* [x] Verify pooled runtime connection.
-* [x] Verify direct migration connection.
-* [x] Configure Supabase Authentication.
-* [x] Configure protected application routes.
-* [x] Implement profile onboarding.
-* [x] Implement display name.
-* [x] Implement profile updates for name, confirmed email, and password.
-* [x] Implement preferred currency.
-* [x] Implement timezone.
-* [x] Create User schema.
-* [x] Create Group schema.
-* [x] Create GroupMember schema.
-* [x] Create Invite schema.
-* [x] Add Prisma migrations.
-* [x] Implement create group.
-* [x] Implement group list.
-* [x] Implement group detail.
-* [x] Implement membership authorization.
-* [x] Implement invitations.
-* [x] Implement expiring invitation tokens.
-* [x] Handle already-registered invitation emails.
-* [x] Handle invitation acceptance by another account safely.
-* [x] Implement member management.
-* [x] Implement role controls.
-* [x] Implement leave group.
-* [x] Implement archive group.
-* [x] Add Flatmates development seed data.
-
-### Stage 1 Acceptance
-
-* [x] Unauthenticated users cannot access protected group data.
-* [x] Authenticated users can create groups.
-* [x] Owners can invite members.
-* [x] Members can see only their authorized groups.
-* [x] Membership changes enforce authorization.
-
----
-
-# Stage 2 — Expense Ledger
-
-Status:
-
-```text
-[x] Complete
-```
-
-This stage is complete.
-
-## Database
-
-* [x] Create `Expense`.
-* [x] Create `ExpensePayment`.
-* [x] Create `ExpenseShare`.
-* [x] Create `ActivityEvent`.
-* [x] Create expense categories.
-* [x] Add Prisma migration.
-* [x] Update seed data if necessary. (No seed change was required; existing development data was preserved.)
-* [x] Verify database constraints.
-
-## Split Calculation Engine
-
-* [x] Create a pure, independently testable calculation module.
-
-Support:
-
-* [x] Equal splits.
-* [x] Exact-amount splits.
-* [x] Percentage splits using integer basis points.
-* [x] Shares/weights splits.
-
-The calculation engine must:
-
-* [x] Use integer minor units.
-* [x] Detect invalid inputs.
-* [x] Detect totals that do not reconcile.
-* [x] Handle rounding deterministically.
-* [x] Allocate remainders with largest-remainder allocation and participant-ID tie-breaking.
-* [x] Never produce negative owed amounts.
-* [x] Never lose minor units.
-
-Example:
-
-```text
-₹10.00 / 3
-```
-
-must produce integer minor-unit allocations whose sum is exactly ₹10.00.
-
-## Add Expense
-
-* [x] Build the add-expense flow.
-
-The form should support:
-
-* [x] Description
-* [x] Amount
-* [x] Currency
-* [x] Date
-* [x] Payer(s)
-* [x] Participants
-* [x] Split method
-* [x] Split amounts
-* [x] Notes
-* [x] Category
-
-* [x] Use React Hook Form with shared Zod validation.
-
-```text
-React Hook Form
-+
-Zod
-```
-
-* [x] Provide a live, precise amount preview.
-
-* [x] Validate all values again on the server and recalculate shares there.
-
-## Transaction
-
-* [x] Create an expense using one Prisma database transaction:
-
-```text
-Expense
-+
-ExpensePayment[]
-+
-ExpenseShare[]
-+
-ActivityEvent
-```
-
-If any operation fails:
-
-```text
-rollback everything
-```
-
-* [x] Propagate any failed write so Prisma rolls back the complete transaction.
-
-## Expense List
-
-* [x] Implement:
-
-```text
-/groups/[groupId]/expenses
-```
-
-Support:
-
-* [x] Expense list
-* [x] Date
-* [x] Description
-* [x] Payer
-* [x] Amount
-* [x] Category
-* [x] Participants
-* [x] Empty state
-* [x] Loading state
-* [x] Error state
-* [x] Responsive/mobile layout
-
-## Expense Detail
-
-* [x] Implement:
-
-```text
-/expenses/[expenseId]
-```
-
-Display:
-
-* [x] Description
-* [x] Total
-* [x] Currency
-* [x] Date
-* [x] Payers
-* [x] Participants
-* [x] Individual shares
-* [x] Split method
-* [x] Notes
-* [x] Activity information where appropriate
-
-## Edit/Delete
-
-* [x] Allow editing/deletion only for the expense creator.
-
-* [x] Use Prisma transactions.
-
-* [x] Write activity events for financially material changes.
-
-* [x] Soft-delete expenses to preserve audit/history.
-
-## Filters
-
-* [x] Add:
-
-* [x] Date filter
-* [x] Member filter
-* [x] Category filter
-
-* [x] Add description search.
-
-## Receipts
-
-Do not implement actual receipt storage during the core ledger stage.
-
-Only expose receipt UI if the storage architecture is already configured.
-
-### Stage 2 Acceptance
-
-The system can:
-
-* [x] Create expenses for 2–10 members.
-* [x] Support equal splits.
-* [x] Support exact splits.
-* [x] Support percentage splits.
-* [x] Support shares/weights.
-* [x] Support multiple payers.
-* [x] Correctly handle rounding.
-* [x] Prevent invalid totals.
-* [x] Persist all records transactionally.
-* [x] Display expenses.
-* [x] View expense details.
-* [x] Edit authorized expenses.
-* [x] Delete authorized expenses.
-* [x] Record appropriate activity events.
-
-No financial amount may be lost through rounding.
-
----
-
-# Stage 3 — Balances and Settlements
-
-Status:
-
-```text
-[x] Complete
-```
-
-## Balance Engine
-
-* [x] Implement pure tested functions for:
-
-* [x] Member net balances
-* [x] Group balances
-* [x] Currency isolation
-* [x] Settlement adjustments
-* [x] Debt simplification
-
-Tests must include:
-
-* [x] Multiple expenses
-* [x] Multiple payers
-* [x] Unequal splits
-* [x] Zero balances
-* [x] Partial settlements
-* [x] Multiple settlements
-* [x] Rounding
-* [x] Multiple currencies where applicable
-
-## Dashboard
-
-Implement/update:
-
-```text
-/
-```
-
-Display:
-
-* [x] Total owed to user
-* [x] Total user owes
-* [x] Net position
-* [x] Recent activity, using the shared structured activity feed from `/activity`
-* [x] Groups
-* [x] Group-level summaries
-
-Preserve the existing Splitly UI.
-
-## Group Balances
-
-Implement:
-
-```text
-/groups/[groupId]/balances
-```
-
-Display:
-
-* [x] Raw member balances
-* [x] Who owes whom
-* [x] Suggested repayments
-* [x] Currency
-* [x] Settlement history
-
-Clearly distinguish:
-
-```text
-You owe
-You are owed
-Settled
-```
-
-Never rely solely on color.
-
-## Settlement
-
-* [x] Create the `Settlement` Prisma model/migration.
-
-Build:
-
-```text
-Record settlement
-```
-
-The form should support:
-
-* [x] Authenticated user shown as the fixed payer
-* [x] Payee
-* [x] Amount
-* [x] Date
-* [x] Note
-
-Use React Hook Form + Zod.
-
-Validate:
-
-* [x] Authenticated payer exists
-* [x] Payee exists
-* [x] Payer != payee
-* [x] Both are active members
-* [x] Amount > 0
-* [x] Currency is valid
-
-* [x] Write settlement and activity in one transaction.
-* [x] Create settlements as pending until the recipient confirms them.
-* [x] Allow only the recipient to confirm a pending settlement.
-* [x] Exclude pending settlements from balances and dashboard activity.
-
-## Settle Up
-
-Allow a suggested debt to prefill:
-
-* [x] Payer
-* [x] Payee
-* [x] Amount
-
-* [x] Allow a valid partial amount.
-
-### Stage 3 Acceptance
-
-* [x] Every posted expense changes balances correctly.
-* [x] Every settlement changes balances correctly.
-* [x] Group balances reconcile to zero.
-* [x] Debt simplification is deterministic.
-* [x] Raw balances remain available.
-* [x] Suggested transfers resolve outstanding balances.
-* [x] Historical expenses remain unchanged.
-
----
-
-# Stage 4 — Supporting Workflows and Polish
-
-Status:
-
-```text
-[x] Complete
-```
-
-## Activity
-
-- [x] Implement the authorized personal activity route:
-
-```text
-/activity
-```
-
-- [x] Add authorized activity feeds to group dashboards.
-- [x] Add group and activity-type filters.
-- [x] Add pagination with preserved filters.
-- [x] Add loading, empty, error, responsive, and accessible states.
-- [x] Build human-readable activity from structured event metadata and relationships.
-- [x] Record group creation and membership lifecycle events atomically in PostgreSQL.
-
-Implemented human-readable events include:
-
-```text
-Alex added ₹2,400 grocery expense
-Sam joined the group
-Priya settled ₹800 with Alex
-```
-
-Activity data must come from structured events.
-
-## Reminders
-
-- [x] Implement reminder preferences.
-
-Scheduled reminders:
-
-* [x] Target valid members.
-* [x] Respect notification preferences.
-* [x] Only contact members with outstanding balances.
-* [x] Avoid duplicate notifications.
-* [x] Log deliveries.
-
-Do not implement a complex notification platform.
-
-## CSV Export
-
-- [x] Support authorized export of expenses.
-
-Allow:
-
-* [x] Group filter
-* [x] Date filter
-* [x] Appropriate expense fields
-
-- [x] Verify exported values are financially correct using integer minor-unit serialization tests.
-
-## Receipt Upload
-
-- [x] Implement secure receipt uploads:
-
-```text
-User
- ↓
-MIME validation
- ↓
-File-size validation
- ↓
-Private storage
- ↓
-Attachment metadata
- ↓
-Signed retrieval URL
-```
+Review toast placement and behavior at mobile widths.
 
 Requirements:
 
-* [x] Private objects
-* [x] MIME checks
-* [x] Size limits
-* [x] Signed URLs
-* [x] Authorization
-* [x] Cleanup after deletion
+- Toasts must remain visible and readable.
+- They must not cover critical controls.
+- They must not overflow the viewport.
+- Success appears only after confirmed success.
+- Errors are understandable without exposing internal details.
+- Multiple duplicate toasts should not be generated.
 
-## Accessibility
-
-Complete:
-
-* [x] Keyboard navigation across authenticated critical workflows
-* [x] Focus states across authenticated critical workflows
-* [x] Screen-reader labels and automated axe checks for public authentication screens
-* [x] Accessible form errors on authentication and tested financial forms
-* [x] Dialog accessibility audit
-* [x] Touch target audit
-
-## Responsive QA
-
-Manually verify:
-
-* [x] Mobile public authentication and protected-route behavior
-* [x] Narrow-mobile (320 px) overflow and control-boundary regression coverage
-* [x] Tablet authenticated critical workflows
-* [x] Desktop public authentication and protected-route behavior
-
-Critical workflows:
-
-```text
-Login
-Create group
-Add member
-Add expense
-View expense
-View balance
-Settle up
-```
-
-## Empty/Error/Loading States
-
-Ensure all important screens have:
-
-* [x] Loading
-* [x] Empty
-* [x] Error
-* [x] Unauthorized
-* [x] Success states
-
-### Stage 4 Acceptance
-
-* [x] Core workflows are polished on mobile, tablet, and desktop.
-
-* [x] Exports are correct.
-
-* [x] Receipts are securely handled.
-
-* [x] Optional workflows fail gracefully.
+Use the existing toast system.
 
 ---
 
-# Stage 5 — Release Readiness
+# 15. Phase 11 — Loading, Empty, Error, and Unauthorized States
 
-Status:
+Audit all major mobile screens for non-happy-path states.
 
-```text
-[ ] External release verification pending
-```
+Verify:
 
-Repository implementation is complete. The unchecked items below require access to the production Supabase, Vercel, GitHub, monitoring, or test-account configuration and must not be marked complete without recorded evidence.
+- loading states,
+- empty states,
+- errors,
+- unauthorized access,
+- successful mutation feedback.
 
-The project currently has one shared production environment and no separate preview, staging, or test deployment. Destructive restoration tests and automated authenticated mutation tests must not run against that production environment; use a disposable Supabase project before completing those checks.
-
-## Security
-
-Add:
-
-* [x] PostgreSQL-backed rate limiting for invitations, member lookup, and receipt uploads
-* [x] Add a read-only Supabase Auth endpoint-protection and rate-limit audit command
-* [x] Run the Supabase Auth audit against the production project and record evidence (passed under the documented Free-plan policy with expected non-blocking warnings; operator confirmed 2026-09-08)
-* [x] Invite endpoint protection
-* [x] Upload limits
-* [x] Same-origin mutation protection
-* [x] Content Security Policy
-* [x] Security headers
-* [x] Enforce Secure and SameSite attributes on production authentication cookies
-* [x] Input size limits
-
-## Monitoring
-
-Add:
-
-* [x] Optional server error-monitoring webhook integration
-* [x] Central server-log credential, PII, and financial-value redaction
-* [x] Database-aware health check
-* [x] Scheduled application-and-database uptime workflow
-* [x] Configure the production health URL and operator failure notifications (scheduled health workflow and failure email delivery verified 2026-09-08)
-
-Do not log:
-
-* Passwords
-* Database credentials
-* Auth tokens
-* Service-role keys
-* Sensitive financial information unnecessarily
-
-## Database Reliability
-
-Confirm:
-
-* [x] Recovery and restoration procedures are documented
-* [x] Supabase backup policy (production uses the Free plan, which provides no managed backups; operator confirmed 2026-09-08)
-* [x] PITR configuration where applicable (unavailable on the production Free plan; operator confirmed 2026-09-08)
-* [x] Receipt-object recovery policy (best-effort attachments with no guaranteed recovery on the Free-plan MVP; users must retain originals)
-* [ ] Disposable-project restoration test
-
-- [x] Document Prisma migration rollback procedures in `docs/OPERATIONS.md`.
-
-## Production Configuration
-
-Configure:
-
-```text
-DATABASE_URL
-DIRECT_URL
-Supabase publishable and server credentials
-Application URL
-Other required production variables
-```
-
-- [x] Add strict, non-secret-printing production configuration validation
-- [x] Use one validated production origin for confirmation, password-reset, account-email, and invitation links
-- [x] Reject localhost email-link fallbacks in production
-- [x] Run the production configuration check with Vercel Production variables (passed 2026-09-08; scheduled email reminders emitted the expected customer-handoff warning)
-
-Verification on 2026-09-07 using the operator-confirmed production `.env.local` failed because `APP_URL`, `CRON_SECRET`, `REMINDER_FROM_EMAIL`, and `RESEND_API_KEY` were not configured. After configuring `APP_URL` and classifying the three reminder-provider variables as an optional, all-or-none customer-handoff configuration, the production check passed on 2026-09-08 with the expected reminder-deferral warning.
-
-All production secrets must be stored in Vercel/environment secret management.
-
-Never commit them.
-
-## Vercel
-
-Confirm:
-
-* [x] GitHub repository connection (`NiteshKhatate/splitly`, production branch `main`, automatic production deployments enabled; operator confirmed 2026-09-08)
-* [x] Preview/staging deployment intentionally deferred for the current single-environment release
-* [x] Production deployment (confirmed by the operator on 2026-09-07; `https://splitly-zeta.vercel.app` and its database-aware health endpoint independently verified on 2026-09-08)
-* [x] Production environment variables (core configuration validation passed 2026-09-08; customer-owned reminder configuration deferred)
-* [x] Repository build configuration
-* [x] Custom domain intentionally deferred to the customer handoff; the production `vercel.app` domain is verified
-* [x] Health endpoint implementation
-
-Vercel handles application deployment.
-
-GitHub Actions handles CI.
-
-Do not create a separate deployment server.
-
-## Final QA
-
-Perform:
-
-* [x] Automated accessibility audit
-* [x] Performance audit against the production deployment (Lighthouse mobile and desktop: Performance 100, Accessibility 95, Best Practices 100, SEO 100; operator confirmed 2026-09-08)
-* [x] Repository security review
-* [x] Automated mobile, tablet, and desktop QA coverage
-* [ ] Fresh-account acceptance test against a production-like environment
-* [x] Local Prisma schema and migration verification
-* [x] Production database migration verification (`prisma migrate status`: 8 migrations, schema up to date on 2026-09-07)
-* [ ] Backup/recovery verification
-
-### Stage 5 Acceptance
-
-A fresh user can:
-
-```text
-Sign up
-  ↓
-Create group
-  ↓
-Invite member
-  ↓
-Add expense
-  ↓
-View balances
-  ↓
-Settle up
-  ↓
-Review activity
-```
-
-without encountering critical errors.
+These states must be intentionally designed for narrow screens rather than being accidental desktop layouts.
 
 ---
 
-# Test Matrix
+# 16. Phase 12 — Responsive Enhancement
 
-## Unit Tests
+After mobile layouts are correct, progressively enhance:
 
-Jest must cover:
+### Tablet
 
-* Equal split
-* Exact split
-* Percentage split
-* Shares/weights split
-* Rounding
-* Remainder allocation
-* Invalid split
-* Multiple payers
-* Balance calculation
-* Debt simplification
-* Currency isolation
-* Settlement calculations
-* Zod validation
+- introduce additional columns where useful,
+- increase spacing where appropriate,
+- improve list/table density without sacrificing readability.
 
-Example fixture:
+### Desktop
 
-```text
-₹10.00 split among 3 people
-```
+- use available horizontal space,
+- add side-by-side content,
+- expand navigation,
+- provide richer contextual information,
+- preserve the same core workflows.
 
-Example:
-
-```text
-₹2,400
-40% / 35% / 25%
-```
-
-Assert integer minor-unit values.
-
-Do not assert formatted display strings for financial correctness.
+Do not create a separate desktop product.
 
 ---
 
-# Integration Tests
+# 17. Phase 13 — Accessibility
 
-Cover:
+Mobile-first changes must preserve accessibility.
 
-* Authorization
-* Group membership
-* Invitation acceptance
-* Expense creation
-* Transaction rollback
-* Expense edit
-* Expense deletion
-* Settlement creation
-* Unauthorized access
+Review:
 
-Financial writes must be tested for atomicity.
+- semantic HTML,
+- labels,
+- focus,
+- keyboard navigation,
+- modal focus,
+- screen-reader labels,
+- error associations,
+- touch targets,
+- contrast,
+- toast announcements.
 
----
-
-# End-to-End Tests
-
-Playwright should cover the critical journey:
-
-```text
-Sign in
- ↓
-Create group
- ↓
-Invite/accept member
- ↓
-Add expense
- ↓
-View balance
- ↓
-Settle up
- ↓
-Verify updated balance
-```
-
-Also include:
-
-* Mobile viewport
-* Access-denied scenario
-* Invalid form submission
+Do not make controls visually compact at the expense of accessibility.
 
 ---
 
-# Database Test Rules
+# 18. Phase 14 — Component Consistency
 
-Do not run ordinary tests against production Supabase.
+When fixing one responsive component:
 
-Do not use:
+- search for similar components,
+- identify shared patterns,
+- reuse existing components,
+- avoid duplicate implementations.
 
-```text
-Production DATABASE_URL
-Production DIRECT_URL
-Production service_role credentials
-```
+Examples:
 
-for normal automated tests.
-
-Use a dedicated test/development environment where database integration tests are required.
-
----
-
-# CI/CD
-
-GitHub Actions is responsible for CI.
-
-Vercel is responsible for application deployment.
-
-CI should run:
-
-```text
-Install dependencies
- ↓
-Lint
- ↓
-Typecheck
- ↓
-Jest
- ↓
-Production build
-```
-
-Playwright may run in CI when the required test environment is available.
-
-The exact commands must be taken from `package.json`.
-
-Do not invent package scripts.
+- all primary buttons should behave consistently,
+- all dialogs should follow the same mobile pattern,
+- all forms should use consistent spacing,
+- all toast behavior should remain consistent,
+- all list/card transformations should follow the same design language.
 
 ---
 
-# Environment Variables
+# 19. Testing and Review Phase
 
-Local development should use:
+Testing and review are intentionally separate from the implementation phase.
 
-```env
-DATABASE_URL=
-DIRECT_URL=
-```
+After all mobile-first implementation tasks are complete, perform the final review.
 
-plus the required Supabase Authentication and application variables.
+### Review
 
-Example documentation only:
+Inspect:
 
-```env
-DATABASE_URL="..."
-DIRECT_URL="..."
-```
+- 320px
+- 360px
+- 375px
+- 390px
+- 414px
+- tablet
+- desktop
 
-Never place real credentials in:
+Review the complete critical workflows:
 
-* Git
-* Documentation
-* Tests
-* Screenshots
-* Logs
-* Example files
+1. Sign in
+2. Dashboard
+3. Create group
+4. Enter group
+5. Add expense
+6. Configure split
+7. View balance
+8. Settle up
+9. Edit expense
+10. Delete expense
+11. Group update/delete according to permissions
+12. Activity/history
+13. Profile/settings
 
-`.env.example` must contain placeholders only.
+### Verification
 
----
+Use the project's established test and verification strategy.
 
-# Git and Commit Strategy
+Do not claim mobile-first completion based only on the existence of responsive Tailwind classes.
 
-Prefer reviewable commits:
-
-```text
-chore: scaffold application
-feat: add authentication and groups
-feat: add expense split ledger
-feat: add balances and settlements
-feat: add activity and export
-chore: harden release
-```
-
-Do not bundle unrelated visual rewrites with database migrations.
-
-Do not mix unrelated refactoring into feature commits.
+The actual user experience must be reviewed at representative mobile widths.
 
 ---
 
-# Development Commands
+# 20. Final Acceptance Criteria
 
-Use the package manager and scripts actually configured in `package.json`.
+The Mobile-First UX phase is complete when:
 
-Typical commands:
-
-```bash
-pnpm dev
-pnpm lint
-pnpm typecheck
-pnpm test
-pnpm test:e2e
-pnpm build
-npx prisma generate
-npx prisma migrate dev
-npx prisma db seed
-```
-
-For Prisma migrations:
-
-```text
-Development:
-DIRECT_URL
-
-Runtime:
-DATABASE_URL
-```
-
-Never print either connection string while verifying connectivity.
-
----
-
-# Definition of Done
-
-A task is complete only when:
-
-* [ ] Implementation is complete.
-* [ ] TypeScript passes.
-* [ ] Lint passes.
-* [ ] Relevant Jest tests pass.
-* [ ] Relevant Playwright tests pass where applicable.
-* [ ] Authorization has been considered.
-* [ ] Validation has been implemented.
-* [ ] Loading state exists where required.
-* [ ] Empty state exists where required.
-* [ ] Error state exists where required.
-* [ ] Unauthorized state exists where required.
-* [ ] Mobile layout has been considered.
-* [ ] Desktop layout has been considered.
-* [ ] Existing Splitly UI/design has been preserved.
-* [ ] Schema changes have Prisma migrations.
-* [ ] Seed data remains valid.
-* [ ] No secrets were committed.
-* [ ] No unnecessary dependencies were introduced.
-* [ ] No unrelated files were modified.
+- [ ] Mobile is the intentional base layout.
+- [ ] Core Splitly workflows are comfortable on a phone.
+- [ ] No accidental horizontal overflow exists.
+- [ ] Primary actions are easy to discover and reach.
+- [ ] Touch targets are usable.
+- [ ] Navigation is mobile-appropriate.
+- [ ] Dashboard is mobile-first.
+- [ ] Groups are mobile-first.
+- [ ] Expense creation is mobile-first.
+- [ ] Expense editing is mobile-first.
+- [ ] All four split methods work comfortably on mobile.
+- [ ] Expense history is readable without forcing desktop tables.
+- [ ] Balances are easy to understand on mobile.
+- [ ] Settlement is usable on mobile.
+- [ ] Modal forms work correctly on mobile.
+- [ ] Forms reset only after confirmed successful submission.
+- [ ] Successful modal forms close only after confirmed success.
+- [ ] Failed submissions preserve form state where practical.
+- [ ] Toasts are readable and correctly positioned.
+- [ ] Loading/empty/error/unauthorized/success states work on mobile.
+- [ ] Accessibility is preserved.
+- [ ] Tablet layout remains coherent.
+- [ ] Desktop layout remains coherent and progressively enhanced.
+- [ ] Existing financial logic is unchanged.
+- [ ] Existing authorization/security behavior is preserved.
+- [ ] Existing design direction is preserved.
+- [ ] No unrelated product features were introduced.
+- [ ] Final testing/review has been completed separately.
+- [ ] Documentation matches the actual implementation.
 
 ---
 
-# Recorded Decisions
+# 21. Final Engineering Principle
 
-1. **Application:** Next.js App Router + TypeScript.
-2. **Styling:** Tailwind CSS with the existing Splitly design system.
-3. **Database:** Supabase-hosted PostgreSQL.
-4. **ORM:** Prisma.
-5. **Runtime database connection:** `DATABASE_URL`.
-6. **Migration database connection:** `DIRECT_URL`.
-7. **Authentication:** Supabase Authentication.
-8. **Forms:** React Hook Form.
-9. **Validation:** Zod.
-10. **Unit/integration testing:** Jest.
-11. **End-to-end testing:** Playwright.
-12. **CI:** GitHub Actions.
-13. **Deployment:** Vercel.
-14. **Currency storage:** Integer minor units.
-15. **Expense source of truth:** `ExpenseShare`.
-16. **Settlement:** Ledger event/agreement; no payment gateway.
-17. **Membership:** Email-bound expiring invitations.
-18. **Initial currency:** User-selected, with INR preselected.
-19. **Scope:** Private beta for friends/households before public launch.
+> **Mobile-first does not mean mobile-only.**
+>
+> Start with the smallest useful experience, prioritize what matters most, make interaction comfortable for touch, and progressively use additional screen space as it becomes available.
 
----
-
-# Current Development Position
-
-```text
-Stage 0 — Foundation
-████████████████████ 100%
-
-Stage 1 — Identity & Groups
-████████████████████ 100%
-
-Stage 2 — Expense Ledger
-████████████████████ 100%
-
-Stage 3 — Balances & Settlements
-████████████████████ 100%
-
-Stage 4 — Supporting Workflows & Polish
-████████████████████ 100%
-
-Stage 5 — Release Readiness
-░░░░░░░░░░░░░░░░░░░░ 0%
-```
-
-## Next Recommended Task
-
-**Begin Stage 5 with the authentication-provider security audit.**
-
-Implement:
-
-```text
-Supabase Auth abuse-protection settings
-Authentication rate-limit configuration
-Redirect and callback endpoint review
-Production evidence in the operations runbook
-```
-
-# Implementation Completion Phase
-
-The MVP implementation is substantially complete. The following product-level tasks were completed before the project moves into the final testing and review phase.
-
-These tasks are implementation work and are complete. The final testing/review pass remains separate and pending.
-
-## Task 1 — Group Update and Delete Authorization
-
-Status:
-
-```text
-[x] Complete
-```
-
-### Goal
-
-Allow only group administrators to update or delete a group.
-
-### Requirements
-
-* Only a group admin can update group information.
-* Only a group admin can delete a group.
-* Authorization must be enforced server-side.
-* UI controls should only be shown to users who are authorized to perform the operation.
-* Direct requests/server actions must still reject unauthorized users even if the UI is bypassed.
-* Existing group membership and financial integrity rules must remain intact.
-* Deleting a group must follow the application's existing data-integrity and deletion rules.
-
-### Acceptance Criteria
-
-* Admin can update a group successfully.
-* Non-admin cannot update a group.
-* Admin can delete a group successfully.
-* Non-admin cannot delete a group.
-* Unauthorized direct/server requests are rejected.
-* UI correctly reflects the user's permissions.
-
----
-
-## Task 2 — Expense Update and Delete Authorization
-
-Status:
-
-```text
-[x] Complete
-```
-
-### Goal
-
-Allow the creator of an expense to update or delete that expense.
-
-### Requirements
-
-* The user who created an expense can update it.
-* The user who created an expense can delete it.
-* Other group members cannot update or delete another user's expense.
-* Authorization must be enforced server-side.
-* UI controls should reflect expense ownership.
-* Existing soft-delete behavior must be preserved.
-* Deleted expenses must remain excluded from active balances and financial calculations.
-* Existing transaction and financial-correctness rules must remain intact.
-
-### Acceptance Criteria
-
-* Expense creator can update their expense.
-* Expense creator can delete their expense.
-* Non-creator cannot update the expense.
-* Non-creator cannot delete the expense.
-* Direct/server-side unauthorized attempts are rejected.
-* Deleted expenses remain excluded from active financial calculations.
-* UI correctly reflects ownership permissions.
-
----
-
-## Task 3 — Toast Success and Error Feedback
-
-Status:
-
-```text
-[x] Complete
-```
-
-### Goal
-
-Use the application's existing toast/notification system consistently for user-facing mutation feedback.
-
-### Requirements
-
-Apply toast feedback to relevant operations throughout the application, including:
-
-* Create
-* Update
-* Delete
-* Save
-* Confirm
-* Cancel
-* Upload
-* Other form-based mutations
-
-### Success Behavior
-
-* Show a success toast only after the server confirms that the operation succeeded.
-* Do not show success feedback optimistically.
-
-### Error Behavior
-
-* Show an error toast when the server operation fails.
-* Error messages must be safe and user-friendly.
-* Do not expose raw database errors, stack traces, internal IDs, or sensitive implementation details.
-
-### Acceptance Criteria
-
-* Successful mutations provide success feedback.
-* Failed mutations provide error feedback.
-* Toasts are not displayed before the server response.
-* Duplicate notifications are avoided.
-* Existing toast infrastructure is reused.
-
----
-
-## Task 4 — Form Submission State and Reset Behavior
-
-Status:
-
-```text
-[x] Complete
-```
-
-### Goal
-
-Make form submission behavior consistent across the application.
-
-### Required Submission Lifecycle
-
-1. User submits the form.
-2. Client-side validation runs.
-3. The request/server action is submitted.
-4. The application waits for the server response.
-5. If the operation succeeds:
-
-   * show the success toast,
-   * reset the form,
-   * clear submission/validation state,
-   * close the modal if the form is inside a modal.
-6. If the operation fails:
-
-   * show the error toast,
-   * do not reset the form,
-   * preserve entered values where practical,
-   * keep the form available for correction/retry.
-
-### Requirements
-
-* Never reset a form before receiving a successful server response.
-* Never treat submission as successful before receiving the server response.
-* Prevent duplicate submissions while a request is pending.
-* Apply this behavior consistently to forms throughout the application.
-* Existing validation behavior must continue to work.
-
-### Acceptance Criteria
-
-* Successful submission resets the form.
-* Failed submission does not unnecessarily reset the form.
-* Failed submission preserves user input where practical.
-* Pending submission state is handled correctly.
-* Duplicate submissions are prevented.
-* The behavior is consistent across application forms.
-
----
-
-## Task 5 — Modal Form Closing Behavior
-
-Status:
-
-```text
-[x] Complete
-```
-
-### Goal
-
-Ensure forms inside modals follow the same confirmed-success lifecycle.
-
-### Requirements
-
-For every form contained inside a modal/dialog:
-
-* Keep the modal open while the request is pending.
-* Wait for the server response.
-* On successful response:
-
-  * show success toast,
-  * reset the form,
-  * clear relevant state,
-  * close the modal.
-* On failed response:
-
-  * show error toast,
-  * keep the modal open,
-  * preserve entered values where practical,
-  * allow the user to correct and retry.
-
-### Acceptance Criteria
-
-* Modal remains open during submission.
-* Modal closes only after successful server confirmation.
-* Successful submission resets the form.
-* Failed submission does not close the modal.
-* Failed submission does not unnecessarily clear entered values.
-* Reopening a successfully submitted form does not contain stale form state.
-
----
-
-# Final Testing and Review Phase
-
-The testing and review phase begins **only after all pending implementation tasks above have been completed**.
-
-Implementation status: all five pending implementation tasks are complete. The final testing and review phase remains pending and is not marked complete by this implementation pass.
-
-Testing and review are intentionally separate from the implementation tasks.
-
-## Testing
-
-Perform a complete verification pass covering:
-
-* Group authorization
-* Expense ownership authorization
-* Toast success/error behavior
-* Form submission lifecycle
-* Modal form behavior
-* Existing financial correctness
-* Existing authentication and authorization
-* Existing critical application workflows
-* Regression testing for previously completed functionality
-
-Use the project's established testing strategy and tooling.
-
-Do not modify production behavior solely to make a test pass. Investigate the underlying cause of failures.
-
-## Review
-
-After testing:
-
-* Review all changed files.
-* Review authorization boundaries.
-* Review server actions and data-access logic.
-* Review form state management.
-* Review modal lifecycle behavior.
-* Review toast handling.
-* Check for inconsistent implementations across similar workflows.
-* Check for regressions.
-* Check that documentation accurately reflects the implementation.
-* Review remaining production-hardening findings.
-
-## Final Verification
-
-The implementation phase is complete when all five pending tasks satisfy their acceptance criteria.
-
-The testing/review phase is complete when:
-
-* The relevant automated tests pass.
-* Critical workflows have been manually or E2E verified where appropriate.
-* No known regression remains.
-* Authorization is enforced server-side.
-* Form and modal behavior is consistent.
-* Success/error feedback is consistent.
-* Remaining production-hardening risks are documented.
-* The release checklist can be evaluated against the actual implementation.
-
-Testing and review completion must not be assumed from successful implementation alone.
+For Splitly, the goal is a financial workflow that feels natural on a phone first and becomes richer—not merely larger—on tablet and desktop.

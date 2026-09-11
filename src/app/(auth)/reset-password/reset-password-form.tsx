@@ -215,7 +215,7 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(handleResetPasswordSubmit)} noValidate>
+    <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit(handleResetPasswordSubmit)} noValidate>
       {message ? <FormMessage tone="error">{message}</FormMessage> : null}
 
       <TextField

@@ -6,7 +6,7 @@ export default function SettingsLoading() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader userName="Splitly" activePath="/settings" />
-      <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8" aria-label="Loading preferences" role="status">
+      <main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8" aria-label="Loading preferences" role="status">
         <span className="sr-only">Loading preferences</span>
         <Skeleton className="h-10 w-72 max-w-full" />
         <Skeleton className="mt-3 h-5 w-64" />

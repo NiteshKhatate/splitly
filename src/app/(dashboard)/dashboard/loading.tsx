@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardLoading() {
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-6 sm:py-10 lg:px-8" aria-label="Loading dashboard" role="status">
+    <main className="min-h-screen bg-background px-4 py-6 sm:px-6 sm:py-10 lg:px-8" aria-label="Loading dashboard" role="status">
       <span className="sr-only">Loading dashboard</span>
       <div className="mx-auto max-w-7xl">
         <div className="flex items-center justify-between border-b border-border pb-6">

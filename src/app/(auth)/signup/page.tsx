@@ -8,11 +8,11 @@ import { SignupForm } from "./signup-form";
 export default function SignupPage() {
   const applicationOrigin = getConfiguredApplicationOrigin();
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8 sm:px-6 sm:py-16 lg:px-8">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 py-6 sm:px-6 sm:py-16 lg:px-8">
       <section className="w-full max-w-md" aria-labelledby="signup-heading">
         <Link
           href="/"
-          className="mx-auto mb-8 flex w-fit items-center gap-3 text-card-heading focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="mx-auto mb-5 flex w-fit items-center gap-3 text-card-heading focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:mb-8"
         >
           <span className="flex size-10 items-center justify-center rounded-control bg-primary text-label text-white">
             S

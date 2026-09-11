@@ -79,7 +79,7 @@ export function ForgotPasswordForm({ applicationOrigin }: { applicationOrigin?: 
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit(handleForgotPasswordSubmit)} noValidate>
+    <form className="space-y-5 sm:space-y-6" onSubmit={handleSubmit(handleForgotPasswordSubmit)} noValidate>
       {message ? <FormMessage tone={message.tone}>{message.text}</FormMessage> : null}
 
       <TextField

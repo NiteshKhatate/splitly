@@ -56,7 +56,7 @@ export default async function GroupExpensesPage({
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader userName={displayName} avatarUrl={profileResult.data?.avatar_url} activePath="/groups" />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         {result.group ? (
           <>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -70,11 +70,11 @@ export default async function GroupExpensesPage({
                 <Button href={`/groups/${groupId}/expenses/new`}>+ Add expense</Button>
               </div>
             </div>
-            <Card className="mt-6">
+            <Card className="mt-5 sm:mt-6">
               {!validation.success ? <div className="mb-4"><FormMessage tone="error">Check the filters and try again.</FormMessage></div> : null}
               <ExpenseFiltersForm filters={validation.success ? validation.data : rawFilters as ExpenseFilters} groupId={groupId} members={result.group.members} />
             </Card>
-            <div className="mt-6"><ExpenseLedger expenses={result.expenses} groupId={groupId} /></div>
+            <div className="mt-4 sm:mt-6"><ExpenseLedger expenses={result.expenses} groupId={groupId} /></div>
           </>
         ) : (
           <SectionError message="Expenses couldn't be loaded. Please try again later." />

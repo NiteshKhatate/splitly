@@ -71,7 +71,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
         avatarUrl={profile?.avatar_url}
         activePath="/groups"
       />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         {groupDetail.group ? (
           <>
             <GroupHeader
@@ -82,10 +82,10 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
               memberCount={groupDetail.group.memberCount}
               name={groupDetail.group.name}
             />
-            <div className="mt-8">
+            <div className="mt-6 sm:mt-8">
               <GroupBalanceSummary balances={groupDetail.group.balances} />
             </div>
-            <div className="mt-6 grid gap-6 lg:grid-cols-5">
+            <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-5">
               <div className="lg:col-span-3">
                 <GroupMembers
                   canAddMembers={groupDetail.group.canAddMembers}
@@ -97,7 +97,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
                 <GroupExpenseSummary expenses={groupDetail.group.recentExpenses} />
               </div>
             </div>
-            <section aria-labelledby="group-activity-heading" className="mt-6">
+            <section aria-labelledby="group-activity-heading" className="mt-4 sm:mt-6">
               <Card>
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
                   <h2 id="group-activity-heading" className="text-card-heading">Group activity</h2>

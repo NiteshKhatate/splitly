@@ -17,5 +17,5 @@ export default async function EditExpensePage({ params }: { params: Promise<{ ex
   const detail = result.detail;
   const displayName = user.user_metadata?.full_name || user.email?.split("@")[0] || "there";
 
-  return <div className="min-h-screen bg-background"><DashboardHeader userName={displayName} activePath="/groups" /><main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10"><h1 className="text-page-heading">Edit expense</h1><p className="mt-2 text-secondary text-foreground-muted">Update {detail.description}. Existing shares are loaded as exact amounts.</p><Card className="mt-6"><AddExpenseForm currency={detail.currency} expenseId={expenseId} groupId={detail.groupId} initialValues={detail.initialValues} members={detail.members} /></Card></main></div>;
+  return <div className="min-h-screen bg-background"><DashboardHeader userName={displayName} activePath="/groups" /><main className="mx-auto max-w-3xl px-4 py-6 sm:px-6 sm:py-10"><h1 className="text-page-heading">Edit expense</h1><p className="mt-2 text-secondary text-foreground-muted">Update {detail.description}. Existing shares are loaded as exact amounts.</p><Card className="mt-6"><AddExpenseForm currency={detail.currency} expenseId={expenseId} groupId={detail.groupId} initialValues={detail.initialValues} members={detail.members} /></Card></main></div>;
 }

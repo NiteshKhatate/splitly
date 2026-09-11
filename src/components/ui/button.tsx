@@ -33,7 +33,7 @@ function getButtonClassName({
   variant?: ButtonVariant;
 }) {
   const baseClass =
-    "inline-flex min-h-11 max-w-full items-center justify-center rounded-control px-4 py-2 text-center text-label transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex min-h-11 max-w-full items-center justify-center rounded-control px-4 py-2 text-center text-label transition-[color,background-color,border-color,transform] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-px disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60";
 
   const variantClass =
     variant === "primary"

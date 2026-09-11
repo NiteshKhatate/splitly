@@ -131,22 +131,33 @@ export function AddExpenseForm({
   const splitMethod = completeValues.splitMethod;
 
   return (
-    <form className="space-y-6" onSubmit={form.handleSubmit(submit)} noValidate>
+    <form className="space-y-5 sm:space-y-6" onSubmit={form.handleSubmit(submit)} noValidate>
       {serverMessage ? <FormMessage tone="error">{serverMessage}</FormMessage> : null}
-      <TextField id="expense-description" label="Description" maxLength={EXPENSE_DESCRIPTION_MAX_LENGTH} required error={form.formState.errors.description?.message} {...form.register("description")} />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <TextField id="expense-amount" label="Total amount" inputMode="decimal" placeholder="0.00" required error={form.formState.errors.amount?.message} {...form.register("amount")} />
+      <section aria-labelledby="expense-basics-heading" className="space-y-4">
+        <div>
+          <p className="text-caption font-medium uppercase tracking-wider text-primary">Step 1</p>
+          <h2 className="mt-1 text-card-heading" id="expense-basics-heading">Expense details</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(8rem,1fr)]">
+          <TextField className="text-amount" id="expense-amount" label="Total amount" inputMode="decimal" placeholder="0.00" required error={form.formState.errors.amount?.message} {...form.register("amount")} />
         <SelectField id="expense-currency" label="Currency" error={form.formState.errors.currency?.message} {...form.register("currency")}>
           {[currency, "INR", "USD", "EUR", "GBP"].filter((item, index, all) => all.indexOf(item) === index).map((code) => <option key={code}>{code}</option>)}
         </SelectField>
-        <TextField id="expense-date" label="Date" type="date" required error={form.formState.errors.date?.message} {...form.register("date")} />
-        <SelectField id="expense-category" label="Category" error={form.formState.errors.category?.message} {...form.register("category")}>
-          {EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category.charAt(0) + category.slice(1).toLowerCase()}</option>)}
-        </SelectField>
-      </div>
+        </div>
+        <TextField id="expense-description" label="Description" maxLength={EXPENSE_DESCRIPTION_MAX_LENGTH} required error={form.formState.errors.description?.message} {...form.register("description")} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField id="expense-date" label="Date" type="date" required error={form.formState.errors.date?.message} {...form.register("date")} />
+          <SelectField id="expense-category" label="Category" error={form.formState.errors.category?.message} {...form.register("category")}>
+            {EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category.charAt(0) + category.slice(1).toLowerCase()}</option>)}
+          </SelectField>
+        </div>
+      </section>
 
-      <fieldset className="space-y-3">
-        <legend className="text-card-heading">Who paid?</legend>
+      <fieldset className="space-y-3 border-t border-border pt-5 sm:pt-6">
+        <legend className="w-full pb-3">
+          <span className="block text-caption font-medium uppercase tracking-wider text-primary">Step 2</span>
+          <span className="mt-1 block text-card-heading">Who paid?</span>
+        </legend>
         <p className="text-secondary text-foreground-muted">Enter an amount for each payer. The amounts must match the total.</p>
         {members.map((member, index) => (
           <TextField key={member.id} id={`payer-${member.id}`} label={member.name} inputMode="decimal" placeholder="0.00" error={form.formState.errors.payers?.[index]?.amount?.message} {...form.register(`payers.${index}.amount`)} />
@@ -154,8 +165,11 @@ export function AddExpenseForm({
         {form.formState.errors.payers?.root?.message ? <p className="text-caption text-danger" role="alert">{form.formState.errors.payers.root.message}</p> : null}
       </fieldset>
 
-      <fieldset className="space-y-4">
-        <legend className="text-card-heading">Split between</legend>
+      <fieldset className="space-y-4 border-t border-border pt-5 sm:pt-6">
+        <legend className="w-full pb-3">
+          <span className="block text-caption font-medium uppercase tracking-wider text-primary">Step 3</span>
+          <span className="mt-1 block text-card-heading">Split between</span>
+        </legend>
         <SelectField id="split-method" label="Split method" {...form.register("splitMethod")}>
           <option value="EQUAL">Equally</option><option value="EXACT">Exact amounts</option><option value="PERCENTAGE">Percentages</option><option value="SHARES">Shares</option>
         </SelectField>
@@ -182,14 +196,16 @@ export function AddExpenseForm({
         {form.formState.errors.participants?.root?.message ? <p className="text-caption text-danger" role="alert">{form.formState.errors.participants.root.message}</p> : null}
       </fieldset>
 
-      <div aria-live="polite" className="rounded-control border border-border bg-surface-muted p-4">
-        <h2 className="text-label">Split preview</h2>
+      <div aria-live="polite" className="rounded-card border border-primary/20 bg-primary-subtle/50 p-4 sm:p-5">
+        <h2 className="text-card-heading">Review split</h2>
         {preview.length > 0 ? (
           <ul className="mt-2 space-y-2 text-secondary">{preview.map((item) => <li key={item.participantId} className="flex flex-col gap-1 min-[360px]:flex-row min-[360px]:justify-between min-[360px]:gap-4"><span className="min-w-0 wrap-break-word">{item.name}</span><span className="wrap-break-word min-[360px]:shrink-0 min-[360px]:text-right">{formatMoney(item.owedMinor, completeValues.currency)}</span></li>)}</ul>
         ) : <p className="mt-2 text-secondary text-foreground-muted">Enter valid split details to see the preview.</p>}
       </div>
 
-      <Textarea id="expense-notes" label="Notes" maxLength={EXPENSE_NOTES_MAX_LENGTH} helperText="Optional." error={form.formState.errors.notes?.message} {...form.register("notes")} />
+      <div className="border-t border-border pt-5 sm:pt-6">
+        <Textarea id="expense-notes" label="Notes" maxLength={EXPENSE_NOTES_MAX_LENGTH} helperText="Optional." error={form.formState.errors.notes?.message} {...form.register("notes")} />
+      </div>
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Button href={expenseId ? `/expenses/${expenseId}` : `/groups/${groupId}`} variant="secondary" className="w-full sm:w-auto">Cancel</Button>
         <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>{isSubmitting ? "Saving..." : expenseId ? "Update expense" : "Save expense"}</Button>

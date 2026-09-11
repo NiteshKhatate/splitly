@@ -64,24 +64,24 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader userName={displayName} avatarUrl={profile?.avatar_url} />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8">
         <DashboardWelcome userName={displayName} />
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           <BalanceSummary
             summaries={dashboardBalances.summaries}
             state={dashboardBalances.error ? "error" : "ready"}
           />
         </div>
-        <div className="mt-6 grid gap-6 lg:grid-cols-5">
-          <div className="lg:col-span-3"><RecentActivity items={dashboardActivity.items} state={dashboardActivity.error ? "error" : "ready"} /></div>
-          <div className="lg:col-span-2">
+        <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-5">
+          <div className="order-2 lg:order-1 lg:col-span-3"><RecentActivity items={dashboardActivity.items} state={dashboardActivity.error ? "error" : "ready"} /></div>
+          <div className="order-1 lg:order-2 lg:col-span-2">
             <GroupSummary
               groups={dashboardGroups.groups}
               state={dashboardGroups.error ? "error" : "ready"}
             />
           </div>
         </div>
-        <div className="mt-6"><DebtSummary debts={dashboardOverview.debts} state={dashboardOverview.error ? "error" : "ready"} /></div>
+        <div className="mt-4 sm:mt-6"><DebtSummary debts={dashboardOverview.debts} state={dashboardOverview.error ? "error" : "ready"} /></div>
       </main>
     </div>
   );
