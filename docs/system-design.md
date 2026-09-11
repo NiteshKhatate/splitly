@@ -2438,3 +2438,572 @@ Unnecessary services
 ```
 
 The system should be easy for another developer or coding agent to understand, modify, test, and deploy safely.
+
+# UI/UX and Mobile-First Design Addendum
+
+## Purpose
+
+This section defines the architectural boundaries and design principles for the current **UI/UX improvement phase** of Splitly.
+
+The objective of this phase is to improve the application's visual design, usability, responsiveness, accessibility, and mobile experience **without changing existing application functionality**.
+
+The existing backend architecture, data model, business rules, financial calculations, authentication, authorization, APIs, and workflows remain the source of truth.
+
+---
+
+## 1. UI/UX-Only Phase Boundary
+
+During this phase, the following are considered **frozen**:
+
+* Database schema and migrations
+* Prisma models
+* Database relationships
+* Server actions
+* API contracts
+* Business logic
+* Expense calculations
+* Split calculations
+* Balance calculations
+* Settlement calculations
+* Financial data behavior
+* Authentication behavior
+* Authorization rules
+* User roles and permissions
+* Existing validation rules
+* Existing application workflows
+* Existing product capabilities
+
+UI/UX implementation must not introduce changes to these areas.
+
+### Allowed Changes
+
+Changes are allowed when they improve:
+
+* Layout
+* Responsive behavior
+* Mobile usability
+* Visual hierarchy
+* Typography
+* Spacing
+* Component styling
+* Navigation presentation
+* Form presentation
+* Modal and dialog presentation
+* Toast presentation
+* Loading states
+* Empty states
+* Error states
+* Accessibility
+* Touch interaction
+* Component consistency
+* Responsive desktop/tablet presentation
+
+### Functional Preservation Rule
+
+Every UI change must preserve the existing behavior of the feature.
+
+A useful rule is:
+
+> **Change how the feature looks or feels, not what the feature does.**
+
+If a proposed UI improvement requires changing business logic or existing functionality, it is outside the scope of this phase.
+
+---
+
+## 2. Presentation and Business Logic Separation
+
+The UI layer should remain responsible for:
+
+* Rendering data
+* Collecting user input
+* Presenting validation errors
+* Presenting loading states
+* Presenting success and failure feedback
+* Managing visual state
+* Managing responsive layouts
+* Managing UI-only interaction state
+* Providing accessible interaction
+
+The UI layer must not duplicate or redefine business rules.
+
+Business decisions such as:
+
+* Who can perform an action
+* How an expense is split
+* How balances are calculated
+* How settlements affect balances
+* What financial values are stored
+* What data is persisted
+
+must continue to be handled by the existing application/business layer.
+
+UI code may conditionally display existing states or actions based on existing authorization and application responses, but must not establish a new authorization model.
+
+---
+
+## 3. Mobile-First Responsive Architecture
+
+Splitly's UI should use a **mobile-first responsive approach**.
+
+The base layout should be designed for small screens first and progressively enhanced for larger viewports.
+
+The responsive progression is:
+
+```text
+Mobile
+  ↓
+Large Mobile
+  ↓
+Tablet
+  ↓
+Desktop
+  ↓
+Large Desktop
+```
+
+Desktop layouts must not be treated as the primary layout that is simply compressed to fit mobile screens.
+
+Instead:
+
+> **Mobile is the foundation; larger screens progressively enhance the experience.**
+
+---
+
+## 4. Responsive Layout Principles
+
+Responsive layouts should prioritize:
+
+* Single-column layouts on narrow screens where appropriate
+* Clear content hierarchy
+* Comfortable spacing
+* Readable typography
+* Touch-friendly controls
+* Appropriate content density
+* Minimal unnecessary horizontal scrolling
+* Accessible interactive elements
+* Clear primary actions
+
+Larger screens may progressively introduce:
+
+* Multi-column layouts
+* Additional navigation space
+* Wider content containers
+* Side-by-side panels
+* More efficient use of horizontal space
+* Greater information density
+
+Responsive behavior must not remove access to existing functionality.
+
+---
+
+## 5. Mobile Navigation
+
+Navigation should be designed around the most important existing Splitly workflows.
+
+Mobile navigation should:
+
+* Be easy to reach
+* Use sufficiently large touch targets
+* Clearly communicate the current location
+* Avoid unnecessary navigation complexity
+* Preserve access to all existing destinations
+* Avoid squeezing desktop navigation into a mobile viewport
+
+Desktop navigation may use the additional available space but must preserve the same underlying destinations and workflows.
+
+Navigation changes in this phase are presentation changes only.
+
+---
+
+## 6. Mobile Forms
+
+Existing forms should be optimized for mobile interaction.
+
+Form layouts should prioritize:
+
+* Clear labels
+* Logical field order
+* Adequate input size
+* Comfortable spacing
+* Easy touch interaction
+* Readable validation messages
+* Clear primary actions
+* Appropriate loading/disabled states
+* Keyboard-friendly interaction
+
+Form presentation may be changed substantially when necessary for usability.
+
+However, the following must remain unchanged:
+
+* Submitted data
+* Validation rules
+* Server actions
+* API contracts
+* Business rules
+* Persistence behavior
+
+---
+
+## 7. Modal and Dialog Architecture
+
+Existing modals and dialogs should adapt to viewport size.
+
+On mobile, dialogs may use:
+
+* Near-full-width layouts
+* Bottom sheets
+* Full-screen presentation where appropriate
+* Larger touch targets
+* Better vertical scrolling behavior
+
+On larger screens, dialogs may use conventional centered modal layouts where appropriate.
+
+### Form Submission Rule
+
+When an existing form is displayed inside a modal or dialog:
+
+1. The modal remains open while the request is pending.
+2. If the request fails, the modal remains open.
+3. Existing user-entered values should be preserved after a failed request.
+4. The existing error should be presented clearly.
+5. After a successful response, the existing success behavior should be presented.
+6. Only after successful completion should the UI reset or close according to the existing workflow.
+
+This is a UI interaction rule and must not require changes to the underlying business logic.
+
+---
+
+## 8. Toasts and User Feedback
+
+Existing success and error feedback should use a consistent visual presentation.
+
+Toasts should be:
+
+* Short
+* Clear
+* Accessible
+* Mobile-friendly
+* Easy to notice without being disruptive
+* Consistent across the application
+
+The UI should not invent business outcomes.
+
+A toast should represent an outcome that actually occurred in the existing application flow.
+
+---
+
+## 9. Loading, Empty, Error, and Unauthorized States
+
+The UI should explicitly and consistently represent existing application states.
+
+### Loading
+
+Use appropriate visual indicators such as:
+
+* Skeletons
+* Spinners
+* Disabled controls
+* Progress indicators
+
+### Empty
+
+Empty states should communicate:
+
+* What is currently empty
+* Why the user may be seeing the state when useful
+* What existing action the user can take next
+
+### Error
+
+Error states should:
+
+* Clearly communicate failure
+* Avoid technical language where possible
+* Preserve user input when appropriate
+* Provide an appropriate existing recovery action
+
+### Unauthorized
+
+Unauthorized states should clearly communicate that the user cannot perform the requested existing action.
+
+Authorization rules themselves must not be changed.
+
+---
+
+## 10. Dense Data on Mobile
+
+Expense lists, activity, members, balances, and other information-dense views should not simply shrink desktop tables onto small screens.
+
+Where appropriate, the UI may use:
+
+* Stacked rows
+* Cards
+* Compact list items
+* Responsive columns
+* Expandable presentation
+* Alternative mobile layouts
+
+The underlying information must remain available.
+
+Responsive design must not silently remove important existing information or functionality.
+
+---
+
+## 11. Touch Interaction
+
+Interactive controls should be designed for touch-first use.
+
+Prioritize:
+
+* Comfortable tap targets
+* Adequate spacing between controls
+* Clear pressed/active states
+* Avoidance of accidental destructive actions
+* Accessible focus states
+* Easy one-handed interaction where practical
+
+Small icons should not be the only way to perform an important action when a larger accessible interaction is appropriate.
+
+---
+
+## 12. Accessibility
+
+UI/UX improvements should strengthen accessibility without changing application behavior.
+
+The presentation layer should consider:
+
+* Semantic HTML
+* Keyboard navigation
+* Visible focus states
+* Proper form labels
+* Accessible validation messages
+* Dialog focus management
+* Screen-reader-friendly state changes
+* Color contrast
+* Touch target sizing
+* Reduced-motion preferences where animations exist
+
+Accessibility improvements must remain compatible with the existing workflows.
+
+---
+
+## 13. Shared UI Components
+
+Shared UI components should be preferred over repeated page-specific implementations.
+
+Where shared components already exist, improve the shared component rather than creating multiple competing versions.
+
+Common reusable UI patterns include:
+
+* Buttons
+* Inputs
+* Selects
+* Cards
+* Dialogs
+* Toasts
+* Form fields
+* Navigation
+* Loading indicators
+* Empty states
+* Error states
+* Confirmation UI
+
+Visual consistency should be maintained across the application.
+
+---
+
+## 14. Design-System Consistency
+
+The UI should maintain consistent:
+
+* Typography
+* Spacing
+* Border radius
+* Component sizing
+* Icons
+* Buttons
+* Form controls
+* Colors
+* Shadows
+* States
+* Breakpoints
+* Responsive behavior
+
+Existing design tokens and shared styles should be reused where possible.
+
+New visual values should not be introduced unnecessarily when an existing design token already represents the intended value.
+
+---
+
+## 15. Progressive Desktop Enhancement
+
+Desktop improvements should enhance the mobile foundation rather than create an unrelated desktop experience.
+
+Examples include:
+
+* Expanding content containers
+* Introducing multi-column layouts
+* Using additional horizontal space
+* Providing richer navigation presentation
+* Increasing information density where appropriate
+* Displaying related content side by side
+
+The underlying workflow must remain the same across viewport sizes.
+
+---
+
+## 16. UI State Management
+
+UI-only state may be introduced when necessary for presentation and interaction.
+
+Examples include:
+
+* Modal open/closed state
+* Mobile navigation open/closed state
+* Expanded/collapsed sections
+* Loading presentation state
+* Toast visibility
+* Responsive presentation state
+
+UI state must not replace or duplicate authoritative application state.
+
+Server responses and existing business logic remain authoritative for application outcomes.
+
+---
+
+## 17. Performance Considerations
+
+UI improvements should not unnecessarily degrade application performance.
+
+Prefer:
+
+* Existing shared components
+* Lightweight UI patterns
+* Efficient rendering
+* Appropriate responsive images
+* Minimal unnecessary client-side state
+* Minimal unnecessary JavaScript
+* Existing framework capabilities
+
+Do not introduce large dependencies solely for visual effects when the existing stack can provide the required UI.
+
+Animations should be purposeful and restrained.
+
+---
+
+## 18. Existing Functionality Verification
+
+After UI/UX implementation, verify that existing functionality remains unchanged.
+
+At minimum, review:
+
+* Authentication
+* Navigation
+* Group workflows
+* Expense creation
+* Expense editing
+* Expense deletion
+* Split configuration
+* Balance presentation
+* Settlement workflows
+* Existing permissions
+* Existing validation
+* Existing success/error behavior
+
+The purpose of this verification is **regression detection**, not functional redesign.
+
+If a UI change causes existing functionality to fail, fix the UI implementation rather than changing the underlying business behavior.
+
+---
+
+## 19. Testing and Review Boundary
+
+Testing and review for this UI/UX phase should occur **after implementation**.
+
+The implementation phase should focus on UI/UX changes.
+
+The review phase should verify:
+
+1. UI correctness
+2. Responsive behavior
+3. Mobile usability
+4. Accessibility
+5. Existing workflow preservation
+6. Existing functionality preservation
+7. Existing tests/build health
+
+Existing automated tests should remain valid.
+
+Tests should not be weakened or removed simply because the UI has changed.
+
+---
+
+## 20. Architecture Principle for This Phase
+
+The current phase follows this architectural principle:
+
+```text
+Existing Business Logic
+        ↓
+Existing Server/API/Data Layer
+        ↓
+Existing Application State
+        ↓
+Improved UI Presentation
+        ↓
+Improved User Experience
+```
+
+The UI/UX work should primarily affect the final two layers.
+
+The existing business and data layers remain stable.
+
+---
+
+## 21. Definition of Done
+
+The UI/UX architecture is considered successfully implemented when:
+
+* Mobile is the primary responsive foundation.
+* Major screens work comfortably on small screens.
+* Tablet layouts are appropriately enhanced.
+* Desktop layouts are polished.
+* Navigation is clear and responsive.
+* Forms are easier to use.
+* Modals and dialogs behave correctly across viewport sizes.
+* Toasts and feedback are visually consistent.
+* Loading, empty, error, and unauthorized states are clear.
+* Touch interaction is comfortable.
+* Accessibility is improved.
+* Shared UI components are consistent.
+* Existing workflows remain intact.
+* Existing business logic remains unchanged.
+* Existing calculations remain unchanged.
+* Existing permissions remain unchanged.
+* Existing data behavior remains unchanged.
+* Existing functionality remains unchanged.
+
+---
+
+## 22. Final Constraint
+
+**This section does not authorize functional changes.**
+
+If a proposed improvement affects:
+
+* What data is stored
+* How data is calculated
+* Who can perform an action
+* How permissions work
+* How authentication works
+* How balances are calculated
+* How expenses are split
+* How settlements work
+* How the backend behaves
+* What an existing feature does
+
+then it is **outside the scope of the current UI/UX phase**.
+
+The correct approach is:
+
+> **Preserve the existing system. Improve the interface. Improve the experience. Verify that functionality remains unchanged.**
