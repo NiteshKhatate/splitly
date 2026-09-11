@@ -176,7 +176,6 @@ Audit at minimum:
 - expense history
 - expense detail
 - add expense
-- edit expense
 - split configuration
 - balances
 - settlement
@@ -564,11 +563,8 @@ Review the complete critical workflows:
 6. Configure split
 7. View balance
 8. Settle up
-9. Edit expense
-10. Delete expense
-11. Group update/delete according to permissions
-12. Activity/history
-13. Profile/settings
+9. Activity/history
+10. Profile/settings
 
 ### Verification
 
