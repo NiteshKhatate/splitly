@@ -16,6 +16,14 @@ function decimalMinor(amountMinor: number): string {
   return `${Math.trunc(amountMinor / 100)}.${String(amountMinor % 100).padStart(2, "0")}`;
 }
 
+function currentMemberFirst<T extends { memberId: string }>(members: T[], userId: string): T[] {
+  return [...members].sort((left, right) => {
+    if (left.memberId === userId) return -1;
+    if (right.memberId === userId) return 1;
+    return 0;
+  });
+}
+
 export default async function GroupBalancesPage({ params }: {
   params: Promise<{ groupId: string }>;
 }) {
@@ -50,7 +58,7 @@ export default async function GroupBalancesPage({ params }: {
       <p className="mt-2 text-secondary text-foreground-muted">Raw balances and suggested repayments are kept separate from expense history.</p>
       <SettlementFlow currencies={detail.currencies.map(({ currency }) => currency)} groupId={groupId} payer={payer}>
       <div className="mt-6 space-y-6">{detail.currencies.map((section) => <section key={section.currency}><div className="mb-3 flex items-center gap-2"><h2 className="text-section-heading">Balances</h2><Badge>{section.currency}</Badge></div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{section.members.map((member) => <Card className="min-w-0" key={member.memberId}><p className="wrap-break-word text-label">{member.name}</p><p className={`mt-2 wrap-break-word text-amount ${member.netMinor > 0 ? "text-success" : member.netMinor < 0 ? "text-danger" : "text-foreground-muted"}`}>{member.status === "settled" ? "Settled" : `${member.status} ${member.amount}`}</p></Card>)}</div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{currentMemberFirst(section.members, user.id).map((member) => <Card className="min-w-0" key={member.memberId}><p className="wrap-break-word text-label">{member.name}{member.memberId === user.id ? " (you)" : ""}</p><p className={`mt-2 wrap-break-word text-amount ${member.netMinor > 0 ? "text-success" : member.netMinor < 0 ? "text-danger" : "text-foreground-muted"}`}>{member.status === "settled" ? "Settled" : `${member.status} ${member.amount}`}</p></Card>)}</div>
         <Card className="mt-4"><h3 className="text-card-heading">Suggested repayments</h3>{section.transfers.length ? <ul className="mt-4 space-y-3">{section.transfers.map((transfer) => <li key={`${transfer.currency}-${transfer.payerId}-${transfer.payeeId}`} className="flex flex-col gap-2 border-b border-border pb-3 last:border-0 sm:flex-row sm:items-center sm:justify-between"><span className="min-w-0 wrap-break-word">{transfer.payerName} pays {transfer.payeeName} {transfer.amount}</span>{transfer.payerId === user.id ? <SettleUpButton amount={decimalMinor(transfer.amountMinor)} currency={transfer.currency} payee={{ id: transfer.payeeId, name: transfer.payeeName }} /> : null}</li>)}</ul> : <p className="mt-2 text-secondary text-foreground-muted">Everyone is settled.</p>}</Card>
       </section>)}</div>
       </SettlementFlow>

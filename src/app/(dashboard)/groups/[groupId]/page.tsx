@@ -85,14 +85,14 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
               <GroupBalanceSummary balances={groupDetail.group.balances} />
             </div>
             <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-5">
-              <div className="lg:col-span-3">
+              <div className="order-2 lg:order-1 lg:col-span-3">
                 <GroupMembers
                   canAddMembers={groupDetail.group.canAddMembers}
                   groupId={groupDetail.group.id}
                   members={groupDetail.group.members}
                 />
               </div>
-              <div className="lg:col-span-2">
+              <div className="order-1 lg:order-2 lg:col-span-2">
                 <GroupExpenseSummary expenses={groupDetail.group.recentExpenses} />
               </div>
             </div>

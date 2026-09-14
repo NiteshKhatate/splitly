@@ -48,7 +48,7 @@ export default async function Home() {
           <Link
             href="/"
             aria-label="Splitly home"
-            className="inline-flex items-center gap-3 text-card-heading focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-11 min-w-11 items-center gap-3 rounded-control text-card-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <span
               className="flex size-10 items-center justify-center rounded-control bg-primary text-label text-white"

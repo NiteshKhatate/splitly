@@ -246,7 +246,7 @@ export function AcceptGroupInvitation({ groupId }: { groupId: string }) {
     <section className="w-full max-w-md" aria-labelledby="invitation-heading">
       <Link
         href="/"
-        className="mx-auto mb-8 flex w-fit items-center gap-3 text-card-heading focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        className="mx-auto mb-8 flex min-h-11 w-fit items-center gap-3 rounded-control px-1 text-card-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         <span className="flex size-10 items-center justify-center rounded-control bg-primary text-label text-white">
           S

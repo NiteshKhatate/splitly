@@ -1,621 +1,636 @@
-# Splitly — Mobile-First UX / Responsive Design Build Plan
+# Splitly — Mobile-First UI Build Plan
 
 **Status:** Ready to execute  
-**Phase:** Mobile-First UX / Responsive Hardening  
-**Purpose:** Rework the existing responsive experience so mobile is the intentional baseline while preserving Splitly's product behavior, financial correctness, and established visual direction.
+**Phase:** Mobile-First UI / UX  
+**Scope:** Existing UI transformation to mobile-first responsive design  
+**Functionality:** Frozen  
+**Workflow:** Frozen
 
 ---
 
-## 1. Phase Objective
+## 1. Objective
 
-The MVP and core production-hardening implementation already exist. This phase focuses specifically on the application's **mobile-first experience**.
+Transform the existing Splitly interface into a polished **mobile-first UI** while preserving the application's existing functionality and workflows.
 
-The goal is not to create a separate mobile application.
+The workflows are already established.
 
-The goal is to make the existing Splitly application:
+This phase is about:
 
-- mobile-first,
-- responsive,
-- touch-friendly,
-- accessible,
-- easy to use on small screens,
-- progressively enhanced for tablet and desktop.
+> **Improving the interface through which users perform the existing workflows.**
 
-The desired design progression is:
+Target progression:
 
-> **Mobile baseline → Tablet enhancement → Desktop enhancement**
+**Mobile → Tablet → Desktop**
 
-Do not treat mobile as a compressed desktop layout.
+Mobile is the baseline.
 
 ---
 
-## 2. Source of Truth
+## 2. Scope
 
-Before making changes, read:
+### In scope
 
-1. `AGENTS.md`
-2. `docs/system-design.md`
-3. the existing `docs/BUILD_PLAN.md` history/specification if available
-4. `docs/RELEASE_CHECKLIST.md`
-5. `docs/OPERATIONS.md`
-6. the current application implementation
+- Mobile-first responsive layouts
+- Tablet and desktop responsive layouts
+- UI component improvements
+- Spacing
+- Typography
+- Visual hierarchy
+- Responsive navigation
+- Mobile-friendly forms
+- Mobile-friendly dialogs
+- Touch interaction
+- Responsive lists/tables
+- Loading states
+- Empty states
+- Error states
+- Success feedback
+- Toast presentation
+- Accessibility
+- UI consistency
 
-The implementation is the source of truth for the current state.
+### Out of scope
 
-Do not assume existing documentation accurately describes the current UI.
+Do not change:
 
----
+- Business logic
+- Database schema
+- Prisma models
+- Database migrations
+- API contracts
+- Server actions
+- Authentication
+- Authorization
+- Permissions
+- Validation rules
+- Expense calculations
+- Split calculations
+- Balance calculations
+- Settlement calculations
+- Existing routes
+- Existing workflows
+- Existing product capabilities
 
-## 3. Phase Rules
-
-### 3.1 Preserve the product
-
-This phase is a UX/responsive improvement, not a product-scope expansion.
-
-Do not add unrelated product features.
-
-Do not change financial semantics.
-
-Do not change authorization rules.
-
-Do not replace the established architecture.
-
-### 3.2 Preserve the visual direction
-
-Reuse the existing:
-
-- design tokens,
-- colors,
-- typography,
-- buttons,
-- inputs,
-- cards,
-- dialogs,
-- navigation,
-- status patterns,
-- spacing,
-- radius,
-- shadows,
-- icons/components.
-
-Do not introduce a new visual identity.
-
-The objective is to make the existing product work better on small screens.
-
-### 3.3 Mobile is the baseline
-
-The smallest supported viewport is the starting point for layout decisions.
-
-Desktop and tablet should progressively enhance the mobile baseline.
+Do not add product features.
 
 ---
 
-# 4. Mobile-First UX Principles
+## 3. Workflow Freeze
 
-## 4.1 Content priority
+Existing workflows have already been implemented.
 
-For every screen:
+Do not redesign them.
 
-1. Identify the user's primary goal.
-2. Put the most important information first.
-3. Make the primary action obvious.
-4. Move secondary information into progressive disclosure where appropriate.
-5. Avoid desktop-level information density on small screens.
+The following remain unchanged:
 
----
+- Authentication
+- Dashboard
+- Groups
+- Expenses
+- Splits
+- Balances
+- Settlements
+- Activity
+- Settings
 
-## 4.2 Touch-first interaction
+The same workflow should remain:
 
-Controls must be comfortable to use with touch.
+**existing user intent → existing action → existing processing → existing result**
 
-Review:
-
-- buttons,
-- links,
-- icon buttons,
-- menus,
-- checkboxes,
-- radio controls,
-- dropdowns,
-- participant selectors,
-- date inputs,
-- modal controls.
-
-Avoid:
-
-- tiny controls,
-- tightly packed actions,
-- hover-only interactions,
-- adjacent destructive actions with insufficient separation.
+Only the UI through which the workflow is performed should change.
 
 ---
+
+# 4. Mobile-First Design Principles
+
+## 4.1 Mobile is the baseline
+
+Start with the smallest supported viewport.
+
+Do not design desktop first and compress it.
+
+Use:
+
+- Flexible widths
+- Stacking
+- Wrapping
+- Responsive grids
+- Appropriate spacing
+- Touch-friendly controls
+
+Then progressively enhance larger screens.
+
+## 4.2 Content priority
+
+For each existing screen:
+
+1. Show the most important existing information first.
+2. Make the existing primary action obvious.
+3. Reduce unnecessary visual density.
+4. Use progressive disclosure for secondary information where appropriate.
+5. Do not hide important existing functionality.
 
 ## 4.3 No accidental horizontal overflow
 
-Primary workflows should not require horizontal scrolling.
+Primary screens should not require unnecessary horizontal scrolling.
 
 Pay particular attention to:
 
-- dashboard cards,
-- group pages,
-- expense lists,
-- balance displays,
-- tables,
-- forms,
-- dialogs,
-- navigation.
-
-If a desktop table becomes unusable on mobile, transform it into a readable list/card representation rather than simply shrinking the table.
+- Dashboard
+- Groups
+- Group details
+- Expense lists
+- Balances
+- Forms
+- Dialogs
+- Navigation
 
 ---
 
-# 5. Phase 1 — Baseline Mobile Audit
+# 5. Phase 1 — UI Foundation
 
-Before changing the UI, inspect the application at representative mobile widths.
+Review and improve shared UI primitives.
 
-Recommended baseline widths:
+Focus on:
 
-- 320px
-- 360px
-- 375px
-- 390px
-- 414px
+- Page containers
+- Spacing
+- Typography
+- Buttons
+- Inputs
+- Selects
+- Form fields
+- Cards
+- Badges
+- Dialogs
+- Toasts
+- Navigation
+- Loading indicators
+- Empty states
+- Error states
 
-Also inspect:
+### Acceptance criteria
 
-- 768px tablet
-- 1024px desktop
-- a larger desktop viewport
-
-Audit at minimum:
-
-- authentication
-- dashboard
-- groups
-- group overview
-- expense history
-- expense detail
-- add expense
-- split configuration
-- balances
-- settlement
-- activity
-- profile/settings
-- dialogs/modals
-- navigation
-- toasts
-- loading states
-- empty states
-- error states
-
-### Deliverable
-
-Before implementation, identify:
-
-- layout problems,
-- overflow,
-- cramped controls,
-- poor information hierarchy,
-- difficult touch interactions,
-- desktop-only assumptions,
-- modal problems,
-- form problems,
-- navigation problems.
-
-Do not redesign everything at once.
+- Existing shared components are reused.
+- Mobile spacing is consistent.
+- Controls are touch-friendly.
+- Typography is readable.
+- No unnecessary UI dependency is introduced.
 
 ---
 
 # 6. Phase 2 — Mobile Navigation
 
-Implement a mobile-appropriate navigation experience.
+Adapt the existing navigation for mobile.
 
-The existing product information architecture should remain recognizable.
+Preserve existing destinations.
 
-Mobile navigation should provide easy access to:
+Prioritize existing destinations such as:
 
 - Dashboard
 - Groups
 - Activity
 - Profile/Settings
-- primary Add Expense action
 
-Where appropriate, use a compact bottom navigation and persistent/high-visibility Add Expense action.
+Keep the existing primary expense action easy to access.
 
-### Acceptance Criteria
+A compact bottom navigation may be used where appropriate.
 
-- Navigation works comfortably on a phone.
-- Primary destinations are easy to reach.
-- Add Expense is easy to discover.
+### Acceptance criteria
+
+- Existing destinations remain accessible.
+- Navigation is comfortable on a phone.
+- Current location is clear.
 - Touch targets are appropriate.
-- No important destination becomes inaccessible.
-- Desktop navigation remains appropriate at larger widths.
+- Desktop navigation remains coherent.
 
 ---
 
 # 7. Phase 3 — Dashboard
 
-Redesign the dashboard layout starting from mobile.
+Transform the existing dashboard into a mobile-first layout.
 
-Prioritize:
+Prioritize existing information:
 
 1. Current financial position
 2. Important balances
 3. Groups
 4. Recent activity
-5. Primary actions
+5. Existing primary actions
 
-Avoid showing too many desktop dashboard cards side-by-side.
+Use a stacked layout by default.
 
-### Mobile requirements
+Avoid excessive card density.
 
-- Single-column or appropriately stacked layout by default.
-- Clear numeric hierarchy.
-- Important balance information visible without excessive scrolling.
-- Cards only where they improve grouping and comprehension.
-- No horizontal overflow.
+### Acceptance criteria
 
-### Desktop enhancement
-
-Use additional width for:
-
-- multiple columns,
-- richer activity information,
-- additional contextual content.
+- Important information appears early.
+- Numbers remain readable.
+- Cards do not overflow.
+- Primary existing actions are easy to find.
+- Desktop uses additional space without changing functionality.
 
 ---
 
 # 8. Phase 4 — Groups
 
-Make the groups experience mobile-first.
+Improve the existing groups experience.
 
-### Groups list
+## Groups list
 
-Each group should communicate its essential information clearly:
+Make each group easy to scan on mobile.
 
-- group name,
-- relevant balance/financial status,
-- recent activity where appropriate,
-- access/navigation affordance.
+Prioritize existing:
 
-### Group detail
+- Group name
+- Financial status
+- Relevant activity
+- Navigation affordance
 
-Prioritize:
+## Group detail
 
-- group identity,
-- user's balance,
-- Add Expense,
-- Settle Up,
-- recent expenses/activity.
+Prioritize existing:
 
-Secondary administrative actions should not dominate the mobile screen.
+- Group identity
+- User balance
+- Add Expense
+- Settle Up
+- Recent expenses/activity
+
+Secondary actions remain available without dominating the screen.
+
+### Acceptance criteria
+
+- Group information is readable.
+- Important actions are easy to reach.
+- No horizontal overflow occurs.
+- Existing group functionality remains unchanged.
 
 ---
 
-# 9. Phase 5 — Expense Creation and Editing
+# 9. Phase 5 — Expense Creation UI
 
-This is a priority mobile workflow.
+Improve the existing expense form for mobile.
 
-The mobile expense flow should be clear and vertically structured.
-
-Recommended information progression:
+Use a clear vertical structure around the existing fields, such as:
 
 1. Amount
 2. Description
-3. Paid by
-4. Split method
-5. Participants
-6. Split configuration
-7. Receipt
-8. Review/submit
+3. Date
+4. Paid by
+5. Split method
+6. Participants
+7. Split configuration
+8. Receipt
+9. Existing submit/review controls
 
-The exact implementation may differ.
+Do not add, remove, or reorder functionality merely for UI convenience.
 
-### Requirements
+### Acceptance criteria
 
-- Use a mobile-friendly single-column layout by default.
-- Use appropriate mobile input types/keyboards.
-- Keep amount entry prominent.
-- Make payer selection easy to understand.
-- Make participant selection touch-friendly.
-- Avoid cramped multi-column layouts.
-- Keep validation errors close to the relevant fields.
-- Preserve the existing financial calculation semantics.
+- Amount entry is prominent.
+- Inputs are comfortable on mobile.
+- Participant selection is touch-friendly.
+- Validation messages are clear.
+- No unnecessary horizontal scrolling occurs.
+- Existing submission behavior is unchanged.
 
 ---
 
-# 10. Phase 6 — Split Configuration
+# 10. Phase 6 — Expense Editing UI
 
-The split system must remain fully functional on mobile.
+Apply the same mobile-first principles to the existing expense edit experience.
 
-Supported methods:
+Focus on:
 
-- Equal
-- Exact
-- Percentage
-- Weighted
+- Clear field grouping
+- Readable values
+- Easy editing
+- Touch-friendly controls
+- Existing actions
+- Appropriate destructive-action presentation
 
-Do not remove split methods.
+Do not change existing permissions or behavior.
+
+---
+
+# 11. Phase 7 — Split Configuration UI
+
+Make the existing split interface comfortable on mobile.
+
+Preserve all existing methods.
 
 Use progressive disclosure where appropriate.
 
-For example:
+Example:
 
 ```text
 Split method
-[ Equally ▼ ]
+[ Existing method ▼ ]
 ```
 
-Only show additional configuration when required by the selected method.
+Only show configuration already associated with the selected method.
 
-### Acceptance Criteria
+### Acceptance criteria
 
-- All four methods remain accessible.
-- Users can understand the selected method.
+- All existing split methods remain accessible.
+- Selected method is obvious.
 - Inputs are touch-friendly.
-- Amounts remain readable.
-- The final allocation remains clear.
-- No financial behavior changes as a result of the UI work.
+- Financial values remain readable.
+- Existing calculations remain unchanged.
 
 ---
 
-# 11. Phase 7 — Expense History and Dense Data
+# 12. Phase 8 — Expense History and Dense Data
 
-Review every table/list containing financial information.
+Adapt existing expense history for small screens.
 
-On mobile, prefer:
+Where desktop tables become difficult to read, use:
 
-- stacked list items,
-- cards,
-- responsive rows,
-- progressive disclosure,
+- Stacked rows
+- Cards
+- Compact list items
+- Responsive layouts
+- Progressive disclosure
 
-where a desktop table becomes difficult to read.
+Keep existing important information accessible.
 
-Each expense should still make important information understandable, including as applicable:
+Do not change:
 
-- description,
-- amount,
-- payer,
-- user's share,
-- status,
-- date.
+- Filtering
+- Sorting
+- Pagination
+- Data behavior
+- Financial calculations
 
-Secondary actions such as edit/delete should not create cramped rows.
+merely for visual reasons.
 
 ---
 
-# 12. Phase 8 — Balances and Settlements
+# 13. Phase 9 — Balances
 
-Balances are one of Splitly's most important mobile workflows.
+Make existing balances immediately understandable on mobile.
 
 Prioritize:
 
-- who owes whom,
-- how much,
-- the user's own position,
-- Settle Up action.
+- User's own position
+- Who owes whom
+- Amount
+- Existing settlement action
 
-Avoid dense desktop-style balance tables on small screens.
+Avoid dense desktop-style tables on small screens.
 
-Settlement flows should be short and easy to complete.
-
-Do not alter balance or settlement calculations.
+Do not change balance calculations.
 
 ---
 
-# 13. Phase 9 — Modals and Dialogs
+# 14. Phase 10 — Settlements
 
-Audit every modal/dialog.
+Improve the presentation of the existing settlement workflow.
 
-For mobile:
+Focus on:
 
-- avoid unnecessarily narrow desktop dialogs,
-- use full-width, full-screen, or sheet-like layouts where appropriate,
-- prevent awkward nested scrolling,
-- maintain accessible focus behavior,
-- keep primary actions visible.
+- Clear amount
+- Clear payer/payee information
+- Simple vertical layout
+- Comfortable inputs
+- Existing confirmation action
+- Mobile-friendly feedback
 
-For forms inside modals:
-
-### While pending
-
-- keep modal open,
-- prevent duplicate submission,
-- preserve form state.
-
-### On success
-
-- show success toast,
-- reset form,
-- clear relevant state,
-- close modal.
-
-### On failure
-
-- show error toast,
-- keep modal open,
-- preserve entered values where practical,
-- allow retry.
+Do not change settlement behavior or calculations.
 
 ---
 
-# 14. Phase 10 — Toasts and Feedback
+# 15. Phase 11 — Activity and Settings
 
-Review toast placement and behavior at mobile widths.
+Adapt the existing:
+
+- Activity/history
+- Profile
+- Settings
+
+for mobile.
+
+Use clear sections and progressive disclosure where useful.
+
+Do not add new capabilities.
+
+---
+
+# 16. Phase 12 — Modals and Dialogs
+
+Review existing dialogs.
+
+On mobile, use an appropriate presentation such as:
+
+- Full-width
+- Near-full-width
+- Bottom sheet
+- Full-screen
+
+### Existing form inside a modal
+
+While pending:
+
+- Keep the modal open.
+- Preserve form state.
+- Prevent duplicate submission through the existing UI behavior.
+
+On failure:
+
+- Keep the modal open.
+- Preserve entered values where practical.
+- Show the existing error.
+
+On success:
+
+- Show existing success feedback.
+- Reset the form.
+- Close the modal according to the existing workflow.
+
+Do not change the underlying submission logic.
+
+---
+
+# 17. Phase 13 — Toasts and Feedback
+
+Improve existing toast presentation.
 
 Requirements:
 
-- Toasts must remain visible and readable.
-- They must not cover critical controls.
-- They must not overflow the viewport.
-- Success appears only after confirmed success.
-- Errors are understandable without exposing internal details.
-- Multiple duplicate toasts should not be generated.
+- Readable on mobile
+- Within viewport
+- Does not cover critical controls
+- Consistent placement
+- Accessible
+- Success only after successful response
+- Errors clearly presented
 
-Use the existing toast system.
-
----
-
-# 15. Phase 11 — Loading, Empty, Error, and Unauthorized States
-
-Audit all major mobile screens for non-happy-path states.
-
-Verify:
-
-- loading states,
-- empty states,
-- errors,
-- unauthorized access,
-- successful mutation feedback.
-
-These states must be intentionally designed for narrow screens rather than being accidental desktop layouts.
+Do not create new business outcomes.
 
 ---
 
-# 16. Phase 12 — Responsive Enhancement
+# 18. Phase 14 — Loading, Empty, Error, and Unauthorized States
 
-After mobile layouts are correct, progressively enhance:
+Improve the presentation of existing states:
 
-### Tablet
+- Loading
+- Empty
+- Error
+- Unauthorized
+- Success
+- Pending submission
 
-- introduce additional columns where useful,
-- increase spacing where appropriate,
-- improve list/table density without sacrificing readability.
+Each state should work cleanly at mobile widths.
 
-### Desktop
-
-- use available horizontal space,
-- add side-by-side content,
-- expand navigation,
-- provide richer contextual information,
-- preserve the same core workflows.
-
-Do not create a separate desktop product.
+Do not change state logic.
 
 ---
 
-# 17. Phase 13 — Accessibility
+# 19. Phase 15 — Touch and Accessibility
 
-Mobile-first changes must preserve accessibility.
+Review all important interactive controls.
 
-Review:
+Ensure:
 
-- semantic HTML,
-- labels,
-- focus,
-- keyboard navigation,
-- modal focus,
-- screen-reader labels,
-- error associations,
-- touch targets,
-- contrast,
-- toast announcements.
+- Comfortable touch targets
+- Clear focus
+- Good contrast
+- Semantic controls
+- Accessible labels
+- Accessible errors
+- Accessible dialogs
+- Accessible toast messages
 
-Do not make controls visually compact at the expense of accessibility.
+Do not trade accessibility for compactness.
 
 ---
 
-# 18. Phase 14 — Component Consistency
+# 20. Phase 16 — Tablet Enhancement
 
-When fixing one responsive component:
+After mobile is correct, enhance tablet layouts.
 
-- search for similar components,
-- identify shared patterns,
-- reuse existing components,
-- avoid duplicate implementations.
+Possible improvements:
 
-Examples:
+- Multi-column layouts
+- Wider containers
+- Better spacing
+- More efficient list density
+- Side-by-side sections
 
-- all primary buttons should behave consistently,
-- all dialogs should follow the same mobile pattern,
-- all forms should use consistent spacing,
-- all toast behavior should remain consistent,
-- all list/card transformations should follow the same design language.
+Do not create a different workflow.
 
 ---
 
-# 19. Testing and Review Phase
+# 21. Phase 17 — Desktop Enhancement
 
-Testing and review are intentionally separate from the implementation phase.
+Enhance the mobile baseline for desktop.
 
-After all mobile-first implementation tasks are complete, perform the final review.
+Use additional width for:
 
-### Review
+- Multi-column layouts
+- Side-by-side sections
+- Wider content
+- Expanded navigation
+- Richer contextual information
+- More efficient data presentation
 
-Inspect:
+The same existing workflow must remain recognizable.
+
+---
+
+# 22. Phase 18 — Cross-Screen Consistency
+
+Review all screens for consistent:
+
+- Typography
+- Spacing
+- Buttons
+- Inputs
+- Cards
+- Dialogs
+- Toasts
+- Badges
+- Icons
+- Navigation
+- States
+- Responsive behavior
+
+Prefer shared components for repeated patterns.
+
+---
+
+# 23. Phase 19 — Final UI Review
+
+After implementation, review representative viewport sizes:
 
 - 320px
 - 360px
 - 375px
 - 390px
 - 414px
-- tablet
-- desktop
+- Tablet
+- Desktop
 
-Review the complete critical workflows:
+Check for:
 
-1. Sign in
-2. Dashboard
-3. Create group
-4. Enter group
-5. Add expense
-6. Configure split
-7. View balance
-8. Settle up
-9. Activity/history
-10. Profile/settings
+- Horizontal overflow
+- Cramped controls
+- Unreadable text
+- Poor spacing
+- Difficult touch interactions
+- Broken dialogs
+- Poor form layouts
+- Navigation problems
+- Inconsistent components
+- Accessibility issues
 
-### Verification
+This review is for **UI quality and regression detection**.
 
-Use the project's established test and verification strategy.
-
-Do not claim mobile-first completion based only on the existence of responsive Tailwind classes.
-
-The actual user experience must be reviewed at representative mobile widths.
+It is not a workflow redesign.
 
 ---
 
-# 20. Final Acceptance Criteria
+# 24. Final Acceptance Criteria
 
-The Mobile-First UX phase is complete when:
+The phase is complete when:
 
 - [ ] Mobile is the intentional base layout.
-- [ ] Core Splitly workflows are comfortable on a phone.
+- [ ] Existing screens are comfortable on mobile.
 - [ ] No accidental horizontal overflow exists.
-- [ ] Primary actions are easy to discover and reach.
-- [ ] Touch targets are usable.
-- [ ] Navigation is mobile-appropriate.
+- [ ] Existing navigation is mobile-friendly.
 - [ ] Dashboard is mobile-first.
 - [ ] Groups are mobile-first.
 - [ ] Expense creation is mobile-first.
 - [ ] Expense editing is mobile-first.
-- [ ] All four split methods work comfortably on mobile.
-- [ ] Expense history is readable without forcing desktop tables.
-- [ ] Balances are easy to understand on mobile.
-- [ ] Settlement is usable on mobile.
-- [ ] Modal forms work correctly on mobile.
-- [ ] Forms reset only after confirmed successful submission.
-- [ ] Successful modal forms close only after confirmed success.
-- [ ] Failed submissions preserve form state where practical.
-- [ ] Toasts are readable and correctly positioned.
-- [ ] Loading/empty/error/unauthorized/success states work on mobile.
-- [ ] Accessibility is preserved.
-- [ ] Tablet layout remains coherent.
-- [ ] Desktop layout remains coherent and progressively enhanced.
-- [ ] Existing financial logic is unchanged.
-- [ ] Existing authorization/security behavior is preserved.
-- [ ] Existing design direction is preserved.
-- [ ] No unrelated product features were introduced.
-- [ ] Final testing/review has been completed separately.
-- [ ] Documentation matches the actual implementation.
+- [ ] Existing split methods remain accessible.
+- [ ] Expense history is readable on mobile.
+- [ ] Balances are easy to understand.
+- [ ] Settlement UI is comfortable on mobile.
+- [ ] Activity is mobile-friendly.
+- [ ] Settings/profile are mobile-friendly.
+- [ ] Existing modal forms behave correctly.
+- [ ] Existing toast behavior is presented consistently.
+- [ ] Loading/empty/error/unauthorized/success states are clear.
+- [ ] Touch targets are comfortable.
+- [ ] Accessibility is preserved/improved.
+- [ ] Tablet layouts are coherent.
+- [ ] Desktop layouts progressively enhance the mobile baseline.
+- [ ] Existing functionality remains unchanged.
+- [ ] Existing workflows remain unchanged.
+- [ ] No new product features were introduced.
+- [ ] No backend/business-logic changes were introduced for UI purposes.
 
 ---
 
-# 21. Final Engineering Principle
+# 25. Final Principle
 
-> **Mobile-first does not mean mobile-only.**
->
-> Start with the smallest useful experience, prioritize what matters most, make interaction comfortable for touch, and progressively use additional screen space as it becomes available.
+> **Mobile-first is a UI strategy, not a product redesign.**
 
-For Splitly, the goal is a financial workflow that feels natural on a phone first and becomes richer—not merely larger—on tablet and desktop.
+The existing Splitly workflows already define what users can do.
+
+This phase should make those workflows:
+
+**clearer → easier → faster → more comfortable → more accessible**
+
+on mobile first, while progressively enhancing the same experience for tablet and desktop.

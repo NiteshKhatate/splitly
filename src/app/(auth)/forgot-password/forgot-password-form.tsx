@@ -97,11 +97,11 @@ export function ForgotPasswordForm({ applicationOrigin }: { applicationOrigin?: 
         {isSubmitting ? "Sending..." : "Send reset link"}
       </Button>
 
-      <p className="text-center text-secondary text-foreground-muted">
-        Remember your password?{" "}
+      <p className="flex flex-wrap items-center justify-center gap-x-1 text-center text-secondary text-foreground-muted">
+        <span>Remember your password?</span>
         <Link
           href="/login"
-          className="text-label text-primary hover:text-primary-hover focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="inline-flex min-h-11 items-center rounded-control px-1 text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           Log in
         </Link>
