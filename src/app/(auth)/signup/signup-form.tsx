@@ -187,7 +187,7 @@ export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }
         action={
           <button
             type="button"
-            className="text-label text-primary hover:text-primary-hover focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="-mr-2 inline-flex min-h-11 items-center rounded-control px-2 text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             onClick={() => setShowPassword((current) => !current)}
             aria-controls="password"
           >
@@ -207,7 +207,7 @@ export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }
         action={
           <button
             type="button"
-            className="text-label text-primary hover:text-primary-hover focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="-mr-2 inline-flex min-h-11 items-center rounded-control px-2 text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             onClick={() => setShowConfirmPassword((current) => !current)}
             aria-controls="confirm-password"
           >
@@ -222,11 +222,11 @@ export function SignupForm({ applicationOrigin }: { applicationOrigin?: string }
         {isSubmitting ? "Creating account..." : "Create account"}
       </Button>
 
-      <p className="text-center text-secondary text-foreground-muted">
-        Already have an account?{" "}
+      <p className="flex flex-wrap items-center justify-center gap-x-1 text-center text-secondary text-foreground-muted">
+        <span>Already have an account?</span>
         <Link
           href="/login"
-          className="text-label text-primary hover:text-primary-hover focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="inline-flex min-h-11 items-center rounded-control px-1 text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           Log in
         </Link>

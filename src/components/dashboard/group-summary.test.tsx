@@ -33,7 +33,7 @@ describe("GroupSummary", () => {
     render(<GroupSummary groups={groups} />);
 
     expect(screen.getByRole("link", { name: /goa trip/i })).toHaveAttribute("href", "/groups/group-1");
-    expect(screen.getByText(/3 members.*you are owed ₹125/i)).toBeInTheDocument();
+    expect(screen.getByText("3 members")).toBeInTheDocument();
     expect(screen.getByText("You are owed ₹125")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /flatmates/i })).toHaveAttribute("href", "/groups/group-2");
     expect(screen.getByText(/1 member/i)).toBeInTheDocument();

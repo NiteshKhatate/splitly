@@ -21,14 +21,15 @@ async function logOut(page: import("@playwright/test").Page) {
   await page.goto("/login");
 }
 
-test("tablet keyboard journey covers group, member, expense, balance, settlement, and activity", async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== "tablet-chromium", "The authenticated responsive audit runs at tablet size.");
+test("responsive keyboard journey covers group, member, expense, balance, settlement, activity, and settings", async ({ page }) => {
   test.skip(!hasTestAccounts, "Dedicated non-production E2E accounts are required.");
   test.setTimeout(90_000);
 
   await logIn(page, ownerEmail!, ownerPassword!);
+  await expect(page.getByRole("heading", { name: /good morning/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
   await page.goto("/groups/new");
-  await page.getByLabel("Group name").fill(`Tablet QA ${Date.now()}`);
+  await page.getByLabel("Group name").fill(`Responsive QA ${Date.now()}`);
   await page.getByRole("button", { name: "Create group" }).click();
   await expect(page).toHaveURL(/\/groups\/[0-9a-f-]+$/);
   const groupPath = new URL(page.url()).pathname;
@@ -43,7 +44,7 @@ test("tablet keyboard journey covers group, member, expense, balance, settlement
   await page.keyboard.press("Escape");
 
   await page.getByRole("link", { name: /add expense/i }).click();
-  await page.getByLabel("Description").fill("Tablet accessibility dinner");
+  await page.getByLabel("Description").fill("Responsive accessibility dinner");
   await page.getByLabel("Total amount").fill("10.00");
   await page.locator('input[id^="payer-"]').first().fill("10.00");
   await page.getByRole("button", { name: "Save expense" }).click();
@@ -71,4 +72,7 @@ test("tablet keyboard journey covers group, member, expense, balance, settlement
   await expect(page.getByRole("heading", { name: "Activity" })).toBeVisible();
   results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
+  await page.goto("/settings");
+  await expect(page.getByRole("heading", { name: "Profile and preferences" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Profile" })).toHaveAttribute("aria-current", "page");
 });

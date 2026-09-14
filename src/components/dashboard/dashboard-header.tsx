@@ -18,7 +18,7 @@ type DashboardHeaderProps = {
 /** Links the Splitly wordmark back to the dashboard home. */
 function DashboardBrandLink() {
   return (
-    <Link href="/dashboard" className="flex items-center gap-3 rounded-control text-card-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+    <Link href="/dashboard" className="flex min-h-11 items-center gap-3 rounded-control text-card-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
       <span className="flex size-9 items-center justify-center rounded-control bg-primary text-label text-white" aria-hidden="true">S</span>
       <span>Splitly</span>
     </Link>
@@ -60,7 +60,7 @@ function getMobileNavLinkClassName(isActive: boolean) {
   return [
     "flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-control px-1 py-1.5 text-caption focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary",
     isActive
-      ? "text-primary"
+      ? "bg-primary-subtle text-primary"
       : "text-foreground-muted hover:bg-surface-muted hover:text-foreground",
   ].join(" ");
 }
@@ -112,7 +112,7 @@ export function DashboardHeader({
       >
         <Link href="/dashboard" aria-current={isDashboardActive ? "page" : undefined} className={getMobileNavLinkClassName(isDashboardActive)}>
           <HouseIcon aria-hidden="true" size={21} weight={isDashboardActive ? "fill" : "regular"} />
-          <span>Home</span>
+          <span>Dashboard</span>
         </Link>
         <Link href="/groups" aria-current={isGroupsActive ? "page" : undefined} className={getMobileNavLinkClassName(isGroupsActive)}>
           <UsersThreeIcon aria-hidden="true" size={21} weight={isGroupsActive ? "fill" : "regular"} />

@@ -16,7 +16,7 @@ export default async function LoginPage({
       <section className="w-full max-w-md" aria-labelledby="login-heading">
         <Link
           href="/"
-          className="mx-auto mb-5 flex w-fit items-center gap-3 text-card-heading focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:mb-8"
+          className="mx-auto mb-5 flex min-h-11 w-fit items-center gap-3 rounded-control px-1 text-card-heading focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:mb-8"
         >
           <span className="flex size-10 items-center justify-center rounded-control bg-primary text-label text-white">
             S

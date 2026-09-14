@@ -85,16 +85,19 @@ export function LoginForm({
       {error ? <FormMessage tone="error">{error}</FormMessage> : null}
       <TextField id="login-email" label="Email" type="email" autoComplete="email" inputMode="email" error={errors.email?.message} required {...register("email")} />
       <TextField id="login-password" label="Password" type="password" autoComplete="current-password" error={errors.password?.message} required {...register("password")} />
-      <div className="text-right">
+      <div className="-my-2 flex justify-end">
         <Link
           href="/forgot-password"
-          className="text-label text-primary hover:text-primary-hover focus-visible:rounded-control focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="inline-flex min-h-11 items-center rounded-control px-1 text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           Forgot password?
         </Link>
       </div>
       <Button type="submit" className="w-full" disabled={isSubmitting}>{isSubmitting ? "Logging in..." : "Log in"}</Button>
-      <p className="text-center text-secondary text-foreground-muted">Need an account? <Link href="/signup" className="text-label text-primary hover:text-primary-hover">Create one</Link></p>
+      <p className="flex flex-wrap items-center justify-center gap-x-1 text-center text-secondary text-foreground-muted">
+        <span>Need an account?</span>
+        <Link href="/signup" className="inline-flex min-h-11 items-center rounded-control px-1 text-label text-primary hover:text-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">Create one</Link>
+      </p>
     </form>
   );
 }

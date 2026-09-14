@@ -25,7 +25,7 @@ export function GroupCard({ group }: { group: Group }) {
         <div className="min-w-0 flex-1">
           <p className="truncate text-label text-foreground">{group.name}</p>
           <p className="mt-1 text-caption text-foreground-muted">
-            {memberLabel} · {group.balance.label}
+            {memberLabel}
           </p>
         </div>
         <span
