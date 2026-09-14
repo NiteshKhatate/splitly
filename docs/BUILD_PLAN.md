@@ -297,24 +297,7 @@ Do not add, remove, or reorder functionality merely for UI convenience.
 
 ---
 
-# 10. Phase 6 — Expense Editing UI
-
-Apply the same mobile-first principles to the existing expense edit experience.
-
-Focus on:
-
-- Clear field grouping
-- Readable values
-- Easy editing
-- Touch-friendly controls
-- Existing actions
-- Appropriate destructive-action presentation
-
-Do not change existing permissions or behavior.
-
----
-
-# 11. Phase 7 — Split Configuration UI
+# 10. Phase 6 — Split Configuration UI
 
 Make the existing split interface comfortable on mobile.
 
@@ -341,7 +324,7 @@ Only show configuration already associated with the selected method.
 
 ---
 
-# 12. Phase 8 — Expense History and Dense Data
+# 11. Phase 7 — Expense History and Dense Data
 
 Adapt existing expense history for small screens.
 
@@ -367,7 +350,7 @@ merely for visual reasons.
 
 ---
 
-# 13. Phase 9 — Balances
+# 12. Phase 8 — Balances
 
 Make existing balances immediately understandable on mobile.
 
@@ -384,7 +367,7 @@ Do not change balance calculations.
 
 ---
 
-# 14. Phase 10 — Settlements
+# 13. Phase 9 — Settlements
 
 Improve the presentation of the existing settlement workflow.
 
@@ -401,7 +384,7 @@ Do not change settlement behavior or calculations.
 
 ---
 
-# 15. Phase 11 — Activity and Settings
+# 14. Phase 10 — Activity and Settings
 
 Adapt the existing:
 
@@ -417,7 +400,7 @@ Do not add new capabilities.
 
 ---
 
-# 16. Phase 12 — Modals and Dialogs
+# 15. Phase 11 — Modals and Dialogs
 
 Review existing dialogs.
 
@@ -452,7 +435,7 @@ Do not change the underlying submission logic.
 
 ---
 
-# 17. Phase 13 — Toasts and Feedback
+# 16. Phase 12 — Toasts and Feedback
 
 Improve existing toast presentation.
 
@@ -470,7 +453,7 @@ Do not create new business outcomes.
 
 ---
 
-# 18. Phase 14 — Loading, Empty, Error, and Unauthorized States
+# 17. Phase 13 — Loading, Empty, Error, and Unauthorized States
 
 Improve the presentation of existing states:
 
@@ -487,7 +470,7 @@ Do not change state logic.
 
 ---
 
-# 19. Phase 15 — Touch and Accessibility
+# 18. Phase 14 — Touch and Accessibility
 
 Review all important interactive controls.
 
@@ -506,7 +489,7 @@ Do not trade accessibility for compactness.
 
 ---
 
-# 20. Phase 16 — Tablet Enhancement
+# 19. Phase 15 — Tablet Enhancement
 
 After mobile is correct, enhance tablet layouts.
 
@@ -522,7 +505,7 @@ Do not create a different workflow.
 
 ---
 
-# 21. Phase 17 — Desktop Enhancement
+# 20. Phase 16 — Desktop Enhancement
 
 Enhance the mobile baseline for desktop.
 
@@ -539,7 +522,7 @@ The same existing workflow must remain recognizable.
 
 ---
 
-# 22. Phase 18 — Cross-Screen Consistency
+# 21. Phase 17 — Cross-Screen Consistency
 
 Review all screens for consistent:
 
@@ -560,7 +543,7 @@ Prefer shared components for repeated patterns.
 
 ---
 
-# 23. Phase 19 — Final UI Review
+# 22. Phase 18 — Final UI Review
 
 After implementation, review representative viewport sizes:
 
@@ -591,7 +574,7 @@ It is not a workflow redesign.
 
 ---
 
-# 24. Final Acceptance Criteria
+# 23. Final Acceptance Criteria
 
 The phase is complete when:
 
@@ -602,7 +585,6 @@ The phase is complete when:
 - [ ] Dashboard is mobile-first.
 - [ ] Groups are mobile-first.
 - [ ] Expense creation is mobile-first.
-- [ ] Expense editing is mobile-first.
 - [ ] Existing split methods remain accessible.
 - [ ] Expense history is readable on mobile.
 - [ ] Balances are easy to understand.
@@ -623,7 +605,7 @@ The phase is complete when:
 
 ---
 
-# 25. Final Principle
+# 24. Final Principle
 
 > **Mobile-first is a UI strategy, not a product redesign.**
 
