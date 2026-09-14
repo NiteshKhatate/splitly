@@ -578,30 +578,30 @@ It is not a workflow redesign.
 
 The phase is complete when:
 
-- [ ] Mobile is the intentional base layout.
-- [ ] Existing screens are comfortable on mobile.
-- [ ] No accidental horizontal overflow exists.
-- [ ] Existing navigation is mobile-friendly.
-- [ ] Dashboard is mobile-first.
-- [ ] Groups are mobile-first.
-- [ ] Expense creation is mobile-first.
-- [ ] Existing split methods remain accessible.
-- [ ] Expense history is readable on mobile.
-- [ ] Balances are easy to understand.
-- [ ] Settlement UI is comfortable on mobile.
-- [ ] Activity is mobile-friendly.
-- [ ] Settings/profile are mobile-friendly.
-- [ ] Existing modal forms behave correctly.
-- [ ] Existing toast behavior is presented consistently.
-- [ ] Loading/empty/error/unauthorized/success states are clear.
-- [ ] Touch targets are comfortable.
-- [ ] Accessibility is preserved/improved.
-- [ ] Tablet layouts are coherent.
-- [ ] Desktop layouts progressively enhance the mobile baseline.
-- [ ] Existing functionality remains unchanged.
-- [ ] Existing workflows remain unchanged.
-- [ ] No new product features were introduced.
-- [ ] No backend/business-logic changes were introduced for UI purposes.
+- [x] Mobile is the intentional base layout.
+- [x] Existing screens are comfortable on mobile.
+- [x] No accidental horizontal overflow exists.
+- [x] Existing navigation is mobile-friendly.
+- [x] Dashboard is mobile-first.
+- [x] Groups are mobile-first.
+- [x] Expense creation is mobile-first.
+- [x] Existing split methods remain accessible.
+- [x] Expense history is readable on mobile.
+- [x] Balances are easy to understand.
+- [x] Settlement UI is comfortable on mobile.
+- [x] Activity is mobile-friendly.
+- [x] Settings/profile are mobile-friendly.
+- [x] Existing modal forms behave correctly.
+- [x] Existing toast behavior is presented consistently.
+- [x] Loading/empty/error/unauthorized/success states are clear.
+- [x] Touch targets are comfortable.
+- [x] Accessibility is preserved/improved.
+- [x] Tablet layouts are coherent.
+- [x] Desktop layouts progressively enhance the mobile baseline.
+- [x] Existing functionality remains unchanged.
+- [x] Existing workflows remain unchanged.
+- [x] No new product features were introduced.
+- [x] No backend/business-logic changes were introduced for UI purposes.
 
 ---
 
