@@ -101,13 +101,18 @@ export function DashboardHeader({ userName, avatarUrl, activePath = "/dashboard"
     <>
       <header className="sticky top-0 z-30 flex min-h-14 items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur md:hidden">
         <BrandLink />
-        <Link
-          href="/settings"
-          aria-label={`Open account for ${userName}`}
-          className="flex min-h-11 min-w-11 items-center justify-center rounded-full"
-        >
-          <UserAvatar name={userName} src={avatarUrl} />
-        </Link>
+        <details className="group relative">
+          <summary className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-full">
+            <UserAvatar name={userName} src={avatarUrl} />
+            <span className="sr-only">Open account menu</span>
+          </summary>
+          <div className="absolute right-0 mt-2 w-56 rounded-card border border-border bg-surface p-2 shadow-lg">
+            <p className="truncate px-3 py-2 text-label">{userName}</p>
+            <div className="border-t border-border pt-1">
+              <LogoutForm />
+            </div>
+          </div>
+        </details>
       </header>
 
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-surface px-4 py-5 md:flex">

@@ -21,6 +21,13 @@ describe("DashboardHeader", () => {
     const navigation = screen.getByRole("navigation", { name: "Desktop navigation" });
     expect(within(navigation).getByRole("link", { name: "Groups" })).toHaveAttribute("aria-current", "page");
     expect(screen.getAllByRole("link", { name: "Add expense" })[0]).toHaveAttribute("href", "/expenses/new");
-    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Log out" })).toHaveLength(2);
+  });
+
+  it("keeps logout available from the compact top header", () => {
+    render(<DashboardHeader userName="Maya" />);
+
+    expect(screen.getByText("Open account menu")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Log out" })).toHaveLength(2);
   });
 });
