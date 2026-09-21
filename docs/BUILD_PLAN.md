@@ -1,618 +1,1255 @@
-# Splitly — Mobile-First UI Build Plan
+# Splitly — Build Plan
 
-**Status:** Ready to execute  
-**Phase:** Mobile-First UI / UX  
-**Scope:** Existing UI transformation to mobile-first responsive design  
-**Functionality:** Frozen  
-**Workflow:** Frozen
+## Purpose
 
----
+This document defines the recommended implementation sequence for Splitly.
 
-## 1. Objective
+Features must be built incrementally.
 
-Transform the existing Splitly interface into a polished **mobile-first UI** while preserving the application's existing functionality and workflows.
+Do not skip ahead to advanced functionality before the financial foundation is correct.
 
-The workflows are already established.
-
-This phase is about:
-
-> **Improving the interface through which users perform the existing workflows.**
-
-Target progression:
-
-**Mobile → Tablet → Desktop**
-
-Mobile is the baseline.
+Each phase has explicit exit criteria.
 
 ---
 
-## 2. Scope
+# Milestone Overview
 
-### In scope
-
-- Mobile-first responsive layouts
-- Tablet and desktop responsive layouts
-- UI component improvements
-- Spacing
-- Typography
-- Visual hierarchy
-- Responsive navigation
-- Mobile-friendly forms
-- Mobile-friendly dialogs
-- Touch interaction
-- Responsive lists/tables
-- Loading states
-- Empty states
-- Error states
-- Success feedback
-- Toast presentation
-- Accessibility
-- UI consistency
-
-### Out of scope
-
-Do not change:
-
-- Business logic
-- Database schema
-- Prisma models
-- Database migrations
-- API contracts
-- Server actions
-- Authentication
-- Authorization
-- Permissions
-- Validation rules
-- Expense calculations
-- Split calculations
-- Balance calculations
-- Settlement calculations
-- Existing routes
-- Existing workflows
-- Existing product capabilities
-
-Do not add product features.
+```text
+M0  Foundation
+M1  Authentication
+M2  Application Shell
+M3  Friends
+M4  Groups
+M5  Basic Expenses
+M6  Balance Engine
+M7  Advanced Splits
+M8  Multiple Payers
+M9  Direct Expenses
+M10 Settlements
+M11 Activity
+M12 Comments
+M13 Categories
+M14 Debt Simplification
+M15 Recurring Expenses
+M16 Multiple Currencies
+M17 Notifications
+M18 Search
+M19 Reports
+M20 Attachments
+M21 Itemization
+M22 Production Hardening
+```
 
 ---
 
-## 3. Workflow Freeze
+# Milestone 0 — Foundation
 
-Existing workflows have already been implemented.
+## Goal
 
-Do not redesign them.
+Create a stable development foundation before product work.
 
-The following remain unchanged:
+## Tasks
 
-- Authentication
-- Dashboard
-- Groups
-- Expenses
-- Splits
-- Balances
-- Settlements
-- Activity
-- Settings
+### 0.1 Repository structure
 
-The same workflow should remain:
+Establish:
 
-**existing user intent → existing action → existing processing → existing result**
+```text
+src/
+├── app/
+├── components/
+├── features/
+├── lib/
+├── hooks/
+├── types/
+└── utils/
+```
 
-Only the UI through which the workflow is performed should change.
+### 0.2 Documentation
+
+Create:
+
+```text
+AGENTS.md
+
+docs/
+├── product-requirements.md
+├── build-plan.md
+├── system-design.md
+├── database.md
+├── business-rules.md
+├── permissions.md
+├── design-system.md
+└── testing.md
+```
+
+### 0.3 Environment configuration
+
+Configure:
+
+- Supabase URL
+- public anon key
+- server secrets
+- environment validation
+
+Never expose privileged keys.
+
+### 0.4 Supabase clients
+
+Create appropriate:
+
+- browser client
+- server client
+- server-only privileged client if ever required
+
+### 0.5 Design tokens
+
+Define:
+
+- typography
+- spacing
+- colors
+- radius
+- shadows
+- breakpoints
+- semantic statuses
+
+### 0.6 Base UI components
+
+Implement:
+
+```text
+Button
+Input
+Textarea
+Select
+Checkbox
+Avatar
+Card
+Dialog
+Drawer
+BottomSheet
+Badge
+Spinner
+Skeleton
+EmptyState
+ErrorState
+```
+
+### 0.7 Mobile layout foundations
+
+Verify:
+
+```text
+320
+375
+390
+430
+768
+1024
+1440
+```
+
+## Exit Criteria
+
+- project builds
+- lint succeeds
+- TypeScript succeeds
+- reusable UI components exist
+- no major layout overflow
+- repository documentation exists
 
 ---
 
-# 4. Mobile-First Design Principles
+# Milestone 1 — Authentication
 
-## 4.1 Mobile is the baseline
+## Goal
 
-Start with the smallest supported viewport.
+Users can securely access Splitly.
 
-Do not design desktop first and compress it.
+## Tasks
+
+### 1.1 Profiles database
+
+Create profile model linked to Supabase Auth.
+
+Fields may include:
+
+```text
+id
+display_name
+avatar_url
+default_currency
+locale
+timezone
+created_at
+updated_at
+```
+
+### 1.2 Signup
+
+Build signup workflow.
+
+### 1.3 Login
+
+Build login workflow.
+
+### 1.4 Logout
+
+Build logout.
+
+### 1.5 Forgot password
+
+Build password reset request.
+
+### 1.6 Password recovery
+
+Handle reset callback/update.
+
+### 1.7 Session protection
+
+Protect authenticated routes.
+
+### 1.8 Profile settings
+
+Basic profile editing.
+
+## Exit Criteria
+
+Two separate users can create accounts and sign in independently.
+
+Unauthorized users cannot access protected application routes.
+
+---
+
+# Milestone 2 — Application Shell
+
+## Goal
+
+Create the mobile-first authenticated application layout.
+
+## Mobile
+
+Primary navigation:
+
+```text
+Home
+Activity
+Add
+Groups
+Account
+```
 
 Use:
 
-- Flexible widths
-- Stacking
-- Wrapping
-- Responsive grids
-- Appropriate spacing
-- Touch-friendly controls
+- compact top bar
+- bottom navigation
+- central Add action
 
-Then progressively enhance larger screens.
+## Desktop
 
-## 4.2 Content priority
+Use:
 
-For each existing screen:
+- persistent sidebar
+- main content region
+- optional contextual secondary panel
 
-1. Show the most important existing information first.
-2. Make the existing primary action obvious.
-3. Reduce unnecessary visual density.
-4. Use progressive disclosure for secondary information where appropriate.
-5. Do not hide important existing functionality.
+## Tasks
 
-## 4.3 No accidental horizontal overflow
+### 2.1 App layout
 
-Primary screens should not require unnecessary horizontal scrolling.
+### 2.2 Mobile header
 
-Pay particular attention to:
+### 2.3 Bottom navigation
 
-- Dashboard
-- Groups
-- Group details
-- Expense lists
-- Balances
-- Forms
-- Dialogs
-- Navigation
+### 2.4 Desktop sidebar
 
----
+### 2.5 Page container
 
-# 5. Phase 1 — UI Foundation
+### 2.6 Loading layout
 
-Review and improve shared UI primitives.
+### 2.7 Error boundary
 
-Focus on:
+### 2.8 Empty-state patterns
 
-- Page containers
-- Spacing
-- Typography
-- Buttons
-- Inputs
-- Selects
-- Form fields
-- Cards
-- Badges
-- Dialogs
-- Toasts
-- Navigation
-- Loading indicators
-- Empty states
-- Error states
+## Exit Criteria
 
-### Acceptance criteria
+Navigation works on:
 
-- Existing shared components are reused.
-- Mobile spacing is consistent.
-- Controls are touch-friendly.
-- Typography is readable.
-- No unnecessary UI dependency is introduced.
+- mobile
+- tablet
+- desktop
+
+No full-width desktop sidebar appears on phone layouts.
 
 ---
 
-# 6. Phase 2 — Mobile Navigation
+# Milestone 3 — Friends
 
-Adapt the existing navigation for mobile.
+## Goal
 
-Preserve existing destinations.
+Create direct relationships between users.
 
-Prioritize existing destinations such as:
+## Tasks
 
-- Dashboard
-- Groups
-- Activity
-- Profile/Settings
+### 3.1 Friendship schema
 
-Keep the existing primary expense action easy to access.
+Support:
 
-A compact bottom navigation may be used where appropriate.
+```text
+pending
+accepted
+declined
+blocked/archive if later required
+```
 
-### Acceptance criteria
+### 3.2 RLS policies
 
-- Existing destinations remain accessible.
-- Navigation is comfortable on a phone.
-- Current location is clear.
-- Touch targets are appropriate.
-- Desktop navigation remains coherent.
+### 3.3 User search
 
----
+### 3.4 Send invitation
 
-# 7. Phase 3 — Dashboard
+### 3.5 Accept invitation
 
-Transform the existing dashboard into a mobile-first layout.
+### 3.6 Decline invitation
 
-Prioritize existing information:
+### 3.7 Friends list
 
-1. Current financial position
-2. Important balances
-3. Groups
-4. Recent activity
-5. Existing primary actions
+### 3.8 Friend profile/detail
 
-Use a stacked layout by default.
+No financial balance required yet.
 
-Avoid excessive card density.
+## Exit Criteria
 
-### Acceptance criteria
-
-- Important information appears early.
-- Numbers remain readable.
-- Cards do not overflow.
-- Primary existing actions are easy to find.
-- Desktop uses additional space without changing functionality.
+Two users can become friends and see the relationship securely.
 
 ---
 
-# 8. Phase 4 — Groups
+# Milestone 4 — Groups
 
-Improve the existing groups experience.
+## Goal
 
-## Groups list
+Users can create and manage expense groups.
 
-Make each group easy to scan on mobile.
+## Tasks
 
-Prioritize existing:
+### 4.1 Group schema
 
-- Group name
-- Financial status
-- Relevant activity
-- Navigation affordance
+Suggested fields:
 
-## Group detail
+```text
+id
+name
+type
+image_url
+default_currency
+simplify_debts
+created_by
+created_at
+updated_at
+archived_at
+```
 
-Prioritize existing:
+### 4.2 Group-members schema
 
-- Group identity
-- User balance
-- Add Expense
-- Settle Up
-- Recent expenses/activity
+Track:
 
-Secondary actions remain available without dominating the screen.
+```text
+group_id
+user_id
+role
+joined_at
+```
 
-### Acceptance criteria
+### 4.3 Group RLS
 
-- Group information is readable.
-- Important actions are easy to reach.
-- No horizontal overflow occurs.
-- Existing group functionality remains unchanged.
+### 4.4 Create group
+
+### 4.5 Group list
+
+### 4.6 Group detail
+
+### 4.7 Add member
+
+### 4.8 Invite member
+
+### 4.9 Remove member
+
+Only when financial constraints permit it.
+
+### 4.10 Edit group
+
+### 4.11 Archive group
+
+## Exit Criteria
+
+A user can:
+
+```text
+create group
+add users
+view membership
+edit group
+```
+
+and unauthorized users cannot view it.
 
 ---
 
-# 9. Phase 5 — Expense Creation UI
+# Milestone 5 — Basic Expense Engine
 
-Improve the existing expense form for mobile.
+## Goal
 
-Use a clear vertical structure around the existing fields, such as:
+Build the first correct financial workflow.
 
-1. Amount
-2. Description
-3. Date
-4. Paid by
-5. Split method
-6. Participants
-7. Split configuration
-8. Receipt
-9. Existing submit/review controls
+Only support:
 
-Do not add, remove, or reorder functionality merely for UI convenience.
+```text
+single payer
+equal split
+one expense currency
+```
 
-### Acceptance criteria
+initially.
 
-- Amount entry is prominent.
-- Inputs are comfortable on mobile.
-- Participant selection is touch-friendly.
-- Validation messages are clear.
-- No unnecessary horizontal scrolling occurs.
-- Existing submission behavior is unchanged.
+## Database
+
+Create:
+
+```text
+expenses
+expense_payers
+expense_participants
+```
+
+## Tasks
+
+### 5.1 Expense schema
+
+### 5.2 Payer schema
+
+### 5.3 Participant schema
+
+### 5.4 Money utilities
+
+### 5.5 Equal split function
+
+### 5.6 Equal split tests
+
+### 5.7 Create-expense validation
+
+### 5.8 Create-expense server action
+
+### 5.9 Add-expense UI
+
+### 5.10 Expense list
+
+### 5.11 Expense detail
+
+### 5.12 Edit expense
+
+### 5.13 Delete expense
+
+## Mobile Add Expense
+
+The experience should be optimized for one-handed use.
+
+Suggested sequence:
+
+```text
+Description
+Amount
+Paid by
+Split between
+Date
+Category
+Notes
+Save
+```
+
+Advanced options should not overwhelm the first view.
+
+## Exit Criteria
+
+Three members can create an equal-split expense and the participant totals reconcile exactly with the total.
 
 ---
 
-# 10. Phase 6 — Split Configuration UI
+# Milestone 6 — Balance Engine
 
-Make the existing split interface comfortable on mobile.
+## Goal
 
-Preserve all existing methods.
+Calculate accurate financial positions.
 
-Use progressive disclosure where appropriate.
+## Tasks
+
+### 6.1 User expense position
+
+Implement:
+
+```text
+paid - owed
+```
+
+### 6.2 Pairwise balances
+
+### 6.3 Group balance
+
+### 6.4 Global balance
+
+### 6.5 Dashboard totals
+
+### 6.6 Currency grouping
+
+Even before multi-currency UX is complete, do not build assumptions that merge currencies.
+
+### 6.7 Unit tests
+
+Include:
+
+```text
+one payer
+three participants
+rounding
+multiple expenses
+edited expense
+deleted expense
+```
+
+## Exit Criteria
+
+Balances are reproducible from financial records.
+
+No manually editable balance field is required.
+
+---
+
+# Milestone 7 — Advanced Split Types
+
+Implement one mode at a time.
+
+## 7.1 Exact Amount
 
 Example:
 
 ```text
-Split method
-[ Existing method ▼ ]
+₹1000
+
+A ₹500
+B ₹300
+C ₹200
 ```
 
-Only show configuration already associated with the selected method.
+Validation:
 
-### Acceptance criteria
-
-- All existing split methods remain accessible.
-- Selected method is obvious.
-- Inputs are touch-friendly.
-- Financial values remain readable.
-- Existing calculations remain unchanged.
+```text
+sum = expense total
+```
 
 ---
 
-# 11. Phase 7 — Expense History and Dense Data
+## 7.2 Percentage
 
-Adapt existing expense history for small screens.
+Example:
 
-Where desktop tables become difficult to read, use:
+```text
+A 50%
+B 30%
+C 20%
+```
 
-- Stacked rows
-- Cards
-- Compact list items
-- Responsive layouts
-- Progressive disclosure
+Validation:
 
-Keep existing important information accessible.
-
-Do not change:
-
-- Filtering
-- Sorting
-- Pagination
-- Data behavior
-- Financial calculations
-
-merely for visual reasons.
+```text
+sum = 100%
+```
 
 ---
 
-# 12. Phase 8 — Balances
+## 7.3 Shares
 
-Make existing balances immediately understandable on mobile.
+Example:
 
-Prioritize:
+```text
+A = 2
+B = 1
+C = 1
+```
 
-- User's own position
-- Who owes whom
-- Amount
-- Existing settlement action
-
-Avoid dense desktop-style tables on small screens.
-
-Do not change balance calculations.
+Calculate proportional values.
 
 ---
 
-# 13. Phase 9 — Settlements
+## 7.4 Adjustment
 
-Improve the presentation of the existing settlement workflow.
+Add only after previous methods are stable.
 
-Focus on:
+## Exit Criteria
 
-- Clear amount
-- Clear payer/payee information
-- Simple vertical layout
-- Comfortable inputs
-- Existing confirmation action
-- Mobile-friendly feedback
-
-Do not change settlement behavior or calculations.
+Every split method produces deterministic, fully reconciled totals.
 
 ---
 
-# 14. Phase 10 — Activity and Settings
+# Milestone 8 — Multiple Payers
 
-Adapt the existing:
+## Goal
 
-- Activity/history
-- Profile
-- Settings
+Support expenses funded by multiple people.
 
-for mobile.
+Example:
 
-Use clear sections and progressive disclosure where useful.
+```text
+Expense ₹2,000
 
-Do not add new capabilities.
+Nitesh paid ₹1,500
+Rahul paid ₹500
+```
 
----
+## Tasks
 
-# 15. Phase 11 — Modals and Dialogs
+### 8.1 Multiple payer UI
 
-Review existing dialogs.
+### 8.2 Contribution validation
 
-On mobile, use an appropriate presentation such as:
+### 8.3 Balance calculations
 
-- Full-width
-- Near-full-width
-- Bottom sheet
-- Full-screen
+### 8.4 Edit payer contributions
 
-### Existing form inside a modal
+### 8.5 Tests
 
-While pending:
+Validation:
 
-- Keep the modal open.
-- Preserve form state.
-- Prevent duplicate submission through the existing UI behavior.
+```text
+sum(payer contributions)
+=
+expense total
+```
 
-On failure:
+## Exit Criteria
 
-- Keep the modal open.
-- Preserve entered values where practical.
-- Show the existing error.
-
-On success:
-
-- Show existing success feedback.
-- Reset the form.
-- Close the modal according to the existing workflow.
-
-Do not change the underlying submission logic.
+Expense balances remain mathematically correct for multiple payers.
 
 ---
 
-# 16. Phase 12 — Toasts and Feedback
+# Milestone 9 — Direct / Non-Group Expenses
 
-Improve existing toast presentation.
+## Goal
 
-Requirements:
+Friends can share expenses without creating a group.
 
-- Readable on mobile
-- Within viewport
-- Does not cover critical controls
-- Consistent placement
-- Accessible
-- Success only after successful response
-- Errors clearly presented
+## Tasks
 
-Do not create new business outcomes.
+### 9.1 Direct expense model support
 
----
+### 9.2 Friend expense screen
 
-# 17. Phase 13 — Loading, Empty, Error, and Unauthorized States
+### 9.3 Add direct expense
 
-Improve the presentation of existing states:
+### 9.4 Direct expense history
 
-- Loading
-- Empty
-- Error
-- Unauthorized
-- Success
-- Pending submission
+### 9.5 Direct balance
 
-Each state should work cleanly at mobile widths.
+### 9.6 Permissions
 
-Do not change state logic.
+## Exit Criteria
+
+Two friends can share and settle expenses without belonging to a group.
 
 ---
 
-# 18. Phase 14 — Touch and Accessibility
+# Milestone 10 — Settlements
 
-Review all important interactive controls.
+## Goal
 
-Ensure:
+Users can record repayments.
 
-- Comfortable touch targets
-- Clear focus
-- Good contrast
-- Semantic controls
-- Accessible labels
-- Accessible errors
-- Accessible dialogs
-- Accessible toast messages
+## Schema
 
-Do not trade accessibility for compactness.
+Suggested:
 
----
+```text
+settlements
+```
 
-# 19. Phase 15 — Tablet Enhancement
+Fields:
 
-After mobile is correct, enhance tablet layouts.
+```text
+id
+group_id nullable
+payer_user_id
+recipient_user_id
+amount
+currency
+payment_method
+settlement_date
+note
+created_by
+created_at
+```
 
-Possible improvements:
+## Payment methods
 
-- Multi-column layouts
-- Wider containers
-- Better spacing
-- More efficient list density
-- Side-by-side sections
+Initially descriptive only:
 
-Do not create a different workflow.
+```text
+cash
+upi
+bank_transfer
+other
+```
 
----
+Do not process payments yet.
 
-# 20. Phase 16 — Desktop Enhancement
+## Tasks
 
-Enhance the mobile baseline for desktop.
+### 10.1 Schema
 
-Use additional width for:
+### 10.2 RLS
 
-- Multi-column layouts
-- Side-by-side sections
-- Wider content
-- Expanded navigation
-- Richer contextual information
-- More efficient data presentation
+### 10.3 Settlement calculation
 
-The same existing workflow must remain recognizable.
+### 10.4 Record-settlement UI
 
----
+### 10.5 Settlement history
 
-# 21. Phase 17 — Cross-Screen Consistency
+### 10.6 Balance integration
 
-Review all screens for consistent:
+### 10.7 Tests
 
-- Typography
-- Spacing
-- Buttons
-- Inputs
-- Cards
-- Dialogs
-- Toasts
-- Badges
-- Icons
-- Navigation
-- States
-- Responsive behavior
+## Exit Criteria
 
-Prefer shared components for repeated patterns.
+Recording a valid settlement reduces balances exactly as expected.
 
 ---
 
-# 22. Phase 18 — Final UI Review
+# Milestone 11 — Activity History
 
-After implementation, review representative viewport sizes:
+## Goal
 
-- 320px
-- 360px
-- 375px
-- 390px
-- 414px
-- Tablet
-- Desktop
+Provide an auditable history.
 
-Check for:
+Events:
 
-- Horizontal overflow
-- Cramped controls
-- Unreadable text
-- Poor spacing
-- Difficult touch interactions
-- Broken dialogs
-- Poor form layouts
-- Navigation problems
-- Inconsistent components
-- Accessibility issues
+```text
+expense_created
+expense_updated
+expense_deleted
+settlement_created
+group_created
+group_updated
+member_added
+member_removed
+comment_added
+```
 
-This review is for **UI quality and regression detection**.
+## Tasks
 
-It is not a workflow redesign.
+### 11.1 Activity schema
 
----
+### 11.2 Event creation
 
-# 23. Final Acceptance Criteria
+### 11.3 Group activity
 
-The phase is complete when:
+### 11.4 Global activity
 
-- [x] Mobile is the intentional base layout.
-- [x] Existing screens are comfortable on mobile.
-- [x] No accidental horizontal overflow exists.
-- [x] Existing navigation is mobile-friendly.
-- [x] Dashboard is mobile-first.
-- [x] Groups are mobile-first.
-- [x] Expense creation is mobile-first.
-- [x] Existing split methods remain accessible.
-- [x] Expense history is readable on mobile.
-- [x] Balances are easy to understand.
-- [x] Settlement UI is comfortable on mobile.
-- [x] Activity is mobile-friendly.
-- [x] Settings/profile are mobile-friendly.
-- [x] Existing modal forms behave correctly.
-- [x] Existing toast behavior is presented consistently.
-- [x] Loading/empty/error/unauthorized/success states are clear.
-- [x] Touch targets are comfortable.
-- [x] Accessibility is preserved/improved.
-- [x] Tablet layouts are coherent.
-- [x] Desktop layouts progressively enhance the mobile baseline.
-- [x] Existing functionality remains unchanged.
-- [x] Existing workflows remain unchanged.
-- [x] No new product features were introduced.
-- [x] No backend/business-logic changes were introduced for UI purposes.
+### 11.5 Pagination
+
+## Exit Criteria
+
+Important financial and group changes appear chronologically.
 
 ---
 
-# 24. Final Principle
+# Milestone 12 — Comments
 
-> **Mobile-first is a UI strategy, not a product redesign.**
+## Goal
 
-The existing Splitly workflows already define what users can do.
+Allow discussion on expenses.
 
-This phase should make those workflows:
+## Tasks
 
-**clearer → easier → faster → more comfortable → more accessible**
+### 12.1 Comment schema
 
-on mobile first, while progressively enhancing the same experience for tablet and desktop.
+### 12.2 RLS
+
+### 12.3 Add comment
+
+### 12.4 Delete own comment if allowed
+
+### 12.5 Expense comment thread
+
+## Exit Criteria
+
+Only authorized expense viewers can read and create comments.
+
+---
+
+# Milestone 13 — Categories
+
+## Goal
+
+Provide structured expense classification.
+
+Initial examples:
+
+```text
+General
+Food
+Groceries
+Dining
+Drinks
+Transport
+Taxi
+Fuel
+Parking
+Housing
+Rent
+Utilities
+Entertainment
+Travel
+Shopping
+Healthcare
+Other
+```
+
+## Tasks
+
+### 13.1 Category model
+
+### 13.2 Seed categories
+
+### 13.3 Category selector
+
+### 13.4 Filtering support
+
+---
+
+# Milestone 14 — Debt Simplification
+
+## Goal
+
+Reduce unnecessary transfer paths.
+
+## Algorithm
+
+1. calculate each member's net group balance
+2. divide users into debtors and creditors
+3. match debtors to creditors
+4. generate simplified payment instructions
+5. preserve every user's net balance
+
+## Tasks
+
+### 14.1 Algorithm
+
+### 14.2 Unit tests
+
+### 14.3 Group setting
+
+### 14.4 Simplified-balance UI
+
+## Mandatory Test
+
+Before simplification:
+
+```text
+A → B ₹500
+B → C ₹500
+```
+
+After:
+
+```text
+A → C ₹500
+```
+
+Net positions must match exactly.
+
+---
+
+# Milestone 15 — Recurring Expenses
+
+## Goal
+
+Generate new expenses from schedules.
+
+Support:
+
+```text
+weekly
+biweekly
+monthly
+yearly
+```
+
+## Architecture
+
+Recurring configuration is a template.
+
+Generated expenses become normal expenses.
+
+Do not mutate historical expense instances when the recurring template changes.
+
+## Tasks
+
+### 15.1 Recurring template schema
+
+### 15.2 Scheduler mechanism
+
+### 15.3 Create recurring expense
+
+### 15.4 Pause
+
+### 15.5 Resume
+
+### 15.6 End recurrence
+
+### 15.7 Future-occurrence editing
+
+---
+
+# Milestone 16 — Multiple Currencies
+
+## Goal
+
+Allow users to track separate financial positions.
+
+## Tasks
+
+### 16.1 Currency metadata
+
+### 16.2 User default currency
+
+### 16.3 Group default currency
+
+### 16.4 Currency selector
+
+### 16.5 Currency-separated balances
+
+### 16.6 Formatting utilities
+
+Never automatically combine:
+
+```text
+₹500
+$25
+€10
+```
+
+into one number.
+
+---
+
+# Milestone 17 — Notifications
+
+## Initial implementation
+
+In-app notifications.
+
+Events:
+
+```text
+friend request
+group invitation
+member added
+new expense
+expense changed
+settlement
+comment
+recurring expense
+```
+
+## Tasks
+
+### 17.1 Notification schema
+
+### 17.2 Notification service
+
+### 17.3 Notification dropdown/page
+
+### 17.4 Read/unread
+
+### 17.5 Notification preferences
+
+Later:
+
+```text
+email
+push
+```
+
+---
+
+# Milestone 18 — Search and Filtering
+
+## Expense Search
+
+Search by:
+
+```text
+description
+group
+person
+category
+notes
+```
+
+Filters:
+
+```text
+date
+amount
+currency
+category
+group
+person
+```
+
+## Tasks
+
+### 18.1 Search query
+
+### 18.2 Search screen
+
+### 18.3 Filters
+
+### 18.4 Pagination
+
+### 18.5 Mobile filter drawer
+
+---
+
+# Milestone 19 — Reports and Insights
+
+## Goal
+
+Provide useful spending analytics.
+
+Reports:
+
+```text
+total spending
+monthly spending
+category spending
+group spending
+spending over time
+amount personally paid
+```
+
+Reports should read from existing financial records.
+
+Do not create a second accounting system.
+
+---
+
+# Milestone 20 — Attachments
+
+## Goal
+
+Support receipts and files.
+
+Use Supabase Storage.
+
+## Tasks
+
+### 20.1 Storage bucket
+
+### 20.2 Storage permissions
+
+### 20.3 Upload receipt
+
+### 20.4 Preview attachment
+
+### 20.5 Delete attachment
+
+### 20.6 File validation
+
+Later:
+
+```text
+OCR
+receipt extraction
+```
+
+---
+
+# Milestone 21 — Itemized Expenses
+
+## Goal
+
+Allow participants to split individual receipt items.
+
+Example:
+
+```text
+Pizza     ₹800
+Drinks    ₹400
+Dessert   ₹300
+Tax       ₹150
+Tip       ₹150
+```
+
+Support:
+
+- item participant assignment
+- tax
+- tip
+- discounts
+- proportional allocation
+
+Final calculated total must reconcile exactly with the expense total.
+
+---
+
+# Milestone 22 — Production Hardening
+
+## Security
+
+Review:
+
+- all RLS
+- all server mutations
+- file access
+- invitation flows
+- ID guessing
+- privilege escalation
+
+## Performance
+
+Review:
+
+- indexes
+- large queries
+- pagination
+- N+1 queries
+- expensive calculations
+
+## UX
+
+Review:
+
+```text
+320px
+375px
+390px
+430px
+768px
+1024px
+1440px
+```
+
+## Accessibility
+
+Review:
+
+- keyboard
+- labels
+- dialogs
+- focus
+- touch targets
+- contrast
+
+## Reliability
+
+Add:
+
+- error boundaries
+- structured logging
+- retry handling
+- safe mutation feedback
+
+---
+
+# First Release Target
+
+The first useful Splitly release should successfully support this scenario:
+
+```text
+Nitesh creates an account
+
+Rahul creates an account
+
+Amit creates an account
+
+Nitesh creates "Goa Trip"
+
+Nitesh adds Rahul and Amit
+
+Nitesh adds Hotel
+₹6,000
+paid by Nitesh
+split equally
+
+Rahul adds Dinner
+₹1,500
+paid by Rahul
+split equally
+
+Splitly calculates accurate balances
+
+Amit records a settlement
+
+Balances update correctly
+
+Users can review expense history
+```
+
+Do not prioritize advanced features until this workflow works reliably.
+
+---
+
+# Definition of Done for a Build Task
+
+A feature is complete only when applicable requirements are satisfied:
+
+```text
+database
+RLS
+domain logic
+server mutation/query
+validation
+UI
+mobile layout
+loading states
+empty states
+error states
+tests
+lint
+TypeScript
+```
+
+The existence of a screen does not mean the feature is complete.
+
+---
+
+# Standard Agent Prompt
+
+Use this pattern when assigning tasks:
+
+```text
+Read AGENTS.md and the relevant documents under /docs.
+
+We are implementing Build Plan task [NUMBER + NAME].
+
+Inspect the existing code before making changes.
+
+Implement only this task.
+
+Follow the existing architecture and design system.
+
+Do not implement future build-plan items.
+
+Add or update tests where required.
+
+Verify TypeScript and lint.
+
+At the end report:
+- implemented
+- files changed
+- database changes
+- tests executed
+- responsive checks
+- anything intentionally deferred
+
+Stop after completing this task.
+```

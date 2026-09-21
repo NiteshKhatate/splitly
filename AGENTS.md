@@ -1,372 +1,1072 @@
-# Splitly — AGENTS.md Mobile-First UI Update
+# Splitly — AGENTS.md
 
-## Current Development Mode
+## 1. Project Identity
 
-The current development phase is **Mobile-First UI / UX**.
+Splitly is a mobile-first shared-expense management application inspired by the workflows of Splitwise.
 
-The purpose of this phase is to improve the existing Splitly interface so that it is intentionally designed for mobile first and progressively enhanced for tablet and desktop.
+The goal is to build a production-quality application for:
 
-The existing product functionality and workflows are already established.
+- friends
+- couples
+- roommates
+- families
+- travel groups
+- recurring shared expenses
 
-> **Keep how Splitly works the same; improve how Splitly looks, feels, and is used.**
+Splitly must have its own:
 
----
+- branding
+- visual design
+- code
+- copy
+- assets
+- component system
+- implementation
 
-## 1. Functionality and Workflow Freeze
+Do not copy proprietary Splitwise source code, private APIs, branding, assets, or text.
 
-Existing functionality and workflows are frozen during this phase.
-
-Do not change:
-
-- Business logic
-- Financial calculations
-- Expense calculations
-- Split calculations
-- Balance calculations
-- Settlement calculations
-- Authentication behavior
-- Authorization rules
-- Permissions
-- Validation rules
-- Database schema
-- Prisma models
-- Database migrations
-- API contracts
-- Server actions
-- Existing routes
-- Existing product capabilities
-- Existing workflow order
-- Existing data behavior
-
-Do not add new product features as part of mobile-first UI work.
-
-Do not redesign an existing workflow.
-
-The existing workflow is the source of truth. The UI should adapt to the workflow, not redefine it.
+The application should reproduce useful expense-sharing workflows rather than visually cloning proprietary assets.
 
 ---
 
-## 2. UI/UX Scope
+# 2. Primary Product Goals
 
-Allowed changes include:
+Splitly must allow users to:
 
-- Mobile-first responsive layouts
-- Tablet and desktop responsive layouts
-- Typography
-- Spacing
-- Visual hierarchy
-- Component styling
-- Navigation presentation
-- Form presentation
-- Modal/dialog presentation
-- Toast presentation
-- Loading states
-- Empty states
-- Error states
-- Touch interaction
-- Accessibility
-- Responsive lists/tables
-- Reusable UI components
-- Visual consistency
+1. create an account
+2. add friends
+3. create groups
+4. add group members
+5. add shared expenses
+6. split expenses in multiple ways
+7. support multiple payers
+8. calculate balances accurately
+9. edit expenses
+10. delete expenses
+11. record settlements
+12. view activity history
+13. manage multiple currencies
+14. simplify debts
+15. view spending history
+16. use the application comfortably on mobile devices
 
-A change is in scope when it improves presentation or interaction without changing underlying product behavior.
+Financial correctness, authorization, and mobile usability are higher priority than animations or visual polish.
 
 ---
 
-## 3. Mobile-First Rules
+# 3. Technology Stack
 
-Mobile is the base layout.
+Use the existing project stack unless explicitly instructed otherwise.
 
-Use mobile-first Tailwind patterns:
+## Application
 
-- Base classes represent the small-screen experience.
-- Use `sm:`, `md:`, `lg:`, and larger breakpoints for progressive enhancement.
-- Do not build desktop first and squeeze it into mobile.
-- Avoid unnecessary horizontal scrolling.
-- Do not make important content or controls unreasonably small.
-- Prefer stacking and wrapping over cramped layouts.
-- Keep existing primary actions easy to reach.
-- Preserve access to all existing functionality.
+- Next.js
+- React
+- TypeScript
+- Next.js App Router
 
-Design progression:
+## Styling
+
+- Tailwind CSS
+- reusable design-system components
+
+## Backend
+
+- Next.js Server Components
+- Server Actions where appropriate
+- Route Handlers where appropriate
+
+## Database
+
+- Supabase PostgreSQL
+
+## Authentication
+
+- Supabase Auth
+
+## Authorization
+
+- PostgreSQL Row Level Security
+
+## Storage
+
+- Supabase Storage
+
+## Hosting
+
+- Vercel
+
+## Package Manager
+
+- pnpm
+
+Do not introduce an additional backend framework such as:
+
+- NestJS
+- Express
+- Fastify
+
+unless explicitly requested.
+
+Splitly should remain a modular monolith unless scale requirements later justify architectural changes.
+
+---
+
+# 4. Required Project Documentation
+
+Before implementing significant features, inspect relevant files from:
 
 ```text
-Mobile baseline
-      ↓
-Tablet enhancement
-      ↓
-Desktop enhancement
+/docs
+```
+
+Expected documents:
+
+```text
+docs/
+├── product-requirements.md
+├── build-plan.md
+├── system-design.md
+├── database.md
+├── business-rules.md
+├── permissions.md
+├── design-system.md
+└── testing.md
+```
+
+If one does not yet exist, do not invent conflicting architecture.
+
+Use the currently available documentation and existing implementation.
+
+---
+
+# 5. Requirement Priority
+
+When instructions conflict, use this priority:
+
+1. latest explicit user instruction
+2. AGENTS.md
+3. business-rules.md
+4. product-requirements.md
+5. permissions.md
+6. database.md
+7. design-system.md
+8. system-design.md
+9. build-plan.md
+10. existing implementation
+
+The latest explicit user instruction overrides documentation when intentional.
+
+---
+
+# 6. Agent Workflow
+
+Before changing code:
+
+1. read AGENTS.md
+2. identify the requested task
+3. read relevant docs
+4. inspect existing implementation
+5. inspect reusable components
+6. inspect applicable database tables
+7. inspect applicable RLS policies
+8. understand business rules
+9. implement the smallest coherent solution
+10. test it
+11. stop
+
+Do not automatically continue to unrelated phases.
+
+---
+
+# 7. Task Scope
+
+Implement only the requested task.
+
+Do not create unrelated features "for later."
+
+Avoid:
+
+- speculative architecture
+- premature abstractions
+- placeholder screens for future phases
+- unrelated refactors
+- large dependency additions
+
+If the requested feature exposes an architectural flaw that must be fixed, fix only what is necessary and explain it afterward.
+
+---
+
+# 8. Mobile-First Requirement
+
+Splitly is mobile-first.
+
+Every feature must work correctly starting at approximately 320px width.
+
+Base styles represent mobile.
+
+Larger layouts are progressive enhancements.
+
+Preferred Tailwind pattern:
+
+```tsx
+className="flex flex-col md:flex-row"
+```
+
+Avoid desktop-first patterns that must later be undone.
+
+---
+
+# 9. Required Responsive Widths
+
+Verify important screens at approximately:
+
+```text
+320px
+375px
+390px
+430px
+768px
+1024px
+1440px
+```
+
+No core workflow may depend on a large desktop viewport.
+
+---
+
+# 10. Mobile UX Rules
+
+## Navigation
+
+Mobile must not display the full desktop sidebar.
+
+Prefer:
+
+- bottom navigation
+- compact mobile header
+- drawer for secondary actions
+
+Desktop may use:
+
+- persistent sidebar
+- contextual secondary panel
+
+## Touch targets
+
+Interactive controls should be at least:
+
+44 × 44px
+
+Prefer approximately:
+
+48px height
+
+for:
+
+- buttons
+- inputs
+- selects
+- important actions
+
+## Forms
+
+Forms should be single-column by default.
+
+Multi-column forms should only appear at larger breakpoints.
+
+## Inputs
+
+Use a minimum mobile text size of approximately 16px for form inputs to prevent mobile-browser zoom issues.
+
+## Overflow
+
+No important screen may introduce unintended horizontal page scrolling.
+
+## Actions
+
+Primary financial actions should remain easy to reach.
+
+Examples:
+
+- Add expense
+- Settle up
+- Save expense
+
+## Modals
+
+Desktop dialogs may be centered.
+
+On mobile consider:
+
+- bottom sheets
+- full-width panels
+- near-fullscreen dialogs
+
+when the form is complex.
+
+---
+
+# 11. Mobile Application Navigation
+
+Preferred mobile primary navigation:
+
+```text
+Home
+Activity
+Add
+Groups
+Account
+```
+
+The central Add action should open expense creation.
+
+Friends can be accessible through:
+
+- Home
+- Groups
+- Account/navigation
+- dedicated secondary screen
+
+depending on final IA.
+
+Do not overload mobile bottom navigation with too many items.
+
+---
+
+# 12. Design System
+
+All UI must follow:
+
+```text
+docs/design-system.md
+```
+
+Do not invent arbitrary:
+
+- colors
+- font sizes
+- spacing values
+- border radius values
+- shadows
+- button variants
+- input styling
+
+If a reusable visual pattern does not exist:
+
+1. determine whether it should be reusable
+2. add it to the design system
+3. implement a component
+4. use the component
+
+---
+
+# 13. Shared Components
+
+Reusable UI belongs under a shared component layer.
+
+Expected primitives may include:
+
+```text
+Button
+IconButton
+Input
+Textarea
+Select
+Checkbox
+Radio
+Switch
+Avatar
+Badge
+Card
+Modal
+Dialog
+Drawer
+BottomSheet
+Dropdown
+Tabs
+Tooltip
+Spinner
+Skeleton
+EmptyState
+ErrorState
+CurrencyAmount
+UserAvatar
+UserPicker
+DatePicker
+```
+
+Feature components should compose primitives instead of duplicating styling.
+
+---
+
+# 14. Feature Organization
+
+Prefer feature-oriented organization.
+
+Example:
+
+```text
+src/
+├── app/
+├── components/
+│   ├── ui/
+│   └── layout/
+├── features/
+│   ├── auth/
+│   ├── friends/
+│   ├── groups/
+│   ├── expenses/
+│   ├── balances/
+│   ├── settlements/
+│   ├── activity/
+│   ├── notifications/
+│   └── settings/
+├── lib/
+├── hooks/
+├── types/
+└── utils/
+```
+
+Feature-specific components should live inside their feature directories.
+
+---
+
+# 15. Domain Layer
+
+Financial logic must not live directly inside React components.
+
+Use dedicated domain utilities/services for:
+
+- expense splitting
+- payer validation
+- participant validation
+- balance calculations
+- settlement calculations
+- debt simplification
+- currency handling
+- rounding
+
+UI components should render results rather than implement accounting logic.
+
+---
+
+# 16. Money Rules
+
+Financial correctness is critical.
+
+Never use floating-point arithmetic for money.
+
+Prefer either:
+
+- integer minor units
+- exact decimal database types
+
+Example:
+
+₹12.50 may be represented internally as:
+
+```text
+1250 paise
+```
+
+if using minor units.
+
+All splits must satisfy:
+
+```text
+sum(payer contributions) = expense total
+```
+
+and:
+
+```text
+sum(participant owed amounts) = expense total
+```
+
+Rounding differences must never disappear silently.
+
+---
+
+# 17. Expense Domain Model
+
+Do not assume:
+
+```text
+payer = participant
+```
+
+These are separate concepts.
+
+An expense can have:
+
+- one payer
+- multiple payers
+- one participant
+- multiple participants
+
+Conceptual model:
+
+```text
+Expense
+├── Payers
+└── Participants
+```
+
+Each payer contributes an amount.
+
+Each participant owes an amount.
+
+---
+
+# 18. Supported Split Methods
+
+Splitly should eventually support:
+
+- equal
+- exact
+- percentage
+- shares
+- adjustment
+
+Build incrementally.
+
+Equal split should be implemented first.
+
+Do not implement every split method simultaneously unless explicitly requested.
+
+---
+
+# 19. Equal Split Rounding
+
+Example:
+
+```text
+₹100 / 3 users
+```
+
+cannot divide evenly.
+
+The application must use deterministic rounding.
+
+Example:
+
+```text
+User A: ₹33.34
+User B: ₹33.33
+User C: ₹33.33
+```
+
+Total:
+
+```text
+₹100.00
+```
+
+The same inputs must always produce the same result.
+
+---
+
+# 20. Balance Rules
+
+For a user:
+
+```text
+net position
+=
+amount paid
+-
+amount owed
++
+settlement effects
+```
+
+Positive position means:
+
+```text
+the user should receive money
+```
+
+Negative position means:
+
+```text
+the user owes money
+```
+
+Balances should be derived from underlying transactions.
+
+Do not create manually editable balances.
+
+---
+
+# 21. Financial Source of Truth
+
+Expenses and settlements are the financial source of truth.
+
+Derived balances may be:
+
+- calculated dynamically
+- cached
+- materialized
+
+for performance.
+
+However, cached balances must always be reconstructable from financial records.
+
+Never use a mutable balance column as the sole accounting source.
+
+---
+
+# 22. Settlement Rules
+
+A settlement records a repayment between users.
+
+A settlement must not:
+
+- delete expenses
+- rewrite expenses
+- destroy historical data
+
+Example:
+
+```text
+Rahul owes Nitesh ₹500
+```
+
+Rahul records:
+
+```text
+₹500 payment to Nitesh
+```
+
+The settlement offsets the debt.
+
+---
+
+# 23. Debt Simplification
+
+Debt simplification may change:
+
+```text
+who pays whom
+```
+
+but must never change:
+
+```text
+any user's net position
+```
+
+Example:
+
+```text
+A owes B ₹500
+B owes C ₹500
+```
+
+may simplify to:
+
+```text
+A owes C ₹500
+```
+
+Net positions remain identical.
+
+The debt simplification algorithm requires unit tests.
+
+---
+
+# 24. Currency Rules
+
+Each expense has one currency.
+
+Different currencies must remain separate.
+
+Example:
+
+```text
+₹2,000 owed
+$25 owed
+```
+
+must not automatically become a single balance.
+
+Currency conversion is a separate feature.
+
+Do not silently convert currencies.
+
+---
+
+# 25. Database Rules
+
+Use PostgreSQL constraints whenever they can protect data integrity.
+
+Prefer:
+
+- UUID primary keys
+- foreign keys
+- unique constraints
+- check constraints
+- timestamps
+- indexes
+
+Application validation complements database constraints.
+
+It does not replace them.
+
+---
+
+# 26. Row Level Security
+
+RLS is mandatory for user financial data.
+
+Frontend hiding is not authorization.
+
+A malicious user must not gain data access by manually changing an ID in a request.
+
+Evaluate RLS for every table containing:
+
+- users
+- friendships
+- groups
+- memberships
+- expenses
+- payers
+- participants
+- settlements
+- comments
+- activities
+- notifications
+
+---
+
+# 27. Group Visibility
+
+A group should normally be visible only to members or properly authorized invitees.
+
+Users must not access arbitrary groups by guessing UUIDs.
+
+---
+
+# 28. Expense Visibility
+
+A group expense should only be visible to authorized group members.
+
+A non-group expense should only be visible to users who legitimately participate in or are otherwise authorized for that expense.
+
+---
+
+# 29. Service Role
+
+Supabase service-role credentials must never be exposed to browser code.
+
+Any service-role operation must run in trusted server-side code only.
+
+---
+
+# 30. Validation
+
+Validate at:
+
+1. form/user interaction level
+2. server boundary
+3. database constraint level where appropriate
+
+Critical validations include:
+
+```text
+amount > 0
+
+payer total = expense total
+
+participant total = expense total
+
+percentage total = 100%
+
+shares > 0
+
+users belong to valid relationships
+
+group members are valid
+
+currency is supported
 ```
 
 ---
 
-## 4. Information Hierarchy
+# 31. Authentication
 
-For each existing screen:
+Supabase Auth should manage identity.
 
-1. Identify the most important information already present.
-2. Present it first on mobile.
-3. Make the existing primary action obvious.
-4. Reduce unnecessary visual density.
-5. Use progressive disclosure for secondary information where appropriate.
-6. Never remove existing functionality simply to simplify the mobile layout.
+Application-specific profile information belongs in a profile table.
 
-Do not invent a new workflow.
+Do not duplicate authentication passwords or authentication secrets in application tables.
 
 ---
 
-## 5. Mobile Navigation
+# 32. Error Handling
 
-Adapt the existing navigation for mobile.
+Every async workflow should consider:
 
-Navigation should:
+- loading
+- success
+- validation failure
+- unauthorized
+- forbidden
+- not found
+- network failure
+- server failure
+- empty state
 
-- Be easy to reach.
-- Have comfortable touch targets.
-- Clearly indicate the current location.
-- Preserve all existing destinations.
-- Keep frequent existing actions easy to access.
-- Avoid squeezing desktop navigation into a narrow viewport.
-
-A compact bottom navigation may be used where appropriate if it maps to existing destinations and behavior.
+Do not implement only the success state.
 
 ---
 
-## 6. Mobile Forms
+# 33. Accessibility
 
-Optimize existing forms for mobile.
+Use semantic HTML.
+
+Every form control needs a programmatic label.
+
+Icon-only actions require accessible labels.
+
+Dialog focus must be managed.
+
+Keyboard navigation should work.
+
+Financial status must not depend solely on color.
+
+Example:
+
+Do not communicate "you owe" only with red.
+
+Also display text such as:
+
+```text
+You owe ₹1,250
+```
+
+---
+
+# 34. Performance
+
+Do not optimize prematurely.
+
+However:
+
+- avoid obvious N+1 queries
+- paginate large activity feeds
+- paginate expense history
+- index commonly filtered fields
+- avoid downloading unnecessary records
+- use server rendering appropriately
+
+---
+
+# 35. Testing Priorities
+
+Highest-priority unit tests:
+
+```text
+equal split
+exact split
+percentage split
+share split
+rounding
+multiple payers
+balance calculations
+settlements
+debt simplification
+currency separation
+```
+
+Highest-priority workflow tests:
+
+```text
+signup
+login
+create group
+add member
+add expense
+edit expense
+delete expense
+settle debt
+```
+
+---
+
+# 36. Security Testing
+
+Verify users cannot:
+
+- view groups they do not belong to
+- access private expenses
+- alter another user's profile
+- record settlement as another user
+- change group membership without permission
+- upload files to another user's expense
+- bypass server validation
+
+---
+
+# 37. Build Philosophy
+
+Prefer vertical slices.
+
+Bad:
+
+```text
+build every page
+then build every API
+then add database
+```
+
+Preferred:
+
+```text
+Create Group
+
+database
+→ RLS
+→ server action
+→ form
+→ validation
+→ UI
+→ tests
+```
+
+Then move to the next feature.
+
+---
+
+# 38. Refactoring
+
+Do not perform broad refactors during feature tasks unless necessary.
+
+If duplication becomes clear:
+
+1. finish the feature safely
+2. identify duplication
+3. extract only the reusable abstraction
+4. verify existing behavior
+
+---
+
+# 39. Dependencies
+
+Before installing a new package:
+
+1. check whether the project already provides the capability
+2. determine whether the dependency is necessary
+3. prefer established lightweight libraries
+4. avoid duplicate libraries serving the same purpose
+
+Do not introduce large dependencies for trivial functionality.
+
+---
+
+# 40. Coding Standards
 
 Prefer:
 
-- Single-column layouts.
-- Clear vertical progression.
-- Readable labels.
-- Comfortable input sizes.
-- Appropriate spacing.
-- Mobile-friendly input types.
-- Clear validation messages.
-- Easy-to-reach primary actions.
-- Visible loading states.
+- strict TypeScript
+- explicit domain types
+- small functions
+- reusable utilities
+- clear naming
+- composition
 
-Do not change:
+Avoid:
 
-- Submitted fields
-- Validation rules
-- Server actions
-- API contracts
-- Business logic
-- Persistence behavior
-
-For forms inside modals:
-
-- Keep the modal open while submission is pending.
-- Keep it open after a failed submission.
-- Preserve entered values after failure.
-- Show the existing error clearly.
-- Only reset/close after confirmed success, according to the existing workflow.
+- `any`
+- giant components
+- deeply nested conditions
+- duplicated business logic
+- hidden side effects
+- magic numbers
 
 ---
 
-## 7. Expense and Split UI
+# 41. Comments
 
-Improve the presentation of existing expense and split workflows without changing them.
+Comments should explain:
 
-Existing information such as amount, description, date, payer, split method, participants, split configuration, receipt, and submit/review controls should remain accessible.
+```text
+why
+```
 
-All existing split methods must remain available.
+not merely:
 
-Do not change:
+```text
+what the code already says
+```
 
-- Split semantics
-- Calculation behavior
-- Participant behavior
-- Financial values
-- Validation rules
-
----
-
-## 8. Dense Data
-
-For existing expense history, activity, members, balances, and similar views:
-
-- Do not simply shrink desktop tables.
-- Use responsive lists, stacked rows, cards, or progressive disclosure where appropriate.
-- Keep important existing information accessible.
-- Do not change filtering, sorting, pagination, calculations, or data-loading behavior merely for visual reasons.
+Financial rounding logic and complex authorization logic deserve explanatory comments.
 
 ---
 
-## 9. Modals and Dialogs
+# 42. Task Completion
 
-Existing dialogs should adapt to small screens.
+Before declaring a task complete verify, where relevant:
 
-Appropriate mobile presentations may include:
-
-- Full-width dialogs
-- Near-full-width dialogs
-- Bottom sheets
-- Full-screen presentation
-
-Ensure:
-
-- Primary actions remain visible.
-- Close/cancel controls are easy to use.
-- Content is not cramped.
-- Scrolling remains usable.
-- Focus management remains accessible.
-
-Do not change what the dialog does.
+- requirement implemented
+- TypeScript passes
+- lint passes
+- relevant tests pass
+- RLS reviewed
+- financial logic tested
+- mobile layout checked
+- desktop layout checked
+- loading state handled
+- empty state handled
+- errors handled
+- no accidental horizontal scrolling
+- design system followed
 
 ---
 
-## 10. Toasts and Feedback
+# 43. Completion Report
 
-Improve the presentation of existing success/error feedback.
+After implementation, report:
 
-Toasts should:
+## Implemented
 
-- Be readable on mobile.
-- Stay within the viewport.
-- Avoid covering critical controls.
-- Use consistent positioning.
-- Be accessible.
-- Represent actual existing outcomes.
+What changed.
 
-For forms:
+## Files changed
 
-> Success feedback is shown only after a successful response.
+Important files created or updated.
 
-> Failure must not reset or close the form/modal.
+## Database changes
 
----
+Tables, migrations, indexes and policies.
 
-## 11. Touch and Accessibility
+## Tests
 
-Design controls for touch-first use.
+Exactly what was executed.
 
-Pay attention to:
+## Verification
 
-- Buttons
-- Links
-- Icon buttons
-- Menus
-- Checkboxes
-- Radio controls
-- Selectors
-- Date controls
-- Participant selectors
-- Dialog controls
-- Destructive actions
+Responsive/security/manual checks performed.
 
-Preserve or improve:
+## Remaining
 
-- Semantic HTML
-- Keyboard navigation
-- Focus states
-- Screen-reader labels
-- Form error associations
-- Dialog focus management
-- Toast accessibility
-- Color contrast
-- Touch target sizing
+Anything intentionally deferred.
 
-Do not trade accessibility for compactness.
+Do not claim a test was run unless it was actually executed.
 
 ---
 
-## 12. Reusable Components
+# 44. Important Agent Constraint
 
-Before creating a UI component:
+Do not automatically begin the next build-plan task.
 
-1. Inspect existing shared components.
-2. Search for an existing equivalent.
-3. Reuse it where possible.
-4. Extend shared components when the pattern is genuinely reusable.
-5. Avoid page-specific duplicate styling.
+Complete the requested task.
 
-Use existing design tokens and visual patterns.
+Run checks.
 
----
+Summarize.
 
-## 13. Progressive Desktop Enhancement
+Stop.
 
-After the mobile baseline is correct, enhance larger viewports.
-
-Tablet and desktop may use:
-
-- Multiple columns
-- Wider containers
-- Side-by-side sections
-- Expanded navigation
-- More efficient information density
-
-The underlying workflow must remain the same.
-
----
-
-## 14. Implementation Discipline
-
-For each screen:
-
-1. Inspect the existing implementation.
-2. Understand the existing workflow.
-3. Do not modify the workflow.
-4. Identify mobile UI problems.
-5. Implement the mobile baseline.
-6. Improve touch interaction.
-7. Improve accessibility.
-8. Add tablet enhancement.
-9. Add desktop enhancement.
-10. Check shared components for consistency.
-
-Do not perform unrelated refactoring.
-
----
-
-## 15. Verification Boundary
-
-Testing/review should happen after the UI implementation.
-
-The review should verify:
-
-- Mobile layout
-- Responsive behavior
-- Touch usability
-- Accessibility
-- Visual consistency
-- No accidental horizontal overflow
-- Existing workflows still function as before
-
-This is regression verification, not workflow redesign.
-
----
-
-## 16. Mobile-First Definition of Done
-
-A UI task is complete when applicable:
-
-- [ ] Mobile is the intentional baseline.
-- [ ] The screen works at narrow mobile widths.
-- [ ] No accidental horizontal overflow exists.
-- [ ] Primary existing actions are easy to reach.
-- [ ] Touch targets are comfortable.
-- [ ] Typography remains readable.
-- [ ] Forms are comfortable on mobile.
-- [ ] Modal/dialog presentation works on mobile.
-- [ ] Loading/empty/error/success states are clear.
-- [ ] Accessibility is preserved/improved.
-- [ ] Tablet presentation is coherent.
-- [ ] Desktop progressively enhances the mobile baseline.
-- [ ] Existing components/tokens are reused.
-- [ ] No unrelated feature was introduced.
-- [ ] Existing workflow behavior is unchanged.
-
-<!-- BEGIN:nextjs-agent-rules -->
-
-# This is NOT the Next.js you know
-
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
-
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+Only continue when explicitly instructed.
